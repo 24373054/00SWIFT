@@ -1,0 +1,1286 @@
+[
+  {
+    "code": "AD",
+    "name": "Andorra",
+    "iso_3a_code": "AND",
+    "iso_3n_code": "020",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 24,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          4,
+          "n"
+        ],
+        [
+          12,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "AE",
+    "name": "United Arab Emirates",
+    "iso_3a_code": "ARE",
+    "iso_3n_code": "784",
+    "currency_code": "AED",
+    "iban_structure": null
+  },
+  {
+    "code": "AL",
+    "name": "Albania",
+    "iso_3a_code": "ALB",
+    "iso_3n_code": "008",
+    "currency_code": "ALL",
+    "iban_structure": {
+      "length": 28,
+      "positions": [
+        [
+          8,
+          "c"
+        ],
+        [
+          16,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "AT",
+    "name": "Austria",
+    "iso_3a_code": "AUT",
+    "iso_3n_code": "040",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 20,
+      "positions": [
+        [
+          5,
+          "n"
+        ],
+        [
+          11,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "AU",
+    "name": "Australia",
+    "iso_3a_code": "AUS",
+    "iso_3n_code": "036",
+    "currency_code": "AUD",
+    "iban_structure": null
+  },
+  {
+    "code": "BA",
+    "name": "Bosnia and Herzegovina",
+    "iso_3a_code": "BIH",
+    "iso_3n_code": "070",
+    "currency_code": "BAM",
+    "iban_structure": {
+      "length": 20,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          3,
+          "n"
+        ],
+        [
+          8,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "BE",
+    "name": "Belgium",
+    "iso_3a_code": "BEL",
+    "iso_3n_code": "056",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 16,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          7,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "BG",
+    "name": "Bulgaria",
+    "iso_3a_code": "BGR",
+    "iso_3n_code": "100",
+    "currency_code": "BGN",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          4,
+          "n"
+        ],
+        [
+          2,
+          "c"
+        ],
+        [
+          8,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "BH",
+    "name": "Bahrain",
+    "iso_3a_code": "BHR",
+    "iso_3n_code": "048",
+    "currency_code": "BHD",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          14,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "BR",
+    "name": "Brazil",
+    "iso_3a_code": "BRA",
+    "iso_3n_code": "076",
+    "currency_code": "BRL",
+    "iban_structure": {
+      "length": 29,
+      "positions": [
+        [
+          8,
+          "n"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          10,
+          "n"
+        ],
+        [
+          1,
+          "c"
+        ],
+        [
+          1,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "BY",
+    "name": "Belarus",
+    "iso_3a_code": "BLR",
+    "iso_3n_code": "112",
+    "currency_code": "BYN",
+    "iban_structure": {
+      "length": 28,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          4,
+          "n"
+        ],
+        [
+          16,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "CA",
+    "name": "Canada",
+    "iso_3a_code": "CAN",
+    "iso_3n_code": "124",
+    "currency_code": "CAD",
+    "iban_structure": null
+  },
+  {
+    "code": "CH",
+    "name": "Switzerland",
+    "iso_3a_code": "CHE",
+    "iso_3n_code": "756",
+    "currency_code": "CHF",
+    "iban_structure": {
+      "length": 21,
+      "positions": [
+        [
+          5,
+          "n"
+        ],
+        [
+          12,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "CN",
+    "name": "China",
+    "iso_3a_code": "CHN",
+    "iso_3n_code": "156",
+    "currency_code": "CNY",
+    "iban_structure": null
+  },
+  {
+    "code": "CY",
+    "name": "Cyprus",
+    "iso_3a_code": "CYP",
+    "iso_3n_code": "196",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 28,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          16,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "CZ",
+    "name": "Czech Republic",
+    "iso_3a_code": "CZE",
+    "iso_3n_code": "203",
+    "currency_code": "CZK",
+    "iban_structure": {
+      "length": 24,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          6,
+          "n"
+        ],
+        [
+          10,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "DE",
+    "name": "Germany",
+    "iso_3a_code": "DEU",
+    "iso_3n_code": "276",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          8,
+          "n"
+        ],
+        [
+          10,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "DK",
+    "name": "Denmark",
+    "iso_3a_code": "DNK",
+    "iso_3n_code": "208",
+    "currency_code": "DKK",
+    "iban_structure": {
+      "length": 18,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          9,
+          "n"
+        ],
+        [
+          1,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "EE",
+    "name": "Estonia",
+    "iso_3a_code": "EST",
+    "iso_3n_code": "233",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 20,
+      "positions": [
+        [
+          2,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ],
+        [
+          11,
+          "n"
+        ],
+        [
+          1,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "EG",
+    "name": "Egypt",
+    "iso_3a_code": "EGY",
+    "iso_3n_code": "818",
+    "currency_code": "EGP",
+    "iban_structure": {
+      "length": 29,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          4,
+          "n"
+        ],
+        [
+          17,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "ES",
+    "name": "Spain",
+    "iso_3a_code": "ESP",
+    "iso_3n_code": "724",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 24,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          4,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ],
+        [
+          10,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "FI",
+    "name": "Finland",
+    "iso_3a_code": "FIN",
+    "iso_3n_code": "246",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 18,
+      "positions": [
+        [
+          6,
+          "n"
+        ],
+        [
+          7,
+          "n"
+        ],
+        [
+          1,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "FR",
+    "name": "France",
+    "iso_3a_code": "FRA",
+    "iso_3n_code": "250",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 27,
+      "positions": [
+        [
+          5,
+          "n"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          11,
+          "c"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "GB",
+    "name": "United Kingdom",
+    "iso_3a_code": "GBR",
+    "iso_3n_code": "826",
+    "currency_code": "GBP",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          6,
+          "n"
+        ],
+        [
+          8,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "GE",
+    "name": "Georgia",
+    "iso_3a_code": "GEO",
+    "iso_3n_code": "268",
+    "currency_code": "GEL",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          2,
+          "c"
+        ],
+        [
+          16,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "GR",
+    "name": "Greece",
+    "iso_3a_code": "GRC",
+    "iso_3n_code": "300",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 27,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          4,
+          "n"
+        ],
+        [
+          16,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "HK",
+    "name": "Hong Kong",
+    "iso_3a_code": "HKG",
+    "iso_3n_code": "344",
+    "currency_code": "HKD",
+    "iban_structure": null
+  },
+  {
+    "code": "HR",
+    "name": "Croatia",
+    "iso_3a_code": "HRV",
+    "iso_3n_code": "191",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 21,
+      "positions": [
+        [
+          7,
+          "n"
+        ],
+        [
+          10,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "HU",
+    "name": "Hungary",
+    "iso_3a_code": "HUN",
+    "iso_3n_code": "348",
+    "currency_code": "HUF",
+    "iban_structure": {
+      "length": 28,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          4,
+          "n"
+        ],
+        [
+          1,
+          "n"
+        ],
+        [
+          15,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "ID",
+    "name": "Indonesia",
+    "iso_3a_code": "IDN",
+    "iso_3n_code": "360",
+    "currency_code": "IDR",
+    "iban_structure": null
+  },
+  {
+    "code": "IE",
+    "name": "Ireland",
+    "iso_3a_code": "IRL",
+    "iso_3n_code": "372",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          6,
+          "n"
+        ],
+        [
+          8,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "IL",
+    "name": "Israel",
+    "iso_3a_code": "ISR",
+    "iso_3n_code": "376",
+    "currency_code": "ILS",
+    "iban_structure": {
+      "length": 23,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          3,
+          "n"
+        ],
+        [
+          13,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "IN",
+    "name": "India",
+    "iso_3a_code": "IND",
+    "iso_3n_code": "356",
+    "currency_code": "INR",
+    "iban_structure": null
+  },
+  {
+    "code": "IS",
+    "name": "Iceland",
+    "iso_3a_code": "ISL",
+    "iso_3n_code": "352",
+    "currency_code": "ISK",
+    "iban_structure": {
+      "length": 26,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ],
+        [
+          6,
+          "n"
+        ],
+        [
+          10,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "IT",
+    "name": "Italy",
+    "iso_3a_code": "ITA",
+    "iso_3n_code": "380",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 27,
+      "positions": [
+        [
+          1,
+          "c"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          12,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "JP",
+    "name": "Japan",
+    "iso_3a_code": "JPN",
+    "iso_3n_code": "392",
+    "currency_code": "JPY",
+    "iban_structure": null
+  },
+  {
+    "code": "KR",
+    "name": "South Korea",
+    "iso_3a_code": "KOR",
+    "iso_3n_code": "410",
+    "currency_code": "KRW",
+    "iban_structure": null
+  },
+  {
+    "code": "LI",
+    "name": "Liechtenstein",
+    "iso_3a_code": "LIE",
+    "iso_3n_code": "438",
+    "currency_code": "CHF",
+    "iban_structure": {
+      "length": 21,
+      "positions": [
+        [
+          5,
+          "n"
+        ],
+        [
+          12,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "LT",
+    "name": "Lithuania",
+    "iso_3a_code": "LTU",
+    "iso_3n_code": "440",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 20,
+      "positions": [
+        [
+          5,
+          "n"
+        ],
+        [
+          11,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "LU",
+    "name": "Luxembourg",
+    "iso_3a_code": "LUX",
+    "iso_3n_code": "442",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 20,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          13,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "LV",
+    "name": "Latvia",
+    "iso_3a_code": "LVA",
+    "iso_3n_code": "428",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 21,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          13,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "MC",
+    "name": "Monaco",
+    "iso_3a_code": "MCO",
+    "iso_3n_code": "492",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 27,
+      "positions": [
+        [
+          5,
+          "n"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          11,
+          "c"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "MD",
+    "name": "Moldova",
+    "iso_3a_code": "MDA",
+    "iso_3n_code": "498",
+    "currency_code": "MDL",
+    "iban_structure": {
+      "length": 24,
+      "positions": [
+        [
+          2,
+          "c"
+        ],
+        [
+          18,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "ME",
+    "name": "Montenegro",
+    "iso_3a_code": "MNE",
+    "iso_3n_code": "499",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          13,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "MK",
+    "name": "North Macedonia",
+    "iso_3a_code": "MKD",
+    "iso_3n_code": "807",
+    "currency_code": "MKD",
+    "iban_structure": {
+      "length": 19,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          10,
+          "c"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "MT",
+    "name": "Malta",
+    "iso_3a_code": "MLT",
+    "iso_3n_code": "470",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 31,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          18,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "NL",
+    "name": "Netherlands",
+    "iso_3a_code": "NLD",
+    "iso_3n_code": "528",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 18,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          10,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "NO",
+    "name": "Norway",
+    "iso_3a_code": "NOR",
+    "iso_3n_code": "578",
+    "currency_code": "NOK",
+    "iban_structure": {
+      "length": 15,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          6,
+          "n"
+        ],
+        [
+          1,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "NZ",
+    "name": "New Zealand",
+    "iso_3a_code": "NZL",
+    "iso_3n_code": "554",
+    "currency_code": "NZD",
+    "iban_structure": null
+  },
+  {
+    "code": "PL",
+    "name": "Poland",
+    "iso_3a_code": "POL",
+    "iso_3n_code": "616",
+    "currency_code": "PLN",
+    "iban_structure": {
+      "length": 28,
+      "positions": [
+        [
+          8,
+          "n"
+        ],
+        [
+          16,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "PT",
+    "name": "Portugal",
+    "iso_3a_code": "PRT",
+    "iso_3n_code": "620",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 25,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          4,
+          "n"
+        ],
+        [
+          11,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "RO",
+    "name": "Romania",
+    "iso_3a_code": "ROU",
+    "iso_3n_code": "642",
+    "currency_code": "RON",
+    "iban_structure": {
+      "length": 24,
+      "positions": [
+        [
+          4,
+          "c"
+        ],
+        [
+          16,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "RS",
+    "name": "Serbia",
+    "iso_3a_code": "SRB",
+    "iso_3n_code": "688",
+    "currency_code": "RSD",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          13,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "RU",
+    "name": "Russia",
+    "iso_3a_code": "RUS",
+    "iso_3n_code": "643",
+    "currency_code": "RUB",
+    "iban_structure": null
+  },
+  {
+    "code": "SA",
+    "name": "Saudi Arabia",
+    "iso_3a_code": "SAU",
+    "iso_3n_code": "682",
+    "currency_code": "SAR",
+    "iban_structure": {
+      "length": 24,
+      "positions": [
+        [
+          2,
+          "n"
+        ],
+        [
+          18,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "SE",
+    "name": "Sweden",
+    "iso_3a_code": "SWE",
+    "iso_3n_code": "752",
+    "currency_code": "SEK",
+    "iban_structure": {
+      "length": 24,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          16,
+          "n"
+        ],
+        [
+          1,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "SI",
+    "name": "Slovenia",
+    "iso_3a_code": "SVN",
+    "iso_3n_code": "705",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 19,
+      "positions": [
+        [
+          5,
+          "n"
+        ],
+        [
+          8,
+          "n"
+        ],
+        [
+          2,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "SK",
+    "name": "Slovakia",
+    "iso_3a_code": "SVK",
+    "iso_3n_code": "703",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 24,
+      "positions": [
+        [
+          4,
+          "n"
+        ],
+        [
+          6,
+          "n"
+        ],
+        [
+          10,
+          "n"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "SM",
+    "name": "San Marino",
+    "iso_3a_code": "SMR",
+    "iso_3n_code": "674",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 27,
+      "positions": [
+        [
+          1,
+          "c"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          5,
+          "n"
+        ],
+        [
+          12,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "TR",
+    "name": "Turkey",
+    "iso_3a_code": "TUR",
+    "iso_3n_code": "792",
+    "currency_code": "TRY",
+    "iban_structure": null
+  },
+  {
+    "code": "UA",
+    "name": "Ukraine",
+    "iso_3a_code": "UKR",
+    "iso_3n_code": "804",
+    "currency_code": "UAH",
+    "iban_structure": {
+      "length": 29,
+      "positions": [
+        [
+          6,
+          "n"
+        ],
+        [
+          19,
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "code": "US",
+    "name": "United States",
+    "iso_3a_code": "USA",
+    "iso_3n_code": "840",
+    "currency_code": "USD",
+    "iban_structure": null
+  },
+  {
+    "code": "VA",
+    "name": "Vatican City",
+    "iso_3a_code": "VAT",
+    "iso_3n_code": "336",
+    "currency_code": "EUR",
+    "iban_structure": {
+      "length": 22,
+      "positions": [
+        [
+          3,
+          "n"
+        ],
+        [
+          15,
+          "n"
+        ]
+      ]
+    }
+  }
+]

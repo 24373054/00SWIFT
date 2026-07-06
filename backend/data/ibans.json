@@ -1,0 +1,20 @@
+[
+  {"iban": "DE89370400440532013000", "bic": "COBADEFF", "country_code": "DE", "bank_code": "37040044", "branch_code": null, "account_number": "0532013000", "valid": true},
+  {"iban": "DE04500700100532013000", "bic": "DEUTDEFF", "country_code": "DE", "bank_code": "50070010", "branch_code": null, "account_number": "0532013000", "valid": true},
+  {"iban": "FR7630006000011234567890189", "bic": "BNPAFRPP", "country_code": "FR", "bank_code": "30006", "branch_code": "00001", "account_number": "12345678901", "valid": true},
+  {"iban": "FR1420041010050500013M02606", "bic": "BNPAFRPP", "country_code": "FR", "bank_code": "20041", "branch_code": "01005", "account_number": "0500013M026", "valid": true},
+  {"iban": "GB29NWBK60161331926819", "bic": "NATWGB21", "country_code": "GB", "bank_code": "NWBK", "branch_code": "601613", "account_number": "31926819", "valid": true},
+  {"iban": "GB82WEST12345698765432", "bic": "NATWGB21", "country_code": "GB", "bank_code": "WEST", "branch_code": "123456", "account_number": "98765432", "valid": true},
+  {"iban": "BE68539007547034", "bic": "KREDBEBB", "country_code": "BE", "bank_code": "539", "branch_code": null, "account_number": "0075470", "valid": true},
+  {"iban": "BE43068999999501", "bic": "KREDBEBB", "country_code": "BE", "bank_code": "068", "branch_code": null, "account_number": "9999950", "valid": true},
+  {"iban": "NL91ABNA0417164300", "bic": "ABNANL2A", "country_code": "NL", "bank_code": "ABNA", "branch_code": null, "account_number": "0417164300", "valid": true},
+  {"iban": "NL24INGB0006789012", "bic": "INGBNL2A", "country_code": "NL", "bank_code": "INGB", "branch_code": null, "account_number": "0006789012", "valid": true},
+  {"iban": "IT60X0542811101000000123456", "bic": "BNLIIITR", "country_code": "IT", "bank_code": "05428", "branch_code": "11101", "account_number": "000000123456", "valid": true},
+  {"iban": "IT40Q0542811101000000123456", "bic": "BNLIIITR", "country_code": "IT", "bank_code": "05428", "branch_code": "11101", "account_number": "000000123456", "valid": false},
+  {"iban": "ES9121000418450200051332", "bic": "BBVAESMM", "country_code": "ES", "bank_code": "2100", "branch_code": "0418", "account_number": "45020005133", "valid": true},
+  {"iban": "CH5604835012345678009", "bic": "CRESCHZZ", "country_code": "CH", "bank_code": "04835", "branch_code": null, "account_number": "012345678009", "valid": true},
+  {"iban": "AT611904300234573201", "bic": "UBSWCHZH", "country_code": "AT", "bank_code": "19043", "branch_code": null, "account_number": "0023457320", "valid": true},
+  {"iban": "DE00000000000000000000", "bic": null, "country_code": "DE", "bank_code": "00000000", "branch_code": null, "account_number": "0000000000", "valid": false},
+  {"iban": "FR00BNPAFRPP123456789012", "bic": null, "country_code": "FR", "bank_code": "BNPA", "branch_code": null, "account_number": "12345678901", "valid": false},
+  {"iban": "INVALIDIBAN", "bic": null, "country_code": "XX", "bank_code": null, "branch_code": null, "account_number": null, "valid": false}
+]

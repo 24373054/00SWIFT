@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Local DB
+backend/swift_dev.db
+*.db
+
+# PKI material (never commit certs/keys)
+backend/certs/
+
+# Env
+backend/.env
+
+# Research clones (reference repos, not part of the project)
+research/
+
+# SWIFT SDK PDF (copyrighted, not for public repo)
+Swift-SDK-2.17.12-10_1_RL.pdf
+
+# IDE
+.idea/
+.vscode/
+*.swp
