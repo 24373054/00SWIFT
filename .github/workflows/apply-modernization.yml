@@ -3,6 +3,8 @@ name: Apply modernization payload
 on:
   push:
     branches: [feat/v2.1.0-hardening]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
@@ -14,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: feat/v2.1.0-hardening
           fetch-depth: 0
       - name: Restore audited source tree
         shell: bash
