@@ -3,6 +3,8 @@ name: Apply modernization payload
 on:
   push:
     branches: [feat/v2.1.0-hardening]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
