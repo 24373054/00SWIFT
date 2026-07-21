@@ -1,4 +1,5 @@
-"""Retail e-CNY, offline value, programmable money, multi-CBDC and PvP services."""
+"""Retail e-CNY, offline value, programmable money, multi-CBDC, and PvP services."""
+
 from __future__ import annotations
 
 import datetime as dt
@@ -6,7 +7,7 @@ import hashlib
 import json
 import secrets
 import uuid
-from decimal import Decimal, InvalidOperation, ROUND_DOWN
+from decimal import ROUND_DOWN, Decimal, InvalidOperation
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -18,6 +19,7 @@ from .cips import EcnyOperatorService
 from .models import (
     CbdcJurisdiction,
     CbdcNode,
+    EcnyOperator,
     FxQuote,
     OfflineVoucher,
     ProgrammableInstrument,
@@ -33,13 +35,13 @@ HK_RETAIL_LIMITS = {
     1: {"balance": 5_000_000_00, "single": 500_000_00, "daily": 1_000_000_00},
 }
 PROGRAM_TEMPLATES = {
-    "directed_subsidy",
-    "merchant_category",
-    "expiry",
-    "staged_payment",
-    "escrow_release",
     "conditional_refund",
+    "directed_subsidy",
+    "escrow_release",
+    "expiry",
+    "merchant_category",
     "multi_approval",
+    "staged_payment",
 }
 
 
@@ -47,15 +49,56 @@ def _json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
 
 
+def _id(prefix: str) -> str:
+    """Return an identifier that fits the legacy VARCHAR(36) account columns."""
+    return f"{prefix}-{uuid.uuid4().hex}"
+
+
+def _as_utc(value: dt.datetime) -> dt.datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=dt.UTC)
+    return value.astimezone(dt.UTC)
+
+
+def _wallet_account(db: Session, wallet_id: str) -> EcnyAccount:
+    account = (
+        db.query(EcnyAccount)
+        .filter(
+            EcnyAccount.owner_type == "wallet",
+            EcnyAccount.owner_ref == wallet_id,
+            EcnyAccount.currency == "CNY",
+        )
+        .first()
+    )
+    if account is None:
+        raise ValueError(f"Wallet ledger account not found: {wallet_id}")
+    return account
+
+
+def _operator_account(db: Session, operator_id: str) -> EcnyAccount:
+    account = (
+        db.query(EcnyAccount)
+        .filter(
+            EcnyAccount.owner_type == "operator",
+            EcnyAccount.owner_ref == operator_id,
+            EcnyAccount.currency == "CNY",
+        )
+        .first()
+    )
+    if account is None:
+        raise ValueError(f"Operator ledger account not found: {operator_id}")
+    return account
+
+
 class RetailProfileError(ValueError):
-    pass
+    """Synthetic Hong Kong retail-profile invariant violation."""
 
 
 class HkRetailService:
     """Synthetic Hong Kong cross-border retail profile.
 
-    The service models public design characteristics only. It is not connected
-    to FPS, an e-CNY operating institution, or the HKMA.
+    This service models publicly described design characteristics only. It is
+    not connected to FPS, an e-CNY operating institution, or the HKMA.
     """
 
     def __init__(self, db: Session):
@@ -70,8 +113,12 @@ class HkRetailService:
     ) -> EcnyWallet:
         if tier not in HK_RETAIL_LIMITS:
             raise RetailProfileError("Unsupported HK retail wallet tier")
-        wallet_id = str(uuid.uuid4())
-        holder_id = str(uuid.uuid4())
+        operator = self.db.query(EcnyOperator).filter_by(operator_id=operator_id).first()
+        if operator is None or operator.status != "active":
+            raise RetailProfileError("Unknown or inactive e-CNY operator")
+
+        wallet_id = _id("wlt")
+        holder_id = _id("hld")
         holder = EcnyHolder(
             holder_id=holder_id,
             wallet_id=wallet_id,
@@ -84,11 +131,20 @@ class HkRetailService:
             wallet_id=wallet_id,
             holder_id=holder_id,
             tier=tier,
-            operator_id=None,
+            operator_id=operator.id,
             currency="CNY",
+            status="active",
         )
         self.db.add_all([holder, wallet])
-        get_or_create_account(self.db, f"acct-wallet-{wallet_id}", "wallet", wallet_id)
+        self.db.add(
+            EcnyAccount(
+                account_id=_id("aw"),
+                owner_type="wallet",
+                owner_ref=wallet_id,
+                currency="CNY",
+                balance=0,
+            )
+        )
         self.db.flush()
         return wallet
 
@@ -101,21 +157,30 @@ class HkRetailService:
     ) -> dict[str, Any]:
         wallet = self._wallet(wallet_id)
         self._check_amount(wallet, amount)
+        current = _wallet_account(self.db, wallet_id).balance
+        if current + amount > HK_RETAIL_LIMITS[wallet.tier]["balance"]:
+            raise RetailProfileError("wallet balance limit exceeded")
+
         issuance = EcnyOperatorService(self.db).issue(operator_id, amount)
-        operator_account = f"acct-operator-{operator_id}"
-        wallet_account = f"acct-wallet-{wallet_id}"
         movement = transfer(
             self.db,
-            operator_account,
-            wallet_account,
+            _operator_account(self.db, operator_id).account_id,
+            _wallet_account(self.db, wallet_id).account_id,
             amount,
-            {"profile": "ecny-hk-retail", "source": "FPS-simulation", "quote_id": quote_id},
+            {
+                "profile": "ecny-hk-retail",
+                "quote_id": quote_id,
+                "source": "FPS-simulation",
+            },
         )
-        self._check_balance(wallet)
         OutboxService(self.db).enqueue(
             "ecny.hk.topup",
             wallet_id,
-            {"amount": amount, "issuance_tx": issuance.tx_id, "movement_tx": movement.tx_id},
+            {
+                "amount": amount,
+                "issuance_tx": issuance.tx_id,
+                "movement_tx": movement.tx_id,
+            },
         )
         return {"issuance_tx": issuance.tx_id, "movement_tx": movement.tx_id}
 
@@ -127,15 +192,16 @@ class HkRetailService:
         merchant_category: str,
     ):
         wallet = self._wallet(wallet_id)
+        self._wallet(merchant_wallet_id)
         self._check_amount(wallet, amount)
         if not merchant_category:
             raise RetailProfileError("merchant_category is required")
         transaction = transfer(
             self.db,
-            f"acct-wallet-{wallet_id}",
-            f"acct-wallet-{merchant_wallet_id}",
+            _wallet_account(self.db, wallet_id).account_id,
+            _wallet_account(self.db, merchant_wallet_id).account_id,
             amount,
-            {"profile": "ecny-hk-retail", "merchant_category": merchant_category},
+            {"merchant_category": merchant_category, "profile": "ecny-hk-retail"},
         )
         OutboxService(self.db).enqueue(
             "ecny.hk.merchant_payment",
@@ -149,7 +215,7 @@ class HkRetailService:
 
     def _wallet(self, wallet_id: str) -> EcnyWallet:
         wallet = self.db.query(EcnyWallet).filter_by(wallet_id=wallet_id).first()
-        if not wallet:
+        if wallet is None:
             raise RetailProfileError("wallet not found")
         if wallet.status != "active":
             raise RetailProfileError("wallet is not active")
@@ -159,13 +225,10 @@ class HkRetailService:
         if amount <= 0 or amount > HK_RETAIL_LIMITS[wallet.tier]["single"]:
             raise RetailProfileError("single transaction limit exceeded")
 
-    def _check_balance(self, wallet: EcnyWallet) -> None:
-        account = self.db.query(EcnyAccount).filter_by(account_id=f"acct-wallet-{wallet.wallet_id}").one()
-        if account.balance > HK_RETAIL_LIMITS[wallet.tier]["balance"]:
-            raise RetailProfileError("wallet balance limit exceeded")
-
 
 class OfflineValueService:
+    """Reserve online value and redeem a device-bound voucher exactly once."""
+
     def __init__(self, db: Session):
         self.db = db
 
@@ -178,19 +241,19 @@ class OfflineValueService:
     ) -> OfflineVoucher:
         if amount <= 0 or ttl_minutes <= 0:
             raise ValueError("Invalid offline amount or lifetime")
-        voucher_id = f"offline-{uuid.uuid4().hex}"
+        voucher_id = _id("off")
         escrow = get_or_create_account(
             self.db,
-            f"acct-offline-{voucher_id}",
+            _id("ao"),
             "offline_escrow",
             voucher_id,
         )
         transfer(
             self.db,
-            f"acct-wallet-{wallet_id}",
+            _wallet_account(self.db, wallet_id).account_id,
             escrow.account_id,
             amount,
-            {"purpose": "offline_reservation", "device_id": device_id},
+            {"device_id": device_id, "purpose": "offline_reservation"},
         )
         voucher = OfflineVoucher(
             voucher_id=voucher_id,
@@ -213,24 +276,29 @@ class OfflineValueService:
         voucher = self.db.query(OfflineVoucher).filter_by(voucher_id=voucher_id).one()
         if voucher.status != "issued":
             raise ValueError("Voucher has already been consumed or invalidated")
-        if voucher.expires_at < utcnow():
+        if _as_utc(voucher.expires_at) < utcnow():
             voucher.status = "expired"
             raise ValueError("Voucher expired")
         if not secrets.compare_digest(voucher.nonce, nonce):
             raise ValueError("Invalid offline voucher nonce")
+        escrow = (
+            self.db.query(EcnyAccount)
+            .filter_by(owner_type="offline_escrow", owner_ref=voucher_id)
+            .one()
+        )
         transaction = transfer(
             self.db,
-            f"acct-offline-{voucher_id}",
-            f"acct-wallet-{merchant_wallet_id}",
+            escrow.account_id,
+            _wallet_account(self.db, merchant_wallet_id).account_id,
             voucher.amount,
-            {"purpose": "offline_redemption", "device_id": voucher.device_id},
+            {"device_id": voucher.device_id, "purpose": "offline_redemption"},
         )
         voucher.status = "redeemed"
         voucher.redeemed_by = merchant_wallet_id
         OutboxService(self.db).enqueue(
             "ecny.offline.redeemed",
             voucher_id,
-            {"merchant_wallet_id": merchant_wallet_id, "amount": voucher.amount},
+            {"amount": voucher.amount, "merchant_wallet_id": merchant_wallet_id},
         )
         self.db.flush()
         return transaction
@@ -249,6 +317,8 @@ class OfflineValueService:
 
 
 class ProgrammableMoneyService:
+    """Execute audited templates without exposing a general-purpose VM."""
+
     def __init__(self, db: Session):
         self.db = db
 
@@ -264,19 +334,19 @@ class ProgrammableMoneyService:
         if amount <= 0:
             raise ValueError("amount must be positive")
         self._validate_conditions(template, conditions)
-        instrument_id = f"program-{uuid.uuid4().hex}"
+        instrument_id = _id("prg")
         escrow = get_or_create_account(
             self.db,
-            f"acct-program-{instrument_id}",
+            _id("ap"),
             "program_escrow",
             instrument_id,
         )
         transfer(
             self.db,
-            f"acct-wallet-{owner_wallet}",
+            _wallet_account(self.db, owner_wallet).account_id,
             escrow.account_id,
             amount,
-            {"template": template, "instrument_id": instrument_id},
+            {"instrument_id": instrument_id, "template": template},
         )
         instrument = ProgrammableInstrument(
             instrument_id=instrument_id,
@@ -308,10 +378,15 @@ class ProgrammableMoneyService:
         conditions = json.loads(instrument.conditions)
         if not self._allows(instrument.template, conditions, amount, context):
             raise ValueError("programmable-money conditions are not satisfied")
+        escrow = (
+            self.db.query(EcnyAccount)
+            .filter_by(owner_type="program_escrow", owner_ref=instrument_id)
+            .one()
+        )
         transaction = transfer(
             self.db,
-            f"acct-program-{instrument_id}",
-            f"acct-wallet-{destination_wallet}",
+            escrow.account_id,
+            _wallet_account(self.db, destination_wallet).account_id,
             amount,
             {"instrument_id": instrument_id, "template": instrument.template},
         )
@@ -329,10 +404,15 @@ class ProgrammableMoneyService:
         )
         if instrument.status != "active":
             raise ValueError("instrument is not refundable")
+        escrow = (
+            self.db.query(EcnyAccount)
+            .filter_by(owner_type="program_escrow", owner_ref=instrument_id)
+            .one()
+        )
         transaction = transfer(
             self.db,
-            f"acct-program-{instrument_id}",
-            f"acct-wallet-{instrument.owner_wallet}",
+            escrow.account_id,
+            _wallet_account(self.db, instrument.owner_wallet).account_id,
             instrument.amount,
             {"instrument_id": instrument_id, "purpose": "refund"},
         )
@@ -343,13 +423,13 @@ class ProgrammableMoneyService:
 
     def _validate_conditions(self, template: str, conditions: dict[str, Any]) -> None:
         required = {
-            "directed_subsidy": {"merchant_categories"},
-            "merchant_category": {"merchant_categories"},
-            "expiry": {"expires_at"},
-            "staged_payment": {"max_release"},
-            "escrow_release": {"approval_key"},
             "conditional_refund": {"condition_key"},
-            "multi_approval": {"threshold", "approvers"},
+            "directed_subsidy": {"merchant_categories"},
+            "escrow_release": {"approval_key"},
+            "expiry": {"expires_at"},
+            "merchant_category": {"merchant_categories"},
+            "multi_approval": {"approvers", "threshold"},
+            "staged_payment": {"max_release"},
         }[template]
         missing = required - conditions.keys()
         if missing:
@@ -365,7 +445,8 @@ class ProgrammableMoneyService:
         if template in {"directed_subsidy", "merchant_category"}:
             return context.get("merchant_category") in conditions["merchant_categories"]
         if template == "expiry":
-            return utcnow() <= dt.datetime.fromisoformat(conditions["expires_at"])
+            expiry = _as_utc(dt.datetime.fromisoformat(conditions["expires_at"]))
+            return utcnow() <= expiry
         if template == "staged_payment":
             return amount <= int(conditions["max_release"])
         if template == "escrow_release":
@@ -379,6 +460,8 @@ class ProgrammableMoneyService:
 
 
 class MultiCbdcService:
+    """Jurisdiction, node, FX quote, and atomic PvP research services."""
+
     def __init__(self, db: Session):
         self.db = db
 
@@ -408,9 +491,14 @@ class MultiCbdcService:
         participant: str,
         role: str,
     ) -> CbdcNode:
-        if role not in {"central_bank", "commercial_bank", "operator", "observer"}:
+        if role not in {"central_bank", "commercial_bank", "observer", "operator"}:
             raise ValueError("Unsupported multi-CBDC node role")
-        if not self.db.query(CbdcJurisdiction).filter_by(code=jurisdiction, active=True).first():
+        active = (
+            self.db.query(CbdcJurisdiction)
+            .filter_by(code=jurisdiction, active=True)
+            .first()
+        )
+        if active is None:
             raise ValueError("Unknown or inactive jurisdiction")
         node = CbdcNode(
             node_id=node_id,
@@ -430,7 +518,11 @@ class MultiCbdcService:
         purpose: str,
     ) -> dict[str, Any]:
         source = self.db.query(CbdcJurisdiction).filter_by(code=source_jurisdiction).one()
-        destination = self.db.query(CbdcJurisdiction).filter_by(code=destination_jurisdiction).one()
+        destination = (
+            self.db.query(CbdcJurisdiction)
+            .filter_by(code=destination_jurisdiction)
+            .one()
+        )
         reasons = []
         for jurisdiction in (source, destination):
             policy = json.loads(jurisdiction.policy)
@@ -442,8 +534,8 @@ class MultiCbdcService:
                 reasons.append(f"{jurisdiction.code}: purpose not allowed")
         return {
             "allowed": not reasons,
-            "reasons": reasons,
             "data_residency": [source.data_residency, destination.data_residency],
+            "reasons": reasons,
         }
 
     def create_quote(
@@ -463,7 +555,7 @@ class MultiCbdcService:
         if parsed_rate <= 0 or max_amount <= 0 or fee < 0 or ttl_seconds <= 0:
             raise ValueError("Invalid quote parameters")
         quote = FxQuote(
-            quote_id=f"quote-{uuid.uuid4().hex}",
+            quote_id=_id("q"),
             provider=provider,
             base_currency=base_currency,
             quote_currency=quote_currency,
@@ -495,7 +587,7 @@ class MultiCbdcService:
         if int(credit_leg["amount"]) != expected:
             raise ValueError("Credit leg does not match the accepted quote")
         pvp = PvpSettlement(
-            pvp_id=f"pvp-{uuid.uuid4().hex}",
+            pvp_id=_id("p"),
             quote_id=quote_id,
             debit_leg=_json(debit_leg),
             credit_leg=_json(credit_leg),
@@ -512,7 +604,11 @@ class MultiCbdcService:
         credit = json.loads(pvp.credit_leg)
         self._active_quote(pvp.quote_id, int(debit["amount"]))
         for leg in (debit, credit):
-            account = self.db.query(EcnyAccount).filter_by(account_id=leg["from_account"]).one()
+            account = (
+                self.db.query(EcnyAccount)
+                .filter_by(account_id=leg["from_account"])
+                .one()
+            )
             if account.currency != leg["currency"] or account.balance < int(leg["amount"]):
                 raise ValueError("Insufficient or mismatched PvP source account")
         pvp.state = "LOCKED"
@@ -532,7 +628,8 @@ class MultiCbdcService:
         owner = f"pvp-{pvp_id}"
         try:
             for resource in resources:
-                locks.append((resource, lease.acquire(f"pvp-account:{resource}", owner)))
+                token = lease.acquire(f"pvp-account:{resource}", owner)
+                locks.append((resource, token))
             self._active_quote(pvp.quote_id, int(debit["amount"]))
             with self.db.begin_nested():
                 transfer(
@@ -540,14 +637,14 @@ class MultiCbdcService:
                     debit["from_account"],
                     debit["to_account"],
                     int(debit["amount"]),
-                    {"pvp_id": pvp_id, "leg": "debit"},
+                    {"leg": "debit", "pvp_id": pvp_id},
                 )
                 transfer(
                     self.db,
                     credit["from_account"],
                     credit["to_account"],
                     int(credit["amount"]),
-                    {"pvp_id": pvp_id, "leg": "credit"},
+                    {"leg": "credit", "pvp_id": pvp_id},
                 )
             pvp.state = "COMMITTED"
             pvp.version += 1
@@ -578,7 +675,7 @@ class MultiCbdcService:
 
     def _active_quote(self, quote_id: str, amount: int) -> FxQuote:
         quote = self.db.query(FxQuote).filter_by(quote_id=quote_id).one()
-        if quote.status != "active" or quote.expires_at < utcnow():
+        if quote.status != "active" or _as_utc(quote.expires_at) < utcnow():
             raise ValueError("FX quote is expired or inactive")
         if amount <= 0 or amount > quote.max_amount:
             raise ValueError("Amount exceeds quote capacity")
