@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Corridor, ThemeName, ViewMode } from "./types";
 
@@ -34,11 +34,27 @@ function RouteLine({ corridor, theme }: { corridor: Corridor; theme: ThemeName }
     return new THREE.BufferGeometry().setFromPoints(curve.getPoints(32));
   }, [corridor]);
 
-  return (
-    <line geometry={geometry}>
-      <lineBasicMaterial color={stateColor(corridor.state, theme)} transparent opacity={0.78} />
-    </line>
+  const line = useMemo(
+    () =>
+      new THREE.Line(
+        geometry,
+        new THREE.LineBasicMaterial({
+          color: stateColor(corridor.state, theme),
+          transparent: true,
+          opacity: 0.78,
+        }),
+      ),
+    [corridor.state, geometry, theme],
   );
+
+  useEffect(() => {
+    return () => {
+      line.geometry.dispose();
+      line.material.dispose();
+    };
+  }, [line]);
+
+  return <primitive object={line} />;
 }
 
 function Pulse({ corridor, progress, theme, index }: { corridor: Corridor; progress: number; theme: ThemeName; index: number }) {
@@ -134,7 +150,10 @@ function SpatialNetwork({ corridors, theme, mode, replayProgress }: Omit<ScenePr
 }
 
 function GeographicFallback({ corridors, locale, theme }: Pick<SceneProps, "corridors" | "locale" | "theme">) {
-  const mapPoint = (position: [number, number, number]): [number, number] => [360 + position[0] * 72, 190 - position[1] * 62];
+  const mapPoint = (position: [number, number, number]): [number, number] => [
+    360 + position[0] * 72,
+    190 - position[1] * 62,
+  ];
   return (
     <svg className="network-fallback" viewBox="0 0 720 380" role="img" aria-label="Geographically placed cross-border payment corridor schematic">
       <g className="geo-grid">
