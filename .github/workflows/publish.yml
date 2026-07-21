@@ -88,13 +88,13 @@ jobs:
           echo "Timed out waiting for CodeQL." >&2
           exit 1
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: steps.release.outputs.skip != 'true'
         with:
           ref: ${{ steps.release.outputs.sha }}
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         if: steps.release.outputs.skip != 'true'
         with:
           python-version: "3.12"
