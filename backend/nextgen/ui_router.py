@@ -312,12 +312,7 @@ def _overlay_database(payload: dict[str, Any], db: Session) -> None:
             }
             for account in accounts
         ]
-    events = (
-        db.query(PaymentLensEvent)
-        .order_by(PaymentLensEvent.id.desc())
-        .limit(8)
-        .all()
-    )
+    events = db.query(PaymentLensEvent).order_by(PaymentLensEvent.id.desc()).limit(8).all()
     if events:
         payload["events"] = [
             {
