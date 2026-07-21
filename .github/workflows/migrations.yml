@@ -60,3 +60,59 @@ jobs:
               raise SystemExit(f"Missing migrated tables: {sorted(missing)}")
           print(f"Verified {len(tables)} tables for {os.environ['DB_URL']}")
           PY
+
+  postgres-roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: swift_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d swift_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Upgrade, downgrade, and re-upgrade PostgreSQL
+        env:
+          SWIFT_ENV: sandbox
+          DB_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/swift_test
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+          python - <<'PY'
+          import os
+          from sqlalchemy import create_engine, inspect, text
+          engine = create_engine(os.environ["DB_URL"])
+          with engine.connect() as connection:
+              connection.execute(text("SELECT 1"))
+          tables = set(inspect(engine).get_table_names())
+          required = {
+              "ng_standard_profiles",
+              "ng_idempotency_records",
+              "ng_outbox_events",
+              "ng_workflows",
+              "ng_payment_lifecycles",
+              "ng_cips_settlements",
+              "ng_pvp_settlements",
+          }
+          missing = required - tables
+          if missing:
+              raise SystemExit(f"Missing PostgreSQL tables: {sorted(missing)}")
+          print(f"Verified {len(tables)} PostgreSQL tables")
+          PY
