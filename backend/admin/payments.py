@@ -4,11 +4,11 @@ The real SWIFT tracker doesn't create payments (they originate via Messaging);
 but the mock needs a way to seed a PaymentState so the tracker endpoints can
 be exercised end-to-end. This admin-only endpoint does that.
 """
+
 from __future__ import annotations
 
 import json
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -18,10 +18,12 @@ from auth.dependencies import require_admin_token
 from core.time import now_utc
 from database import PaymentState, get_db
 from iso20022.builder import build_pacs008_xml
-from iso20022.uetr import generate_uetr
 from iso20022.states import PDNG
+from iso20022.uetr import generate_uetr
 
-router = APIRouter(prefix="/api/payments", tags=["Admin — Payments"], dependencies=[Depends(require_admin_token)])
+router = APIRouter(
+    prefix="/api/payments", tags=["Admin — Payments"], dependencies=[Depends(require_admin_token)]
+)
 
 
 class InjectPaymentRequest(BaseModel):
@@ -29,10 +31,10 @@ class InjectPaymentRequest(BaseModel):
     currency: str = "EUR"
     debtor_agent: str = "BANKDEFFXXX"
     creditor_agent: str = "BANKFRPPXXX"
-    debtor_name: Optional[str] = "Sender Corp"
-    creditor_name: Optional[str] = "Receiver Corp"
-    instruction_id: Optional[str] = None
-    uetr: Optional[str] = None
+    debtor_name: str | None = "Sender Corp"
+    creditor_name: str | None = "Receiver Corp"
+    instruction_id: str | None = None
+    uetr: str | None = None
 
 
 @router.get("")
@@ -83,7 +85,9 @@ def inject_payment(body: InjectPaymentRequest, db: Session = Depends(get_db)):
         transaction_status=PDNG,
         state=PDNG,
         iso20022_msg=iso_msg,
-        history=json.dumps([{"status": PDNG, "timestamp": now_utc().isoformat(), "reason": "Payment initiated"}]),
+        history=json.dumps(
+            [{"status": PDNG, "timestamp": now_utc().isoformat(), "reason": "Payment initiated"}]
+        ),
         created_at=now_utc(),
         updated_at=now_utc(),
     )

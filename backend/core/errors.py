@@ -29,14 +29,11 @@ module replaces all of that with a single typed model + exception handler.
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-
 
 # ---- severity enum (from SWIFT-API-Guide errors.md) ----
 
@@ -65,29 +62,31 @@ SWAP_599 = ("SwAP599", "UnexpectedError", 500)
 
 # ---- error item models ----
 
+
 class ErrorItem(BaseModel):
     """A single SWIFT error entry."""
 
     code: str = Field(..., min_length=3, max_length=70, description="Unique error identifier")
     severity: str = Field(..., description="Fatal | Transient | Logic")
     text: str = Field(..., min_length=1, max_length=255, description="Human-readable description")
-    user_message: Optional[str] = Field(None, max_length=255)
-    more_info: Optional[str] = Field(None, description="URI to more information")
+    user_message: str | None = Field(None, max_length=255)
+    more_info: str | None = Field(None, description="URI to more information")
 
 
 class SwiftErrorEnvelope(BaseModel):
     """Generic SWIFT error envelope: ``{"errors": [ErrorItem]}``."""
 
-    errors: List[ErrorItem]
+    errors: list[ErrorItem]
 
 
 class SwiftRefErrorEnvelope(BaseModel):
     """SwiftRef error envelope — same shape, codes prefixed ``REDA.API.*``."""
 
-    errors: List[ErrorItem]
+    errors: list[ErrorItem]
 
 
 # ---- exceptions ----
+
 
 class SwiftApiException(Exception):
     """Base SWIFT API exception. Carries an ErrorItem + HTTP status.
@@ -102,8 +101,8 @@ class SwiftApiException(Exception):
         severity: str,
         text: str,
         status_code: int,
-        user_message: Optional[str] = None,
-        more_info: Optional[str] = None,
+        user_message: str | None = None,
+        more_info: str | None = None,
     ):
         self.error = ErrorItem(
             code=code, severity=severity, text=text, user_message=user_message, more_info=more_info
@@ -124,6 +123,7 @@ class SwiftRefException(SwiftApiException):
 
 # ---- convenience constructors for common SwAP errors ----
 
+
 def invalid_token(text: str = "Invalid or expired OAuth token") -> SwiftApiException:
     return SwiftApiException(SWAP_502[0], SEVERITY_FATAL, text, SWAP_502[2])
 
@@ -133,7 +133,11 @@ def token_not_provided() -> SwiftApiException:
 
 
 def insufficient_scope(scope: str = "") -> SwiftApiException:
-    text = f"OAuth token has insufficient scope for the requested service: {scope}" if scope else SWAP_503[1]
+    text = (
+        f"OAuth token has insufficient scope for the requested service: {scope}"
+        if scope
+        else SWAP_503[1]
+    )
     return SwiftApiException(SWAP_503[0], SEVERITY_FATAL, text, SWAP_503[2])
 
 
@@ -163,6 +167,7 @@ def unexpected_error(text: str = "Unexpected internal error") -> SwiftApiExcepti
 
 # ---- SwiftRef REDA.API.* convenience constructors ----
 
+
 def swiftref_not_found(code: str, text: str) -> SwiftRefException:
     """404 for a SwiftRef lookup (e.g. REDA.API.BINF for BIC not found)."""
     return SwiftRefException(code, SEVERITY_FATAL, text, 404)
@@ -179,6 +184,7 @@ def swiftref_unauthorized() -> SwiftRefException:
 
 # ---- exception handlers ----
 
+
 def _envelope(exc: SwiftApiException) -> dict:
     return {"errors": [jsonable_encoder(exc.error)]}
 
@@ -188,7 +194,9 @@ async def swift_api_exception_handler(request: Request, exc: SwiftApiException) 
     return JSONResponse(status_code=exc.status_code, content=_envelope(exc))
 
 
-async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     """Convert FastAPI/Pydantic request-validation errors into the SwAP envelope.
 
     Maps the 422 validation error to a 400 ``SwAP501 APIRequestIsMalformed``,

@@ -10,13 +10,12 @@ credential (identified by consumer_key), returning the signature + a valid
 bearer token. This lets the frontend exercise the full signed flow without
 exposing the private key. DISABLED in pilot/live.
 """
+
 from __future__ import annotations
 
 import base64
 import hashlib
 import secrets
-import time
-from typing import Optional
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException
@@ -25,12 +24,14 @@ from sqlalchemy.orm import Session
 
 from auth.dependencies import require_admin_token
 from config import get_settings
-from core.time import epoch_seconds
+from core.security import token_digest
+from core.time import epoch_seconds, now_utc
 from core.utils import load_certificate_from_file, load_private_key_from_file
-from database import AppCredential, OAuthToken, get_db, SessionLocal
-from core.time import now_utc
+from database import AppCredential, OAuthToken, get_db
 
-router = APIRouter(prefix="/api/dev", tags=["Admin — Dev Helpers"], dependencies=[Depends(require_admin_token)])
+router = APIRouter(
+    prefix="/api/dev", tags=["Admin — Dev Helpers"], dependencies=[Depends(require_admin_token)]
+)
 
 
 class SignRequest(BaseModel):
@@ -42,7 +43,7 @@ class SignRequest(BaseModel):
 
 class SignResponse(BaseModel):
     signature: str
-    access_token: Optional[str] = None
+    access_token: str | None = None
     cert_subject: str
 
 
@@ -67,7 +68,7 @@ def dev_sign(body: SignRequest, db: Session = Depends(get_db)):
         priv = load_private_key_from_file(key_path, None)
         loaded = load_certificate_from_file(crt_path)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Cannot load credential key/cert: {exc}")
+        raise HTTPException(status_code=500, detail="Cannot load credential key/cert") from exc
 
     # Compute the SWIFT double-encoded digest + sign an RS256 JWT (mirrors client.swift_signature).
     body_b64 = base64.b64encode(body.body.encode("utf-8"))
@@ -75,21 +76,41 @@ def dev_sign(body: SignRequest, db: Session = Depends(get_db)):
     digest_b64 = base64.b64encode(digest).decode("utf-8")
     now = epoch_seconds()
     sig_jwt = jwt.encode(
-        {"iat": now, "nbf": now, "exp": now + 15, "jti": secrets.token_hex(16),
-         "sub": cred.cert_subject, "aud": body.audience, "digest": digest_b64},
-        priv, algorithm="RS256", headers={"alg": "RS256", "x5c": loaded.x5c, "typ": "JWT"},
+        {
+            "iat": now,
+            "nbf": now,
+            "exp": now + 15,
+            "jti": secrets.token_hex(16),
+            "sub": cred.cert_subject,
+            "aud": body.audience,
+            "digest": digest_b64,
+        },
+        priv,
+        algorithm="RS256",
+        headers={"alg": "RS256", "x5c": loaded.x5c, "typ": "JWT"},
     )
 
     # Optionally mint a bearer token (opaque, sandbox-style).
     access_token = None
     if body.scope:
-        raw = f"tok:{cred.id}:{secrets.token_hex(32)}:{now}"
-        access_token = hashlib.sha256(raw.encode()).hexdigest()
-        db.add(OAuthToken(
-            app_id=cred.id, access_token=access_token, token_type="Bearer",
-            expires_in=settings.oauth_token_ttl_default, scope=body.scope, issued_at=now_utc(),
-        ))
+        requested = set(body.scope.split())
+        allowed = set((cred.allowed_scopes or "").split())
+        if not requested.issubset(allowed):
+            raise HTTPException(status_code=403, detail="Requested scope is not allowed")
+        access_token = secrets.token_urlsafe(48)
+        db.add(
+            OAuthToken(
+                app_id=cred.id,
+                access_token=token_digest(access_token),
+                token_type="Bearer",
+                expires_in=settings.oauth_token_ttl_default,
+                scope=body.scope,
+                issued_at=now_utc(),
+            )
+        )
         cred.last_used = now_utc()
         db.commit()
 
-    return SignResponse(signature=sig_jwt, access_token=access_token, cert_subject=cred.cert_subject)
+    return SignResponse(
+        signature=sig_jwt, access_token=access_token, cert_subject=cred.cert_subject
+    )

@@ -4,34 +4,30 @@ The mock tier queries the seeded ``SwiftRefBic/Iban/Currency/Country`` tables.
 The live tier forwards to the real ``/swiftrefdata/v4`` host configured in
 ``Settings.live_host_swiftref``.
 """
+
 from __future__ import annotations
 
 import json
-from typing import Optional
 
-from config import get_settings
 from core.bic import validate_bic
-from core.iban import validate_iban, parse_iban
-from core.errors import swiftref_not_found, swiftref_invalid
+from core.errors import swiftref_invalid, swiftref_not_found
+from core.iban import parse_iban, validate_iban
 from database import (
-    SessionLocal,
     SwiftRefBic,
-    SwiftRefIban,
     SwiftRefCurrency,
-    SwiftRefCountry,
+    SwiftRefIban,
 )
 
-
 # REDA.API.* error codes from the SwiftRef swagger.
-_ERR_BIC_FORMAT = "REDA.API.IBIC"      # invalid BIC format
-_ERR_BIC_NOT_FOUND = "REDA.API.BINF"   # BIC not in directory
-_ERR_IBAN_FORMAT = "REDA.API.IINP"     # invalid IBAN format (no data)
+_ERR_BIC_FORMAT = "REDA.API.IBIC"  # invalid BIC format
+_ERR_BIC_NOT_FOUND = "REDA.API.BINF"  # BIC not in directory
+_ERR_IBAN_FORMAT = "REDA.API.IINP"  # invalid IBAN format (no data)
 _ERR_IBAN_NOT_FOUND = "REDA.API.IBNF"  # IBAN not found
-_ERR_CUR_FORMAT = "REDA.API.ICTP"      # invalid currency code
-_ERR_CUR_NOT_FOUND = "REDA.API.CUNF"   # currency not found
+_ERR_CUR_FORMAT = "REDA.API.ICTP"  # invalid currency code
+_ERR_CUR_NOT_FOUND = "REDA.API.CUNF"  # currency not found
 
 
-def _get_bic(db, bic: str) -> Optional[SwiftRefBic]:
+def _get_bic(db, bic: str) -> SwiftRefBic | None:
     """Look up a BIC. Tries the exact form first, then 8-char prefix of an 11-char BIC."""
     upper = bic.upper()
     row = db.query(SwiftRefBic).filter(SwiftRefBic.bic == upper).first()

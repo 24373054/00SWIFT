@@ -13,11 +13,10 @@ Why not call ``pacs008.generate_xml_string`` directly: its path validator
 rejects absolute template paths on Windows (outside-allowed-directories).
 We use its XSD file instead, which is the higher-value part.
 """
+
 from __future__ import annotations
 
-import os
 import uuid
-from typing import Optional
 
 from core.time import now_utc
 from iso20022.uetr import generate_uetr
@@ -52,8 +51,8 @@ def _esc(s) -> str:
 
 
 def build_pacs008_xml(
-    uetr: Optional[str] = None,
-    instruction_id: Optional[str] = None,
+    uetr: str | None = None,
+    instruction_id: str | None = None,
     amount: str = "10000.00",
     currency: str = "EUR",
     debtor_name: str = "Sender Corp",

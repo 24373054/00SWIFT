@@ -1,32 +1,40 @@
-"""Sandbox-friendly auth dependency for the e-CNY API.
+"""Authentication and scope dependencies for the e-CNY API."""
 
-In sandbox mode, e-CNY endpoints accept X-Admin-Token as an equivalent
-credential (mirroring /api/dev/sign convenience) so the frontend and admin
-scripts can exercise the full flow without minting a real OAuth token per
-call. In pilot/live, the standard get_cred + require_scopes path applies.
-"""
 from __future__ import annotations
-
-from typing import Optional
 
 from fastapi import Depends, Header
 
+from auth.dependencies import get_cred, require_admin_token
+from auth.oauth import get_token_scopes
 from config import get_settings
-from auth.dependencies import get_cred
+from core.errors import insufficient_scope, token_not_provided
 from database import get_db
 
 
-def require_ecny_cred(
-    x_admin_token: Optional[str] = Header(None, alias="X-Admin-Token"),
-    authorization: Optional[str] = Header(None),
-    db=Depends(get_db),
-):
-    """Resolve an e-CNY caller. Sandbox: admin token OR bearer. Else: bearer+scope."""
-    settings = get_settings()
-    if settings.is_sandbox:
-        if x_admin_token is not None or not settings.admin_api_token:
+def require_ecny_scope(required: str | None = None):
+    """Require a valid sandbox admin token or an OAuth e-CNY scope."""
+
+    def _check(
+        x_admin_token: str | None = Header(None, alias="X-Admin-Token"),
+        authorization: str | None = Header(None),
+        db=Depends(get_db),
+    ):
+        settings = get_settings()
+        if settings.is_sandbox and x_admin_token is not None:
+            require_admin_token(x_admin_token)
             return None
-        if authorization:
-            return get_cred(authorization=authorization, db=db)
-        return None
-    return get_cred(authorization=authorization, db=db)
+        if settings.is_sandbox and not settings.admin_api_token and not authorization:
+            return None
+        if not authorization:
+            raise token_not_provided()
+        cred = get_cred(authorization=authorization, db=db)
+        if required:
+            scopes = set(get_token_scopes(authorization, db))
+            if required not in scopes and "ecny.api" not in scopes:
+                raise insufficient_scope(required)
+        return cred
+
+    return _check
+
+
+require_ecny_cred = require_ecny_scope()

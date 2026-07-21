@@ -1,106 +1,122 @@
-"""Admin endpoints for e-CNY provisioning and management.
+"""Admin-only e-CNY provisioning and observability endpoints."""
 
-Exposed under /api/ecny/* with X-Admin-Token (reuse existing require_admin_token
-dependency). This allows operators and admin staff to create test wallets,
-provide seeding data, and view dashboard statistics.
-"""
 from __future__ import annotations
 
-from typing import Any, Dict, List
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from database import get_db, SessionLocal
 from auth.dependencies import require_admin_token
+from config import get_settings
+from database import (
+    EcnyAccount,
+    EcnyBridgeChannel,
+    EcnyComplianceReport,
+    EcnyTransaction,
+    EcnyWallet,
+    get_db,
+)
 from ecny.issuance import net_issuance
+from ecny.ledger import get_or_create_account
+from ecny.wallet import wallet_balance
 
-router = APIRouter(prefix="/api/ecny", tags=["e-CNY admin"])
+router = APIRouter(
+    prefix="/api/ecny",
+    tags=["e-CNY admin"],
+    dependencies=[Depends(require_admin_token)],
+)
 
 
 @router.post("/provision-operator")
-def provision_operator(account_id: str, owner_ref: str,
-                       currency: str = "CNY",
-                       _: None = Depends(require_admin_token)):
-    """Create (idempotent) an operator ledger account for testing."""
-    from database import EcnyAccount
-    from ecny.ledger import get_or_create_account
-    db = SessionLocal()
-    try:
-        acct = get_or_create_account(db, account_id, "operator", owner_ref, currency)
-        db.commit()
-        return {"account_id": acct.account_id, "owner_type": acct.owner_type,
-                "owner_ref": acct.owner_ref, "currency": acct.currency,
-                "balance": acct.balance}
-    finally:
-        db.close()
+def provision_operator(
+    account_id: str,
+    owner_ref: str,
+    currency: str = "CNY",
+    db: Session = Depends(get_db),
+):
+    currency = currency.upper()
+    if len(currency) != 3 or not currency.isalpha():
+        raise HTTPException(400, "currency must be a 3-letter code")
+    account = get_or_create_account(db, account_id, "operator", owner_ref, currency)
+    db.commit()
+    return {
+        "account_id": account.account_id,
+        "owner_type": account.owner_type,
+        "owner_ref": account.owner_ref,
+        "currency": account.currency,
+        "balance": account.balance,
+    }
 
 
 @router.post("/seed-foreign-account")
-def seed_foreign_account(account_id: str, owner_ref: str, currency: str,
-                         balance_fen: int,
-                         _: None = Depends(require_admin_token)):
-    """Create a foreign-currency account with a seed balance (for mBridge tests)."""
-    from database import EcnyAccount
-    db = SessionLocal()
-    try:
-        acct = db.query(EcnyAccount).filter(EcnyAccount.account_id == account_id).first()
-        if not acct:
-            acct = EcnyAccount(account_id=account_id, owner_type="operator",
-                               owner_ref=owner_ref, currency=currency, balance=0)
-            db.add(acct)
-        acct.balance = balance_fen
-        db.commit()
-        return {"account_id": acct.account_id, "currency": acct.currency,
-                "balance": acct.balance}
-    finally:
-        db.close()
+def seed_foreign_account(
+    account_id: str,
+    owner_ref: str,
+    currency: str,
+    balance_fen: int = Query(..., ge=0),
+    db: Session = Depends(get_db),
+):
+    if not get_settings().is_sandbox:
+        raise HTTPException(403, "fixture seeding is sandbox-only")
+    currency = currency.upper()
+    if currency == "CNY":
+        raise HTTPException(400, "CNY must be issued through the issuance API")
+    account = db.query(EcnyAccount).filter(EcnyAccount.account_id == account_id).first()
+    if not account:
+        account = EcnyAccount(
+            account_id=account_id,
+            owner_type="operator",
+            owner_ref=owner_ref,
+            currency=currency,
+            balance=0,
+        )
+        db.add(account)
+    elif account.currency != currency:
+        raise HTTPException(409, "account already exists with another currency")
+    account.balance = balance_fen
+    db.commit()
+    return {
+        "account_id": account.account_id,
+        "currency": account.currency,
+        "balance": account.balance,
+    }
 
 
 @router.get("/stats")
-def e_cny_stats(_: None = Depends(require_admin_token)):
-    """Dashboard stats for e-CNY subsystem."""
-    db = SessionLocal()
-    try:
-        from database import EcnyAccount, EcnyBridgeChannel, EcnyWallet, EcnyTransaction, EcnyComplianceReport
-        net_issue = net_issuance(db)
-        wallets = db.query(EcnyWallet).count()
-        txs = db.query(EcnyTransaction).count()
-        bridge_txs = db.query(EcnyBridgeChannel).count()
-        reports = db.query(EcnyComplianceReport).count()
-        return {
-            "net_issuance_cny": net_issue / 100,  # fen -> CNY
-            "wallets_total": wallets,
-            "ledger_transactions": txs,
-            "bridge_channels": bridge_txs,
-            "compliance_reports": reports,
-        }
-    finally:
-        db.close()
+def e_cny_stats(db: Session = Depends(get_db)):
+    return {
+        "net_issuance_fen": net_issuance(db),
+        "wallets_total": db.query(EcnyWallet).count(),
+        "ledger_transactions": db.query(EcnyTransaction).count(),
+        "bridge_channels": db.query(EcnyBridgeChannel).count(),
+        "compliance_reports": db.query(EcnyComplianceReport).count(),
+    }
 
 
 @router.get("/ledger-accounts")
-def list_ledger_accounts(_: None = Depends(require_admin_token)):
-    """List all e-CNY ledger accounts."""
-    from database import EcnyAccount
-    db = SessionLocal()
-    try:
-        rows = db.query(EcnyAccount).all()
-        return [{"account_id": r.account_id, "owner_type": r.owner_type,
-                 "owner_ref": r.owner_ref, "currency": r.currency,
-                 "balance": r.balance} for r in rows]
-    finally:
-        db.close()
+def list_ledger_accounts(db: Session = Depends(get_db)):
+    rows = db.query(EcnyAccount).order_by(EcnyAccount.account_id).all()
+    return [
+        {
+            "account_id": row.account_id,
+            "owner_type": row.owner_type,
+            "owner_ref": row.owner_ref,
+            "currency": row.currency,
+            "balance": row.balance,
+        }
+        for row in rows
+    ]
 
 
 @router.get("/wallets")
-def list_e_cny_wallets(_: None = Depends(require_admin_token)):
-    """List all e-CNY wallets."""
-    from database import EcnyWallet
-    db = SessionLocal()
-    try:
-        rows = db.query(EcnyWallet).all()
-        return [{"wallet_id": r.wallet_id, "tier": r.tier, "balance": r.balance,
-                 "status": r.status, "operator_id": r.operator_id} for r in rows]
-    finally:
-        db.close()
+def list_e_cny_wallets(db: Session = Depends(get_db)):
+    rows = db.query(EcnyWallet).order_by(EcnyWallet.created_at.desc()).all()
+    return [
+        {
+            "wallet_id": row.wallet_id,
+            "tier": row.tier,
+            "balance": wallet_balance(db, row),
+            "status": row.status,
+            "operator_id": row.operator_id,
+        }
+        for row in rows
+    ]

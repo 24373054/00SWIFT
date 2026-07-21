@@ -21,10 +21,11 @@ from __future__ import annotations
 import datetime
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     Integer,
@@ -50,7 +51,10 @@ if DATABASE_URL.startswith("sqlite") and ":memory:" in DATABASE_URL:
         poolclass=StaticPool,
     )
 else:
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+    )
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 
@@ -65,6 +69,7 @@ def _utcnow() -> datetime.datetime:
 # =========================================================================
 # Auth / credentials
 # =========================================================================
+
 
 class AppCredential(Base):
     """A registered application. Holds consumer key/secret + PKI material.
@@ -92,13 +97,13 @@ class AppCredential(Base):
 
 
 class OAuthToken(Base):
-    """An issued OAuth2 access token (opaque or JWT)."""
+    """Issued OAuth2 token metadata. ``access_token`` stores only SHA-256."""
 
     __tablename__ = "oauth_tokens"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     app_id = Column(Integer, nullable=False)
-    access_token = Column(String(2000), unique=True, nullable=False)
+    access_token = Column(String(64), unique=True, nullable=False, index=True)
     token_type = Column(String(50), default="Bearer")
     expires_in = Column(Integer, default=3600)
     scope = Column(String(1000), default="")
@@ -126,6 +131,7 @@ class JtiRecord(Base):
 # Audit
 # =========================================================================
 
+
 class ApiRequest(Base):
     """API call audit log. Latency is now real-measured (middleware.py)."""
 
@@ -146,6 +152,7 @@ class ApiRequest(Base):
 # =========================================================================
 # GPI Tracker payment state
 # =========================================================================
+
 
 class PaymentState(Base):
     """A tracked payment. Aligned with the GPI Tracker v4 transaction model.
@@ -188,6 +195,7 @@ class PaymentState(Base):
 # Messaging (FIN/InterAct/FileAct)
 # =========================================================================
 
+
 class FinMessage(Base):
     """A FIN (or InterAct) message sent via the Messaging API."""
 
@@ -202,7 +210,9 @@ class FinMessage(Base):
     uetr = Column(String(36), nullable=True)
     network_priority = Column(String(20), default="Normal")
     network_info = Column(Text, default="{}")  # JSON
-    distribution_id = Column(String(36), nullable=True, index=True)  # soft-link to MessageDistribution
+    distribution_id = Column(
+        String(36), nullable=True, index=True
+    )  # soft-link to MessageDistribution
     created_at = Column(DateTime, default=_utcnow)
 
 
@@ -227,6 +237,7 @@ class MessageDistribution(Base):
 # =========================================================================
 # SwiftRef static reference data (seeded from data/*.json)
 # =========================================================================
+
 
 class SwiftRefBic(Base):
     __tablename__ = "swiftref_bics"
@@ -280,8 +291,10 @@ class SwiftRefCountry(Base):
 # e-CNY — wallets & holders
 # =========================================================================
 
+
 class EcnyWallet(Base):
     """A digital yuan wallet. Tier 1/2/3 (DC/EP grading)."""
+
     __tablename__ = "ecny_wallets"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -290,7 +303,7 @@ class EcnyWallet(Base):
     tier = Column(Integer, default=3)  # 1=strong KYC/large, 2=medium, 3=small anonymous
     operator_id = Column(Integer, nullable=True)  # operating institution app_id
     currency = Column(String(3), default="CNY")
-    balance = Column(Integer, default=0)  # in fen (分), integer to avoid float error
+    balance = Column(Integer, default=0)  # deprecated cache; ledger account is authoritative
     status = Column(String(20), default="active")  # active/frozen/closed
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
@@ -298,6 +311,7 @@ class EcnyWallet(Base):
 
 class EcnyHolder(Base):
     """Wallet holder KYC. id_hash only (never store raw ID). Tier 3 may be null (anonymous)."""
+
     __tablename__ = "ecny_holders"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -315,8 +329,10 @@ class EcnyHolder(Base):
 # e-CNY — ledger accounts & double-entry
 # =========================================================================
 
+
 class EcnyAccount(Base):
     """A ledger account. owner_type: central_bank / operator / wallet."""
+
     __tablename__ = "ecny_accounts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -331,6 +347,7 @@ class EcnyAccount(Base):
 
 class EcnyTransaction(Base):
     """A ledger transaction. Atomic, double-entry, immutable once settled."""
+
     __tablename__ = "ecny_transactions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -349,14 +366,20 @@ class EcnyTransaction(Base):
 
 class EcnyEntry(Base):
     """Double-entry leg. Two rows per transaction (debit + credit)."""
+
     __tablename__ = "ecny_entries"
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="ck_entry_positive"),
+        CheckConstraint("direction IN ('debit', 'credit')", name="ck_entry_direction"),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     entry_id = Column(String(36), unique=True, nullable=False, index=True)
     tx_id = Column(String(36), nullable=False, index=True)
     account_id = Column(String(36), nullable=False, index=True)
     direction = Column(String(10), nullable=False)  # debit/credit
-    amount = Column(Integer, nullable=False, default=0)  # fen
+    amount = Column(Integer, nullable=False, default=0)  # smallest currency unit
+    currency = Column(String(3), nullable=False, default="CNY")
     created_at = Column(DateTime, default=_utcnow)
 
 
@@ -364,8 +387,10 @@ class EcnyEntry(Base):
 # e-CNY — bridge (mBridge / CIPS)
 # =========================================================================
 
+
 class EcnyBridgeChannel(Base):
     """A cross-border bridge channel."""
+
     __tablename__ = "ecny_bridge_channels"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -381,6 +406,7 @@ class EcnyBridgeChannel(Base):
 
 class EcnyBridgeTransaction(Base):
     """A cross-border transaction routed via a bridge channel."""
+
     __tablename__ = "ecny_bridge_transactions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -402,8 +428,10 @@ class EcnyBridgeTransaction(Base):
 # e-CNY — compliance
 # =========================================================================
 
+
 class EcnyComplianceReport(Base):
     """A regulatory compliance report (large cash / suspicious / cross-border)."""
+
     __tablename__ = "ecny_compliance_reports"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -420,6 +448,7 @@ class EcnyComplianceReport(Base):
 # =========================================================================
 # Initialization + seeding
 # =========================================================================
+
 
 def init_db() -> None:
     """Create all tables (idempotent). Does NOT run migrations."""
@@ -448,11 +477,11 @@ def _data_dir() -> str:
     return os.path.join(backend_root, "data")
 
 
-def _load_fixture(filename: str) -> List[Dict[str, Any]]:
+def _load_fixture(filename: str) -> list[dict[str, Any]]:
     path = os.path.join(_data_dir(), filename)
     if not os.path.exists(path):
         return []
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         return json.load(fh)
 
 
@@ -463,7 +492,7 @@ def _seed_if_empty(db, model, filename: str, row_fn) -> None:
         db.add(row_fn(item))
 
 
-def _row_for_bic(item: Dict[str, Any]) -> SwiftRefBic:
+def _row_for_bic(item: dict[str, Any]) -> SwiftRefBic:
     return SwiftRefBic(
         bic=item["bic"].upper(),
         name=item.get("name"),
@@ -478,7 +507,7 @@ def _row_for_bic(item: Dict[str, Any]) -> SwiftRefBic:
     )
 
 
-def _row_for_iban(item: Dict[str, Any]) -> SwiftRefIban:
+def _row_for_iban(item: dict[str, Any]) -> SwiftRefIban:
     return SwiftRefIban(
         iban=item["iban"].upper().replace(" ", ""),
         bic=item.get("bic"),
@@ -490,7 +519,7 @@ def _row_for_iban(item: Dict[str, Any]) -> SwiftRefIban:
     )
 
 
-def _row_for_currency(item: Dict[str, Any]) -> SwiftRefCurrency:
+def _row_for_currency(item: dict[str, Any]) -> SwiftRefCurrency:
     return SwiftRefCurrency(
         code=item["code"].upper(),
         name=item.get("name"),
@@ -500,20 +529,23 @@ def _row_for_currency(item: Dict[str, Any]) -> SwiftRefCurrency:
     )
 
 
-def _row_for_country(item: Dict[str, Any]) -> SwiftRefCountry:
+def _row_for_country(item: dict[str, Any]) -> SwiftRefCountry:
     return SwiftRefCountry(
         code=item["code"].upper(),
         name=item.get("name"),
         iso_3a_code=item.get("iso_3a_code"),
         iso_3n_code=item.get("iso_3n_code"),
         currency_code=item.get("currency_code"),
-        iban_structure=json.dumps(item.get("iban_structure")) if item.get("iban_structure") is not None else None,
+        iban_structure=json.dumps(item.get("iban_structure"))
+        if item.get("iban_structure") is not None
+        else None,
     )
 
 
 # =========================================================================
 # e-CNY — initialization + seeding
 # =========================================================================
+
 
 def seed_ecny_data() -> None:
     """Seed the e-CNY ledger with the central bank issuance account and the
@@ -536,22 +568,26 @@ def seed_ecny_data() -> None:
             db.add(cb)
 
         if db.query(EcnyBridgeChannel).first() is None:
-            db.add(EcnyBridgeChannel(
-                channel_id="ch-mbridge-0001",
-                channel_type="mbridge",
-                counterparty="mBridge multi-CBDC platform",
-                currency_pair="CNY/MULTI",
-                status="active",
-                fx_rate=json.dumps({"rate": "1.000000", "as_of": "2026-01-01"}),
-            ))
-            db.add(EcnyBridgeChannel(
-                channel_id="ch-cips-0001",
-                channel_type="cips",
-                counterparty="CIPS (Cross-Border Interbank Payment System)",
-                currency_pair="CNY/CNY",
-                status="active",
-                fx_rate=json.dumps({"rate": "1.000000", "as_of": "2026-01-01"}),
-            ))
+            db.add(
+                EcnyBridgeChannel(
+                    channel_id="ch-mbridge-0001",
+                    channel_type="mbridge",
+                    counterparty="mBridge multi-CBDC platform",
+                    currency_pair="CNY/MULTI",
+                    status="active",
+                    fx_rate=json.dumps({"rate": "1.000000", "as_of": "2026-01-01"}),
+                )
+            )
+            db.add(
+                EcnyBridgeChannel(
+                    channel_id="ch-cips-0001",
+                    channel_type="cips",
+                    counterparty="CIPS (Cross-Border Interbank Payment System)",
+                    currency_pair="CNY/CNY",
+                    status="active",
+                    fx_rate=json.dumps({"rate": "1.000000", "as_of": "2026-01-01"}),
+                )
+            )
         db.commit()
     finally:
         db.close()

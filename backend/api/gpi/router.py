@@ -7,15 +7,16 @@ is removed (state moves via POST /payments/{uetr}/status).
 Pydantic models use ``from_`` for the ``from`` field (Python keyword); an
 alias makes the JSON wire name ``from``.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from auth.dependencies import get_cred, require_scopes, require_signature
-from database import get_db
 from api.gpi import service
+from auth.dependencies import get_cred, require_signature
+from database import get_db
 
 router = APIRouter(prefix="/swift-apitracker/v4", tags=["GPI Tracker"])
 
@@ -66,7 +67,9 @@ def get_changed_transactions(
     cred=Depends(get_cred),
     db: Session = Depends(get_db),
 ):
-    return service.list_changed_payments(db, from_date_time, to_date_time, maximum_number, payment_scenario)
+    return service.list_changed_payments(
+        db, from_date_time, to_date_time, maximum_number, payment_scenario
+    )
 
 
 @router.post("/payments/{uetr}/status", status_code=200)
@@ -101,4 +104,6 @@ def report_cancellation_status(
     _sig=Depends(require_signature),
     db: Session = Depends(get_db),
 ):
-    return service.report_cancellation_status(db, uetr, body.model_dump(by_alias=True, exclude_none=True))
+    return service.report_cancellation_status(
+        db, uetr, body.model_dump(by_alias=True, exclude_none=True)
+    )

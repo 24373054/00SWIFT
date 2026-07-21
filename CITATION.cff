@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use 00SWIFT in research, please cite this software."
+title: "00SWIFT: SWIFT and e-CNY Cross-Border Payment Sandbox"
+type: software
+authors:
+  - family-names: Yang
+    given-names: Zhuo
+    alias: SealWax
+repository-code: "https://github.com/24373054/00SWIFT"
+version: 2.1.0
+date-released: 2026-07-21
+license: Apache-2.0
+keywords:
+  - SWIFT
+  - e-CNY
+  - ISO 20022
+  - payments
+  - sandbox

@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.x509 import load_pem_x509_certificate
@@ -35,7 +34,7 @@ class LoadedCertificate:
     """A parsed PEM certificate plus its x5c chain and RFC4514 subject."""
 
     pem: str  # original PEM text
-    x5c: List[str]  # base64 DER segments (no headers/newlines), for JWT x5c header
+    x5c: list[str]  # base64 DER segments (no headers/newlines), for JWT x5c header
     cert_subject: str  # RFC4514 string, lowercased (matches SWIFT sample utils.py)
     certificate: object  # the cryptography x509.Certificate object
 
@@ -72,7 +71,7 @@ def load_certificate_from_file(path: str) -> LoadedCertificate:
         return load_certificate_from_pem(fh.read())
 
 
-def load_private_key_from_pem(pem_bytes: bytes, password: Optional[bytes] = None):
+def load_private_key_from_pem(pem_bytes: bytes, password: bytes | None = None):
     """Load a PEM-encoded private key (RSA, for RS256 signing).
 
     ``password`` is the key passphrase bytes, or None for an unencrypted key.
@@ -80,7 +79,7 @@ def load_private_key_from_pem(pem_bytes: bytes, password: Optional[bytes] = None
     return load_pem_private_key(pem_bytes, password=password)
 
 
-def load_private_key_from_file(path: str, password: Optional[bytes] = None):
+def load_private_key_from_file(path: str, password: bytes | None = None):
     with open(path, "rb") as fh:
         return load_private_key_from_pem(fh.read(), password)
 
@@ -90,13 +89,13 @@ def get_certificate(filename: str) -> LoadedCertificate:
     return load_certificate_from_file(key_path(filename))
 
 
-def get_key(filename: str, key_password: Optional[str] = None):
+def get_key(filename: str, key_password: str | None = None):
     """Load a private key from the certs dir (mirrors SWIFT sample ``get_key``)."""
     password = key_password.encode("utf-8") if key_password else None
     return load_private_key_from_file(key_path(filename), password)
 
 
-def get_proxies() -> Optional[dict]:
+def get_proxies() -> dict | None:
     """Return a requests/httpx proxies dict if PROXY is set, else None."""
     proxy = get_settings().proxy
     return {"https": proxy, "http": proxy} if proxy else None

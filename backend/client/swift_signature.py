@@ -3,13 +3,13 @@
 Ported from ``research/api-sample-code/python/messaging-api/app/api/swift_signature.py``.
 The digest uses SWIFT's double-encoding quirk: ``base64(sha256(base64(body)))``.
 """
+
 from __future__ import annotations
 
 import base64
 import hashlib
 import secrets
 import time
-from typing import Optional
 
 import jwt
 

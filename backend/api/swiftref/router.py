@@ -5,14 +5,15 @@ with the ``swift.swiftref`` (or wildcard ``swift.api``) scope.
 
 Live-mode forwarding is deferred — the mock tier covers the sandbox use case.
 """
+
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from api.swiftref import repository
 from auth.dependencies import get_cred, require_scopes
 from database import get_db
-from api.swiftref import repository
 
 router = APIRouter(
     prefix="/swiftrefdata/v4",

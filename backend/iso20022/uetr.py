@@ -2,8 +2,8 @@
 
 A UETR is a UUID v4 that follows a payment through its full lifecycle.
 """
+
 import uuid
-from typing import Optional
 
 
 def generate_uetr() -> str:

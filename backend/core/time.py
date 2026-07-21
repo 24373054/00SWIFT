@@ -5,12 +5,12 @@ returns a naive datetime and is a latent bug for any timezone-aware comparison
 (token expiry, ``iat``/``exp`` JWT claims, ``last_status_update``).
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def now_utc() -> datetime:
     """Return the current UTC time as a timezone-aware datetime."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def now_utc_iso() -> str:

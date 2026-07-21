@@ -15,8 +15,10 @@ RFC4514 subject convention used by the OAuth ``sub`` claim).
 In pilot/live mode this script is NOT used — real SWIFT PKI certs must be
 uploaded per credential.
 """
+
 from __future__ import annotations
 
+import contextlib
 import datetime
 import os
 import sys
@@ -32,9 +34,11 @@ def _backend_root() -> str:
 
 
 def _ensure_dirs() -> tuple[str, str]:
-    certs = os.path.join(_backend_root(), "certs")
-    ca_dir = os.path.join(certs, "ca")
-    apps_dir = os.path.join(certs, "apps")
+    from config import get_settings
+
+    settings = get_settings()
+    ca_dir = settings.certs_ca_dir()
+    apps_dir = settings.certs_apps_dir()
     os.makedirs(ca_dir, exist_ok=True)
     os.makedirs(apps_dir, exist_ok=True)
     return ca_dir, apps_dir
@@ -53,6 +57,8 @@ def _save_key(key, path: str) -> None:
                 encryption_algorithm=serialization.NoEncryption(),
             )
         )
+    with contextlib.suppress(OSError):
+        os.chmod(path, 0o600)
 
 
 def _save_cert(cert, path: str) -> None:
@@ -72,11 +78,13 @@ def ensure_ca(ca_dir: str) -> tuple[rsa.RSAPrivateKey, x509.Certificate]:
         return key, cert
 
     key = _gen_key()
-    subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, "swift-mock-ca"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "SWIFT Dev Sandbox"),
-    ])
-    now = datetime.datetime.now(datetime.timezone.utc)
+    subject = issuer = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COMMON_NAME, "swift-mock-ca"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "SWIFT Dev Sandbox"),
+        ]
+    )
+    now = datetime.datetime.now(datetime.UTC)
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -101,12 +109,14 @@ def issue_client_cert(
 ) -> tuple[str, str, str]:
     """Issue a client cert signed by the mock CA. Returns (key_path, crt_path, cert_subject)."""
     cn = consumer_key.lower()
-    subject = x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, cn),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "SWIFT Dev Sandbox App"),
-    ])
+    subject = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COMMON_NAME, cn),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "SWIFT Dev Sandbox App"),
+        ]
+    )
     key = _gen_key()
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)

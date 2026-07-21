@@ -11,18 +11,17 @@ source real rates.
 Accounts for foreign CBDCs are created on demand under owner_type 'operator'
 with the foreign currency; the home e-CNY account is CNY.
 """
+
 from __future__ import annotations
 
-import json
 import uuid
 from decimal import Decimal
-from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
 
 from core.time import now_utc
-from database import EcnyAccount, EcnyBridgeChannel, EcnyBridgeTransaction
-from ecny.ledger import LedgerError, exchange, get_or_create_account
+from database import EcnyBridgeChannel, EcnyBridgeTransaction
+from ecny.ledger import LedgerError, exchange
 from iso20022.uetr import generate_uetr
 
 # Sandbox FX rates (CNY -> foreign). Deterministic seed.
@@ -50,19 +49,29 @@ def fx_rate(from_ccy: str, to_ccy: str) -> Decimal:
     t = SANDBOX_FX.get(to_ccy)
     if not f or not t:
         raise BridgeError(f"unsupported currency pair: {from_ccy}/{to_ccy}")
-    return (t / f)
+    return t / f
 
 
 def list_channels(db: Session, channel_type: str = "mbridge") -> list:
-    return db.query(EcnyBridgeChannel).filter(
-        EcnyBridgeChannel.channel_type == channel_type,
-        EcnyBridgeChannel.status == "active",
-    ).all()
+    return (
+        db.query(EcnyBridgeChannel)
+        .filter(
+            EcnyBridgeChannel.channel_type == channel_type,
+            EcnyBridgeChannel.status == "active",
+        )
+        .all()
+    )
 
 
-def settle_pvp(db: Session, from_account_id: str, to_account_id: str,
-               from_amount_fen: int, from_ccy: str, to_ccy: str,
-               counterparty: Optional[str] = None) -> EcnyBridgeTransaction:
+def settle_pvp(
+    db: Session,
+    from_account_id: str,
+    to_account_id: str,
+    from_amount_fen: int,
+    from_ccy: str,
+    to_ccy: str,
+    counterparty: str | None = None,
+) -> EcnyBridgeTransaction:
     """Atomic PvP settlement: debit source currency, credit target currency
     at the agreed FX rate. Returns the bridge transaction record.
     """
@@ -74,25 +83,35 @@ def settle_pvp(db: Session, from_account_id: str, to_account_id: str,
         raise BridgeError("computed target amount is zero")
     uetr = generate_uetr()
     bridge_tx = EcnyBridgeTransaction(
-        bridge_tx_id=_new_id("btx"), uetr=uetr,
+        bridge_tx_id=_new_id("btx"),
+        uetr=uetr,
         channel_id="ch-mbridge-0001",
-        from_currency=from_ccy, from_amount=from_amount_fen,
-        to_currency=to_ccy, to_amount=to_amount_fen,
-        fx_rate=str(rate), status="pending",
+        from_currency=from_ccy,
+        from_amount=from_amount_fen,
+        to_currency=to_ccy,
+        to_amount=to_amount_fen,
+        fx_rate=str(rate),
+        status="pending",
         counterparty_ref=counterparty,
     )
     db.add(bridge_tx)
     db.flush()
     try:
-        exchange(db, from_account_id, to_account_id, from_amount_fen, to_amount_fen,
-                 memo={"uetr": uetr, "channel": "mbridge", "fx_rate": str(rate)})
+        exchange(
+            db,
+            from_account_id,
+            to_account_id,
+            from_amount_fen,
+            to_amount_fen,
+            memo={"uetr": uetr, "channel": "mbridge", "fx_rate": str(rate)},
+        )
     except LedgerError as e:
         bridge_tx.status = "failed"
-        raise BridgeError(f"PvP settlement failed: {e}")
+        raise BridgeError(f"PvP settlement failed: {e}") from e
     bridge_tx.status = "settled"
     bridge_tx.settled_at = now_utc()
     return bridge_tx
 
 
-def get_bridge_tx(db: Session, uetr: str) -> Optional[EcnyBridgeTransaction]:
+def get_bridge_tx(db: Session, uetr: str) -> EcnyBridgeTransaction | None:
     return db.query(EcnyBridgeTransaction).filter(EcnyBridgeTransaction.uetr == uetr).first()

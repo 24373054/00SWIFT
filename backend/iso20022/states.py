@@ -11,9 +11,6 @@ its own copy (which was duplicated in the old ``app.js``).
 
 from __future__ import annotations
 
-from typing import Dict, List
-
-
 # ---- status code constants (TransactionIndividualStatus5Code) ----
 
 PDNG = "PDNG"  # Pending
@@ -26,12 +23,32 @@ CANC = "CANC"  # Cancelled
 PART = "PART"  # Partially settled
 
 
-PAYMENT_STATES: Dict[str, Dict[str, str]] = {
+PAYMENT_STATES: dict[str, dict[str, str]] = {
     PDNG: {"label": "Pending", "color": "#f59e0b", "icon": "clock", "severity": "Logic"},
-    ACCP: {"label": "Accepted (Customer Credit Pending)", "color": "#3b82f6", "icon": "refresh-cw", "severity": "Logic"},
-    ACSP: {"label": "Accepted (Settlement in Process)", "color": "#3b82f6", "icon": "refresh-cw", "severity": "Logic"},
-    ACSC: {"label": "Accepted (Settlement Completed)", "color": "#10b981", "icon": "check-circle", "severity": "Logic"},
-    ACCC: {"label": "Accepted (Customer Credit Completed)", "color": "#10b981", "icon": "check-circle", "severity": "Logic"},
+    ACCP: {
+        "label": "Accepted (Customer Credit Pending)",
+        "color": "#3b82f6",
+        "icon": "refresh-cw",
+        "severity": "Logic",
+    },
+    ACSP: {
+        "label": "Accepted (Settlement in Process)",
+        "color": "#3b82f6",
+        "icon": "refresh-cw",
+        "severity": "Logic",
+    },
+    ACSC: {
+        "label": "Accepted (Settlement Completed)",
+        "color": "#10b981",
+        "icon": "check-circle",
+        "severity": "Logic",
+    },
+    ACCC: {
+        "label": "Accepted (Customer Credit Completed)",
+        "color": "#10b981",
+        "icon": "check-circle",
+        "severity": "Logic",
+    },
     RJCT: {"label": "Rejected", "color": "#ef4444", "icon": "x-circle", "severity": "Fatal"},
     CANC: {"label": "Cancelled", "color": "#6b7280", "icon": "slash", "severity": "Fatal"},
     PART: {"label": "Partially Settled", "color": "#a855f7", "icon": "divide", "severity": "Logic"},
@@ -42,15 +59,15 @@ PAYMENT_STATES: Dict[str, Dict[str, str]] = {
 # Extended from the old prototype (which only had PDNG/ACSP -> {ACSC,RJCT,CANC}).
 # Now models the full creditor-side flow including ACCC and PART.
 
-VALID_TRANSITIONS: Dict[str, List[str]] = {
+VALID_TRANSITIONS: dict[str, list[str]] = {
     PDNG: [ACCP, ACSP, RJCT, CANC],
     ACCP: [ACSP, ACSC, RJCT, CANC],
     ACSP: [ACSC, ACCC, PART, RJCT, CANC],
     PART: [ACSC, ACCC, RJCT],
-    ACSC: [],   # terminal (settled at debtor side)
-    ACCC: [],   # terminal (settled at creditor side)
-    RJCT: [],   # terminal
-    CANC: [],   # terminal
+    ACSC: [],  # terminal (settled at debtor side)
+    ACCC: [],  # terminal (settled at creditor side)
+    RJCT: [],  # terminal
+    CANC: [],  # terminal
 }
 
 TERMINAL_STATES = {ACSC, ACCC, RJCT, CANC}
@@ -66,9 +83,6 @@ def is_terminal(state: str) -> bool:
     return state in TERMINAL_STATES
 
 
-def all_states() -> List[Dict[str, str]]:
+def all_states() -> list[dict[str, str]]:
     """Return a list of {code, label, color, icon, severity} for the frontend."""
-    return [
-        {"code": code, **info}
-        for code, info in PAYMENT_STATES.items()
-    ]
+    return [{"code": code, **info} for code, info in PAYMENT_STATES.items()]
