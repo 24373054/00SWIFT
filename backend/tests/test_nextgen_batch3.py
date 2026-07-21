@@ -1,4 +1,5 @@
 """Tests for retail CBDC, offline value, programmable money, PvP and platform controls."""
+
 from __future__ import annotations
 
 import datetime as dt
@@ -39,10 +40,16 @@ def test_hk_retail_topup_and_merchant_payment(db):
     retail, payer, merchant = _operator_and_wallets(db)
     tx = retail.merchant_payment(payer.wallet_id, merchant.wallet_id, 100_00, "5411")
     assert tx.status == "settled"
-    payer_balance = db.query(EcnyAccount).filter_by(account_id=f"acct-wallet-{payer.wallet_id}").one()
-    merchant_balance = db.query(EcnyAccount).filter_by(
-        account_id=f"acct-wallet-{merchant.wallet_id}"
-    ).one()
+    payer_balance = (
+        db.query(EcnyAccount)
+        .filter_by(owner_type="wallet", owner_ref=payer.wallet_id, currency="CNY")
+        .one()
+    )
+    merchant_balance = (
+        db.query(EcnyAccount)
+        .filter_by(owner_type="wallet", owner_ref=merchant.wallet_id, currency="CNY")
+        .one()
+    )
     assert payer_balance.balance == 900_00
     assert merchant_balance.balance == 100_00
 
@@ -107,7 +114,12 @@ def test_programmable_money_uses_allowlisted_templates(db):
 def test_programmable_money_rejects_arbitrary_template(db):
     _, payer, _ = _operator_and_wallets(db)
     with pytest.raises(ValueError, match="Unsupported"):
-        ProgrammableMoneyService(db).create(payer.wallet_id, 10, "python_eval", {"code": "1+1"})
+        ProgrammableMoneyService(db).create(
+            payer.wallet_id,
+            10,
+            "python_eval",
+            {"code": "1+1"},
+        )
 
 
 def test_multi_cbdc_policy_is_bilateral(db):
@@ -182,8 +194,18 @@ def test_pvp_rejects_quote_mismatch(db):
     with pytest.raises(ValueError, match="quote"):
         service.create_pvp(
             quote.quote_id,
-            {"from_account": "a-cny", "to_account": "b-cny", "amount": 100, "currency": "CNY"},
-            {"from_account": "b-hkd", "to_account": "a-hkd", "amount": 119, "currency": "HKD"},
+            {
+                "from_account": "a-cny",
+                "to_account": "b-cny",
+                "amount": 100,
+                "currency": "CNY",
+            },
+            {
+                "from_account": "b-hkd",
+                "to_account": "a-hkd",
+                "amount": 119,
+                "currency": "HKD",
+            },
         )
 
 
@@ -202,7 +224,12 @@ def test_explainable_policy_decision_and_audit_chain(db):
         "bank-a",
         "settle",
         "pvp-1",
-        {"roles": ["settlement"], "amount": 100, "jurisdiction": "CN", "purpose": "trade"},
+        {
+            "roles": ["settlement"],
+            "amount": 100,
+            "jurisdiction": "CN",
+            "purpose": "trade",
+        },
         {
             "required_roles": ["settlement"],
             "max_amount": 1_000,
@@ -241,4 +268,5 @@ def test_expiry_template(db):
         "expiry",
         {"expires_at": (dt.datetime.now(dt.UTC) + dt.timedelta(minutes=1)).isoformat()},
     )
-    assert service.execute(instrument.instrument_id, merchant.wallet_id, 10_00, {}).status == "settled"
+    transaction = service.execute(instrument.instrument_id, merchant.wallet_id, 10_00, {})
+    assert transaction.status == "settled"
