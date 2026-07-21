@@ -104,7 +104,7 @@ def test_full_ecny_flow(client):
 
 
 def test_operational_endpoints(client):
-    assert client.get("/health").json()["version"] == "2.1.0"
+    assert client.get("/health").json()["version"] == "3.0.0"
     assert client.get("/ready").json()["status"] == "ready"
     catalogue = client.get("/api/catalogue", headers=ADMIN)
     assert catalogue.status_code == 200

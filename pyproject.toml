@@ -1,7 +1,7 @@
 [project]
 name = "00swift"
-version = "2.1.0"
-description = "Contract-aligned SWIFT and e-CNY cross-border payment sandbox"
+version = "3.0.0"
+description = "Standards-driven SWIFT, CIPS, e-CNY and multi-CBDC payment research platform"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 license = { text = "Apache-2.0" }

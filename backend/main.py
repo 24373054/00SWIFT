@@ -31,6 +31,7 @@ from config import get_settings
 from core.errors import register_exception_handlers
 from core.middleware import RequestContextMiddleware
 from database import SessionLocal, init_db, seed_ecny_data, seed_reference_data
+from nextgen.cbdc_router import router as cbdc_router
 from nextgen.router import router as nextgen_router
 from version import __version__
 
@@ -112,6 +113,7 @@ for business_router in (
     ecny_router,
     ecny_admin_router,
     nextgen_router,
+    cbdc_router,
 ):
     app.include_router(business_router)
 

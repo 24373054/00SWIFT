@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing .release marker tag (for example v2.1.0)
+        description: Existing .release marker tag (for example v3.0.0)
         required: true
         type: string
 
@@ -43,7 +43,8 @@ jobs:
             SHA="${{ github.event.workflow_run.head_sha }}"
             mapfile -t MARKERS < <(
               gh api "repos/${REPOSITORY}/commits/${SHA}" \
-                --jq '.files[].filename' | grep '^\.release/v[0-9]' || true
+                --jq '.files[].filename' | \
+                grep -E '^\.release/v[0-9]+\.[0-9]+\.[0-9]+$' || true
             )
             if [[ ${#MARKERS[@]} -eq 0 ]]; then
               echo "No release marker changed in ${SHA}; nothing to publish."
