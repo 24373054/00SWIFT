@@ -179,16 +179,10 @@ class AuditChainService:
         payload: dict[str, Any],
         trace_id: str | None = None,
     ) -> RuntimeAuditEvent:
-        previous = (
-            self.db.query(RuntimeAuditEvent)
-            .order_by(RuntimeAuditEvent.id.desc())
-            .first()
-        )
+        previous = self.db.query(RuntimeAuditEvent).order_by(RuntimeAuditEvent.id.desc()).first()
         encoded = _json(payload)
         previous_hash = previous.payload_hash if previous else None
-        payload_hash = hashlib.sha256(
-            f"{previous_hash or ''}:{encoded}".encode()
-        ).hexdigest()
+        payload_hash = hashlib.sha256(f"{previous_hash or ''}:{encoded}".encode()).hexdigest()
         event = RuntimeAuditEvent(
             trace_id=trace_id or current_trace_id(),
             event_type=event_type,
@@ -206,9 +200,7 @@ class AuditChainService:
         for event in self.db.query(RuntimeAuditEvent).order_by(RuntimeAuditEvent.id).all():
             if event.previous_hash != previous_hash:
                 return False
-            expected = hashlib.sha256(
-                f"{previous_hash or ''}:{event.payload}".encode()
-            ).hexdigest()
+            expected = hashlib.sha256(f"{previous_hash or ''}:{event.payload}".encode()).hexdigest()
             if not hmac.compare_digest(expected, event.payload_hash):
                 return False
             previous_hash = event.payload_hash
@@ -233,9 +225,7 @@ class ReconciliationService:
                 "reason": "invalid liquidity position",
             }
             for account in cips_accounts
-            if account.balance < 0
-            or account.reserved < 0
-            or account.reserved > account.balance
+            if account.balance < 0 or account.reserved < 0 or account.reserved > account.balance
         ]
         failures.extend(
             {
@@ -244,8 +234,7 @@ class ReconciliationService:
                 "reason": "issuance outside authorized range",
             }
             for operator in operators
-            if operator.issued_amount < 0
-            or operator.issued_amount > operator.issuance_limit
+            if operator.issued_amount < 0 or operator.issued_amount > operator.issuance_limit
         )
         failures.extend(
             {

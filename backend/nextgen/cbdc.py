@@ -367,9 +367,7 @@ class ProgrammableMoneyService:
         context: dict[str, Any],
     ):
         instrument = (
-            self.db.query(ProgrammableInstrument)
-            .filter_by(instrument_id=instrument_id)
-            .one()
+            self.db.query(ProgrammableInstrument).filter_by(instrument_id=instrument_id).one()
         )
         if instrument.status != "active":
             raise ValueError("instrument is not active")
@@ -398,9 +396,7 @@ class ProgrammableMoneyService:
 
     def refund(self, instrument_id: str):
         instrument = (
-            self.db.query(ProgrammableInstrument)
-            .filter_by(instrument_id=instrument_id)
-            .one()
+            self.db.query(ProgrammableInstrument).filter_by(instrument_id=instrument_id).one()
         )
         if instrument.status != "active":
             raise ValueError("instrument is not refundable")
@@ -493,11 +489,7 @@ class MultiCbdcService:
     ) -> CbdcNode:
         if role not in {"central_bank", "commercial_bank", "observer", "operator"}:
             raise ValueError("Unsupported multi-CBDC node role")
-        active = (
-            self.db.query(CbdcJurisdiction)
-            .filter_by(code=jurisdiction, active=True)
-            .first()
-        )
+        active = self.db.query(CbdcJurisdiction).filter_by(code=jurisdiction, active=True).first()
         if active is None:
             raise ValueError("Unknown or inactive jurisdiction")
         node = CbdcNode(
@@ -518,11 +510,7 @@ class MultiCbdcService:
         purpose: str,
     ) -> dict[str, Any]:
         source = self.db.query(CbdcJurisdiction).filter_by(code=source_jurisdiction).one()
-        destination = (
-            self.db.query(CbdcJurisdiction)
-            .filter_by(code=destination_jurisdiction)
-            .one()
-        )
+        destination = self.db.query(CbdcJurisdiction).filter_by(code=destination_jurisdiction).one()
         reasons = []
         for jurisdiction in (source, destination):
             policy = json.loads(jurisdiction.policy)
@@ -604,11 +592,7 @@ class MultiCbdcService:
         credit = json.loads(pvp.credit_leg)
         self._active_quote(pvp.quote_id, int(debit["amount"]))
         for leg in (debit, credit):
-            account = (
-                self.db.query(EcnyAccount)
-                .filter_by(account_id=leg["from_account"])
-                .one()
-            )
+            account = self.db.query(EcnyAccount).filter_by(account_id=leg["from_account"]).one()
             if account.currency != leg["currency"] or account.balance < int(leg["amount"]):
                 raise ValueError("Insufficient or mismatched PvP source account")
         pvp.state = "LOCKED"

@@ -1,4 +1,5 @@
 """API routes for retail e-CNY, offline value, programmable money and multi-CBDC PvP."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -157,7 +158,9 @@ def top_up_hk_wallet(
     db: Session = Depends(get_db),
 ):
     try:
-        return _commit(db, HkRetailService(db).fps_top_up(wallet_id=wallet_id, **request.model_dump()))
+        return _commit(
+            db, HkRetailService(db).fps_top_up(wallet_id=wallet_id, **request.model_dump())
+        )
     except (RetailProfileError, ValueError) as exc:
         raise HTTPException(409, str(exc)) from exc
 
@@ -225,7 +228,9 @@ def execute_programmable_instrument(
     db: Session = Depends(get_db),
 ):
     try:
-        tx = ProgrammableMoneyService(db).execute(instrument_id=instrument_id, **request.model_dump())
+        tx = ProgrammableMoneyService(db).execute(
+            instrument_id=instrument_id, **request.model_dump()
+        )
         return _commit(db, {"tx_id": tx.tx_id, "status": tx.status})
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
