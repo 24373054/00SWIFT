@@ -3,32 +3,73 @@ name: Release validation
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published semantic-version tag to validate
+        required: true
+        type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-validation-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
 jobs:
   validate-and-package:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       GH_TOKEN: ${{ github.token }}
       REPOSITORY: ${{ github.repository }}
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
+      - name: Validate requested tag shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r backend/requirements-dev.txt
           python -m pip check
+
+      - name: Verify published metadata and existing assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          gh release view "$RELEASE_TAG" \
+            --json tagName,isDraft,isPrerelease,targetCommitish,assets \
+            > /tmp/release-before.json
+          jq -e --arg tag "$RELEASE_TAG" '
+            .tagName == $tag and
+            .isDraft == false and
+            .isPrerelease == false and
+            ([.assets[].name] | sort) ==
+              (["00SWIFT-'"$VERSION"'-dependencies.txt", "00SWIFT-'"$VERSION"'.tar.gz", "SHA256SUMS"] | sort)
+          ' /tmp/release-before.json
+          rm -rf /tmp/release-before
+          mkdir -p /tmp/release-before
+          gh release download "$RELEASE_TAG" --dir /tmp/release-before --clobber
+          sed 's#  dist/#  #' /tmp/release-before/SHA256SUMS > /tmp/release-before.normalized
+          (cd /tmp/release-before && sha256sum --check /tmp/release-before.normalized)
+
       - name: Verify version and quality gate
         shell: bash
         run: |
@@ -36,13 +77,17 @@ jobs:
           TAG_VERSION="${RELEASE_TAG#v}"
           PACKAGE_VERSION="$(python -c 'from pathlib import Path; import re; print(re.search(r"version = \"([^\"]+)\"", Path("pyproject.toml").read_text()).group(1))')"
           test "$TAG_VERSION" = "$PACKAGE_VERSION"
+          test -f ".release/$RELEASE_TAG"
+          test -f "docs/releases/$RELEASE_TAG.md"
+          grep -Fq "## [$TAG_VERSION]" CHANGELOG.md
           ruff check backend
           ruff format --check backend
           python -m compileall -q backend
           node --check frontend/app.js
           bandit -q -r backend -c pyproject.toml
           pytest --cov=backend --cov-report=term-missing --cov-fail-under=68
-      - name: Build release assets
+
+      - name: Rebuild release assets from the immutable tag
         shell: bash
         run: |
           set -euo pipefail
@@ -52,15 +97,26 @@ jobs:
             --output="dist/00SWIFT-${VERSION}.tar.gz" HEAD
           python -m pip freeze > "dist/00SWIFT-${VERSION}-dependencies.txt"
           sha256sum dist/* > dist/SHA256SUMS
-      - name: Upload release assets
-        run: gh release upload "$RELEASE_TAG" dist/* --clobber
+
+      - name: Replace assets and verify published checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "$RELEASE_TAG" dist/* --clobber
+          rm -rf /tmp/release-after
+          mkdir -p /tmp/release-after
+          gh release download "$RELEASE_TAG" --dir /tmp/release-after --clobber
+          sed 's#  dist/#  #' /tmp/release-after/SHA256SUMS > /tmp/release-after.normalized
+          (cd /tmp/release-after && sha256sum --check /tmp/release-after.normalized)
+
       - name: Record release validation success
         shell: bash
         run: |
           set -euo pipefail
+          TARGET_COMMIT="$(gh release view "$RELEASE_TAG" --json targetCommitish --jq '.targetCommitish')"
           STATUS_PATH=".release/${RELEASE_TAG}.validated"
           STATUS_CONTENT="$(printf 'status=validated\ntag=%s\ncommit=%s\nworkflow_run=%s\n' \
-            "$RELEASE_TAG" "${{ github.event.release.target_commitish }}" "${{ github.run_id }}" | base64 -w0)"
+            "$RELEASE_TAG" "$TARGET_COMMIT" "${{ github.run_id }}" | base64 -w0)"
           gh api --method PUT "repos/${REPOSITORY}/contents/${STATUS_PATH}" \
             -f message="chore: record ${RELEASE_TAG} validation" \
             -f content="$STATUS_CONTENT" \
