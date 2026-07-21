@@ -137,9 +137,7 @@ def _evaluate(
     workspace = resource.removeprefix("workspace.").split(".", 1)[0]
     role_allows = workspace in ROLE_WORKSPACES[role]
     max_amount = (
-        250_000_000
-        if role in {"settlement_operator", "platform_administrator"}
-        else 25_000_000
+        250_000_000 if role in {"settlement_operator", "platform_administrator"} else 25_000_000
     )
     decision = PolicyEngine(db).evaluate(
         subject=subject,
@@ -155,9 +153,7 @@ def _evaluate(
             "required_roles": [role if role_allows else "__denied__"],
             "max_amount": max_amount,
             "allowed_jurisdictions": ["CN", "HK", "TH", "AE"] if jurisdiction else [],
-            "allowed_purposes": (
-                ["trade", "services", "treasury", "retail"] if purpose else []
-            ),
+            "allowed_purposes": (["trade", "services", "treasury", "retail"] if purpose else []),
         },
     )
     obligations: list[str] = []
@@ -276,16 +272,11 @@ def _overlay_database(payload: dict[str, Any], db: Session) -> None:
         {
             "cross_border_volume": sum(item.amount for item in settlements),
             "active_payments": sum(
-                item.status not in {"SETTLED", "REJECTED", "CANCELLED"}
-                for item in lifecycles
+                item.status not in {"SETTLED", "REJECTED", "CANCELLED"} for item in lifecycles
             ),
-            "queued_value": sum(
-                item.amount for item in settlements if item.status == "QUEUED"
-            ),
+            "queued_value": sum(item.amount for item in settlements if item.status == "QUEUED"),
             "open_cases": len(cases),
-            "available_liquidity": sum(
-                max(item.balance - item.reserved, 0) for item in accounts
-            ),
+            "available_liquidity": sum(max(item.balance - item.reserved, 0) for item in accounts),
             "reserved_liquidity": sum(item.reserved for item in accounts),
         }
     )
@@ -299,8 +290,7 @@ def _overlay_database(payload: dict[str, Any], db: Session) -> None:
                 "queued": sum(
                     item.amount
                     for item in settlements
-                    if item.debtor_participant == account.participant_id
-                    and item.status == "QUEUED"
+                    if item.debtor_participant == account.participant_id and item.status == "QUEUED"
                 ),
                 "expected_incoming": sum(
                     item.amount
