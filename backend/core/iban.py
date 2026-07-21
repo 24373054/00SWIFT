@@ -13,7 +13,6 @@ for unknown countries we fall back to mod-97 only and mark the IBAN as
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 # Basic IBAN shape: 2 letters country, 2 digits check, 1-30 alphanumerics.
 IBAN_RE = re.compile(r"^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$")
@@ -37,12 +36,18 @@ class IbanStructure:
 # Sources: ISO 13616 published structures (publicly available).
 _IBAN_STRUCTURES = {
     "DE": IbanStructure("DE", 22, ((8, "n"), (10, "n"))),  # bank code + account
-    "FR": IbanStructure("FR", 27, ((5, "n"), (5, "n"), (11, "c"), (2, "n"))),  # bank + branch + account + check
-    "IT": IbanStructure("IT", 27, ((1, "c"), (5, "n"), (5, "n"), (12, "c"))),  # CIN + ABI + CAB + account
+    "FR": IbanStructure(
+        "FR", 27, ((5, "n"), (5, "n"), (11, "c"), (2, "n"))
+    ),  # bank + branch + account + check
+    "IT": IbanStructure(
+        "IT", 27, ((1, "c"), (5, "n"), (5, "n"), (12, "c"))
+    ),  # CIN + ABI + CAB + account
     "GB": IbanStructure("GB", 22, ((4, "c"), (6, "n"), (8, "n"))),  # bank + sort + account
     "BE": IbanStructure("BE", 16, ((3, "n"), (7, "n"), (2, "n"))),  # bank + account + check
     "NL": IbanStructure("NL", 18, ((4, "c"), (10, "n"))),  # bank + account
-    "ES": IbanStructure("ES", 24, ((4, "n"), (4, "n"), (2, "n"), (10, "n"))),  # bank + branch + check + account
+    "ES": IbanStructure(
+        "ES", 24, ((4, "n"), (4, "n"), (2, "n"), (10, "n"))
+    ),  # bank + branch + check + account
     "CH": IbanStructure("CH", 21, ((5, "n"), (12, "c"))),  # bank + account
     "AT": IbanStructure("AT", 20, ((5, "n"), (11, "n"))),  # bank + account
     "US": None,  # US does not use IBAN
@@ -93,13 +98,13 @@ class IbanComponents:
     country_code: str
     checksum: str
     bank_id: str
-    branch_id: Optional[str]
+    branch_id: str | None
     account_number: str
     length: int
     is_iso: bool
 
 
-def parse_iban(iban: str) -> Optional[IbanComponents]:
+def parse_iban(iban: str) -> IbanComponents | None:
     """Parse an IBAN into its components. Returns None if format is invalid.
 
     Note: ``is_iso`` is True only when the country is in the local structure

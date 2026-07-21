@@ -1,17 +1,18 @@
 """Pydantic schemas for the e-CNY API."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class WalletOpenRequest(BaseModel):
     tier: int = Field(3, ge=1, le=3, description="1=strong KYC/large, 2=medium, 3=small anonymous")
     operator_account_id: str = Field(..., description="Operator ledger account id")
-    holder_name: Optional[str] = None
-    holder_id_type: Optional[str] = None
-    holder_id_hash: Optional[str] = None
+    holder_name: str | None = None
+    holder_id_type: str | None = None
+    holder_id_hash: str | None = None
     holder_country: str = "CN"
 
 
@@ -20,8 +21,8 @@ class WalletResponse(BaseModel):
     tier: int
     balance: int
     status: str
-    holder_id: Optional[str] = None
-    operator_id: Optional[int] = None
+    holder_id: str | None = None
+    operator_id: int | None = None
     ledger_account_id: str
 
 
@@ -29,23 +30,32 @@ class TransferRequest(BaseModel):
     from_wallet_id: str
     to_wallet_id: str
     amount_fen: int = Field(..., gt=0, description="Amount in fen (1 CNY = 100 fen)")
-    memo: Optional[Dict[str, Any]] = None
+    memo: dict[str, Any] | None = None
 
 
 class IssuanceRequest(BaseModel):
     operator_account_id: str
     amount_fen: int = Field(..., gt=0)
     action: str = Field("mint", pattern="^(mint|burn|issue_to_wallet|redeem_from_wallet)$")
-    wallet_id: Optional[str] = None  # required for issue_to_wallet / redeem_from_wallet
+    wallet_id: str | None = None  # required for issue_to_wallet / redeem_from_wallet
 
 
 class CrossBorderRequest(BaseModel):
     from_wallet_id: str
     to_account_id: str
     amount_fen: int = Field(..., gt=0)
-    target_currency: str
-    channel: Optional[str] = Field(None, description="mbridge | cips; auto if omitted")
-    counterparty: Optional[str] = None
+    target_currency: str = Field(..., min_length=3, max_length=3)
+    channel: str | None = Field(
+        None, pattern="^(mbridge|cips)$", description="mbridge | cips; auto if omitted"
+    )
+    counterparty: str | None = None
+
+    @field_validator("target_currency")
+    @classmethod
+    def normalize_currency(cls, value: str) -> str:
+        if not value.isalpha():
+            raise ValueError("target_currency must be an ISO alphabetic code")
+        return value.upper()
 
 
 class BridgeTxResponse(BaseModel):
@@ -55,9 +65,9 @@ class BridgeTxResponse(BaseModel):
     from_amount: int
     to_currency: str
     to_amount: int
-    fx_rate: Optional[str] = None
+    fx_rate: str | None = None
     status: str
-    counterparty_ref: Optional[str] = None
+    counterparty_ref: str | None = None
 
 
 class LedgerTransactionResponse(BaseModel):
@@ -66,20 +76,20 @@ class LedgerTransactionResponse(BaseModel):
     status: str
     amount: int
     currency: str
-    from_account: Optional[str] = None
-    to_account: Optional[str] = None
-    uetr: Optional[str] = None
-    memo: Dict[str, Any] = {}
+    from_account: str | None = None
+    to_account: str | None = None
+    uetr: str | None = None
+    memo: dict[str, Any] = Field(default_factory=dict)
     created_at: str
-    settled_at: Optional[str] = None
+    settled_at: str | None = None
 
 
 class ComplianceReportResponse(BaseModel):
     report_id: str
-    tx_id: Optional[str] = None
+    tx_id: str | None = None
     report_type: str
     amount: int
     currency: str
-    threshold: Optional[int] = None
-    details: Dict[str, Any] = {}
+    threshold: int | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
     created_at: str

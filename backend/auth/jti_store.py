@@ -19,11 +19,9 @@ from __future__ import annotations
 import threading
 from collections import OrderedDict
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from config import get_settings
 from core.time import now_utc
 from database import JtiRecord
 
@@ -52,7 +50,9 @@ class _LruJtiCache:
 _cache = _LruJtiCache()
 
 
-def check_and_record(db: Session, jti: str, expires_at: datetime, app_id: Optional[int] = None) -> bool:
+def check_and_record(
+    db: Session, jti: str, expires_at: datetime, app_id: int | None = None
+) -> bool:
     """Return True if ``jti`` is a replay (already seen), else record it.
 
     Checks the LRU cache first, then the DB. On first sight, inserts into both.
@@ -79,7 +79,9 @@ def check_and_record(db: Session, jti: str, expires_at: datetime, app_id: Option
 def cleanup_expired(db: Session) -> int:
     """Delete expired JTI records. Returns the number deleted."""
     now = now_utc()
-    deleted = db.query(JtiRecord).filter(JtiRecord.expires_at < now).delete(synchronize_session=False)
+    deleted = (
+        db.query(JtiRecord).filter(JtiRecord.expires_at < now).delete(synchronize_session=False)
+    )
     db.commit()
     # Also prune the in-memory cache.
     with _cache._lock:

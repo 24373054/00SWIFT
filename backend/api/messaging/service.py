@@ -4,15 +4,15 @@ Mock tier writes ``FinMessage`` + ``MessageDistribution`` rows. On send, it
 also synthesizes an inbound ``Distribution`` so ``GET /distributions`` lists it
 (matching the real Alliance Cloud inbox model).
 """
+
 from __future__ import annotations
 
 import json
 import uuid
-from typing import List
 
 from sqlalchemy.orm import Session
 
-from core.errors import resource_not_found, SwiftApiException, SEVERITY_FATAL
+from core.errors import resource_not_found
 from core.time import now_utc
 from database import FinMessage, MessageDistribution
 
@@ -53,8 +53,13 @@ def send_fin_message(db: Session, body: dict) -> dict:
     return {"message_cloud_reference": message_cloud_reference, "distribution_id": distribution_id}
 
 
-def list_distributions(db: Session, limit: int = 50) -> List[dict]:
-    rows = db.query(MessageDistribution).order_by(MessageDistribution.created_at.desc()).limit(limit).all()
+def list_distributions(db: Session, limit: int = 50) -> list[dict]:
+    rows = (
+        db.query(MessageDistribution)
+        .order_by(MessageDistribution.created_at.desc())
+        .limit(limit)
+        .all()
+    )
     return [
         {
             "distribution_id": r.distribution_id,
@@ -70,7 +75,11 @@ def list_distributions(db: Session, limit: int = 50) -> List[dict]:
 
 
 def ack_distribution(db: Session, distribution_id: str) -> None:
-    r = db.query(MessageDistribution).filter(MessageDistribution.distribution_id == distribution_id).first()
+    r = (
+        db.query(MessageDistribution)
+        .filter(MessageDistribution.distribution_id == distribution_id)
+        .first()
+    )
     if not r:
         raise resource_not_found(f"Distribution {distribution_id} not found")
     r.status = "acked"
@@ -79,7 +88,11 @@ def ack_distribution(db: Session, distribution_id: str) -> None:
 
 
 def nak_distribution(db: Session, distribution_id: str, reason: str | None) -> None:
-    r = db.query(MessageDistribution).filter(MessageDistribution.distribution_id == distribution_id).first()
+    r = (
+        db.query(MessageDistribution)
+        .filter(MessageDistribution.distribution_id == distribution_id)
+        .first()
+    )
     if not r:
         raise resource_not_found(f"Distribution {distribution_id} not found")
     r.status = "naked"

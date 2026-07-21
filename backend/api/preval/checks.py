@@ -4,17 +4,18 @@ Each check returns a ``ValidationCheck`` (status + reason codes). Checks call
 the SwiftRef repository to validate BIC/IBAN/currency/country against the
 reference directory.
 """
+
 from __future__ import annotations
 
-from typing import List
+from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.orm import Session
 
-from core.bic import validate_bic
-from core.iban import validate_iban
 from api.preval.schemas import ValidationCheck, ValidationReason
 from api.swiftref import repository as swiftref
-
+from core.bic import validate_bic
+from core.errors import SwiftRefException
+from core.iban import validate_iban
 
 # Status codes (from the swagger).
 S_VALID = "FVAL_valid"
@@ -40,12 +41,27 @@ R_DECIMALS_MISMATCH = "DACD_amount_decimals_do_not_match_currency_decimals"
 def check_bic(db: Session, bic: str, check_type: str) -> ValidationCheck:
     """Validate a BICFI against the SwiftRef directory."""
     if not bic or not validate_bic(bic, mode="data"):
-        return ValidationCheck(check_type=check_type, validated_by="SWIFT_CENTRALLY", status=S_INVALID, reason=[ValidationReason(code=R_INVALID_BIC)])
+        return ValidationCheck(
+            check_type=check_type,
+            validated_by="SWIFT_CENTRALLY",
+            status=S_INVALID,
+            reason=[ValidationReason(code=R_INVALID_BIC)],
+        )
     try:
         swiftref.lookup_bic_validity(db, bic)
-        return ValidationCheck(check_type=check_type, validated_by="SWIFT_CENTRALLY", status=S_VALID, reason=[ValidationReason(code=R_VALID_BIC)])
-    except Exception:
-        return ValidationCheck(check_type=check_type, validated_by="SWIFT_CENTRALLY", status=S_INVALID, reason=[ValidationReason(code=R_INVALID_BIC)])
+        return ValidationCheck(
+            check_type=check_type,
+            validated_by="SWIFT_CENTRALLY",
+            status=S_VALID,
+            reason=[ValidationReason(code=R_VALID_BIC)],
+        )
+    except SwiftRefException:
+        return ValidationCheck(
+            check_type=check_type,
+            validated_by="SWIFT_CENTRALLY",
+            status=S_INVALID,
+            reason=[ValidationReason(code=R_INVALID_BIC)],
+        )
 
 
 def check_account_format(db: Session, account: str, country: str) -> ValidationCheck:
@@ -54,32 +70,62 @@ def check_account_format(db: Session, account: str, country: str) -> ValidationC
     if len(acct) >= 4 and acct[:2].isalpha() and acct[2:4].isdigit():
         # Looks like an IBAN — validate structurally.
         if validate_iban(acct):
-            return ValidationCheck(check_type="Account_Format_Validation", validated_by="SWIFT_CENTRALLY", status=S_VALID, reason=[ValidationReason(code=R_VALID_IBAN)])
-        return ValidationCheck(check_type="Account_Format_Validation", validated_by="SWIFT_CENTRALLY", status=S_INVALID, reason=[ValidationReason(code=R_INVALID_IBAN)])
+            return ValidationCheck(
+                check_type="Account_Format_Validation",
+                validated_by="SWIFT_CENTRALLY",
+                status=S_VALID,
+                reason=[ValidationReason(code=R_VALID_IBAN)],
+            )
+        return ValidationCheck(
+            check_type="Account_Format_Validation",
+            validated_by="SWIFT_CENTRALLY",
+            status=S_INVALID,
+            reason=[ValidationReason(code=R_INVALID_IBAN)],
+        )
     # Domestic account number — mark not available (no domestic directory).
-    return ValidationCheck(check_type="Account_Format_Validation", validated_by="SWIFT_CENTRALLY", status=S_NOT_AVAIL, reason=[ValidationReason(code="NAVL_not_available")])
+    return ValidationCheck(
+        check_type="Account_Format_Validation",
+        validated_by="SWIFT_CENTRALLY",
+        status=S_NOT_AVAIL,
+        reason=[ValidationReason(code="NAVL_not_available")],
+    )
 
 
 def check_currency(db: Session, currency: str) -> ValidationCheck:
     try:
         swiftref.lookup_currency_validity(db, currency)
-        return ValidationCheck(check_type="Instructed_Amount_Validation", validated_by="SWIFT_CENTRALLY", status=S_VALID, reason=[ValidationReason(code=R_VALID_CCY)])
-    except Exception:
-        return ValidationCheck(check_type="Instructed_Amount_Validation", validated_by="SWIFT_CENTRALLY", status=S_INVALID, reason=[ValidationReason(code=R_INVALID_CCY)])
+        return ValidationCheck(
+            check_type="Instructed_Amount_Validation",
+            validated_by="SWIFT_CENTRALLY",
+            status=S_VALID,
+            reason=[ValidationReason(code=R_VALID_CCY)],
+        )
+    except SwiftRefException:
+        return ValidationCheck(
+            check_type="Instructed_Amount_Validation",
+            validated_by="SWIFT_CENTRALLY",
+            status=S_INVALID,
+            reason=[ValidationReason(code=R_INVALID_CCY)],
+        )
 
 
 def check_amount(amount: str, currency: str, db: Session) -> ValidationCheck:
     """Validate amount format + decimal places match the currency's minor_unit."""
-    reasons: List[ValidationReason] = []
+    reasons: list[ValidationReason] = []
     status = S_VALID
     try:
-        amt = float(amount)
-        if amt <= 0:
+        amt = Decimal(str(amount))
+        if not amt.is_finite() or amt <= 0:
             reasons.append(ValidationReason(code=R_INVALID_AMOUNT))
             status = S_INVALID
-    except (ValueError, TypeError):
+    except (InvalidOperation, ValueError, TypeError):
         reasons.append(ValidationReason(code=R_INVALID_AMOUNT))
-        return ValidationCheck(check_type="Instructed_Amount_Validation", validated_by="SWIFT_CENTRALLY", status=S_INVALID, reason=reasons)
+        return ValidationCheck(
+            check_type="Instructed_Amount_Validation",
+            validated_by="SWIFT_CENTRALLY",
+            status=S_INVALID,
+            reason=reasons,
+        )
     # Check decimals against currency minor_unit.
     try:
         details = swiftref.lookup_currency_details(db, currency)
@@ -92,13 +138,34 @@ def check_amount(amount: str, currency: str, db: Session) -> ValidationCheck:
                 reasons.append(ValidationReason(code=R_DECIMALS_MISMATCH))
                 if status == S_VALID:
                     status = S_VALID_COMMENTS
-    except Exception:
-        pass  # currency unknown — skip decimal check
-    return ValidationCheck(check_type="Instructed_Amount_Validation", validated_by="SWIFT_CENTRALLY", status=status, reason=reasons)
+    except SwiftRefException:
+        # Currency validity is reported by ``check_currency``; keep this check focused on amount.
+        return ValidationCheck(
+            check_type="Instructed_Amount_Validation",
+            validated_by="SWIFT_CENTRALLY",
+            status=status,
+            reason=reasons,
+        )
+    return ValidationCheck(
+        check_type="Instructed_Amount_Validation",
+        validated_by="SWIFT_CENTRALLY",
+        status=status,
+        reason=reasons,
+    )
 
 
 def check_country(country: str, check_type: str) -> ValidationCheck:
     """Validate an ISO 3166 country code (structural — 2 uppercase letters)."""
     if country and len(country) == 2 and country.isalpha() and country.isupper():
-        return ValidationCheck(check_type=check_type, validated_by="SWIFT_CENTRALLY", status=S_VALID, reason=[ValidationReason(code=R_VALID_COUNTRY)])
-    return ValidationCheck(check_type=check_type, validated_by="SWIFT_CENTRALLY", status=S_INVALID, reason=[ValidationReason(code=R_INVALID_COUNTRY)])
+        return ValidationCheck(
+            check_type=check_type,
+            validated_by="SWIFT_CENTRALLY",
+            status=S_VALID,
+            reason=[ValidationReason(code=R_VALID_COUNTRY)],
+        )
+    return ValidationCheck(
+        check_type=check_type,
+        validated_by="SWIFT_CENTRALLY",
+        status=S_INVALID,
+        reason=[ValidationReason(code=R_INVALID_COUNTRY)],
+    )

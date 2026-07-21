@@ -4,15 +4,16 @@ P1 endpoints: POST /fin/messages (send), GET /distributions (inbox),
 POST /distributions/{id}/acks | /naks. Send/ack/nak require
 X-SWIFT-Signature.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from api.messaging import service
+from api.messaging.schemas import AckNakRequest, FinMessageEmission
 from auth.dependencies import get_cred, require_scopes, require_signature
 from database import get_db
-from api.messaging import service
-from api.messaging.schemas import FinMessageEmission, AckNakRequest
 
 router = APIRouter(
     prefix="/alliancecloud/v2",

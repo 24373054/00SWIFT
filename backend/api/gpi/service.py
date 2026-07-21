@@ -5,25 +5,21 @@ invented ``POST /payments/{uetr}/transition`` is removed (user decision 5);
 state now moves via ``POST /payments/{uetr}/status`` status-confirmations
 (CamtA0100105), matching the real SWIFT tracker.
 """
+
 from __future__ import annotations
 
 import json
-import uuid
-from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
-from core.errors import SwiftApiException, malformed_request, resource_not_found, SEVERITY_FATAL
+from core.errors import SEVERITY_FATAL, SwiftApiException, malformed_request, resource_not_found
 from core.time import now_utc
 from database import PaymentState
 from iso20022.states import (
+    CANC,
     PAYMENT_STATES,
     VALID_TRANSITIONS,
     is_valid_transition,
-    CANC,
-    ACSC,
-    ACCC,
-    PDNG,
 )
 
 
@@ -59,20 +55,22 @@ def list_changed_payments(
     from_dt: str,
     to_dt: str,
     maximum_number: int = 50,
-    payment_scenario: Optional[str] = None,
+    payment_scenario: str | None = None,
 ) -> dict:
     """List payments whose ``updated_at`` falls in [from_dt, to_dt].
 
     Real SWIFT uses a ``next`` cursor; we return a simple list (cursor omitted
     for the mock since the dataset is small).
     """
-    from core.time import now_utc
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     try:
         f = datetime.fromisoformat(from_dt.replace("Z", "+00:00"))
         t = datetime.fromisoformat(to_dt.replace("Z", "+00:00"))
-    except Exception:
-        raise malformed_request("Invalid from_date_time/to_date_time format (use ISO-8601)")
+    except ValueError:
+        raise malformed_request(
+            "Invalid from_date_time/to_date_time format (use ISO-8601)"
+        ) from None
 
     q = db.query(PaymentState).filter(
         PaymentState.updated_at >= f.replace(tzinfo=None),
@@ -80,6 +78,7 @@ def list_changed_payments(
     )
     if payment_scenario:
         q = q.filter(PaymentState.payment_scenario == payment_scenario)
+    maximum_number = max(1, min(maximum_number, 500))
     rows = q.order_by(PaymentState.updated_at.desc()).limit(maximum_number).all()
     return {
         "from_date_time": from_dt,
@@ -96,21 +95,26 @@ def confirm_status(db: Session, uetr: str, body: dict) -> None:
         raise resource_not_found(f"Payment {uetr} not found")
     new_status = body.get("transaction_status")
     if new_status not in PAYMENT_STATES:
-        raise SwiftApiException("SwAP501", SEVERITY_FATAL, f"Invalid transaction_status: {new_status}", 400)
+        raise SwiftApiException(
+            "SwAP501", SEVERITY_FATAL, f"Invalid transaction_status: {new_status}", 400
+        )
     if not is_valid_transition(p.transaction_status, new_status):
         valid = VALID_TRANSITIONS.get(p.transaction_status, [])
         raise SwiftApiException(
-            "SwAP599", SEVERITY_LOGIC if False else "Fatal",
+            "SwAP599",
+            SEVERITY_FATAL,
             f"Cannot transition from {p.transaction_status} to {new_status}. Valid: {valid or 'none (terminal)'}",
             422,
         )
     history = json.loads(p.history or "[]")
-    history.append({
-        "status": new_status,
-        "timestamp": now_utc().isoformat(),
-        "reason": "Status confirmation",
-        "informing_party": body.get("from_") or body.get("from"),
-    })
+    history.append(
+        {
+            "status": new_status,
+            "timestamp": now_utc().isoformat(),
+            "reason": "Status confirmation",
+            "informing_party": body.get("from_") or body.get("from"),
+        }
+    )
     p.transaction_status = new_status
     p.state = new_status  # legacy alias
     if body.get("instruction_identification"):
@@ -129,18 +133,21 @@ def request_cancellation(db: Session, uetr: str, body: dict) -> dict:
         raise resource_not_found(f"Payment {uetr} not found")
     if not is_valid_transition(p.transaction_status, CANC):
         raise SwiftApiException(
-            "SwAP599", SEVERITY_FATAL,
+            "SwAP599",
+            SEVERITY_FATAL,
             f"Cannot cancel payment in terminal state {p.transaction_status}",
             422,
         )
     reason = body.get("cancellation_reason", "DUPL")
     history = json.loads(p.history or "[]")
-    history.append({
-        "status": CANC,
-        "timestamp": now_utc().isoformat(),
-        "reason": f"Cancellation requested: {reason}",
-        "informing_party": body.get("from_") or body.get("from"),
-    })
+    history.append(
+        {
+            "status": CANC,
+            "timestamp": now_utc().isoformat(),
+            "reason": f"Cancellation requested: {reason}",
+            "informing_party": body.get("from_") or body.get("from"),
+        }
+    )
     p.transaction_status = CANC
     p.state = CANC
     p.history = json.dumps(history)
@@ -156,12 +163,14 @@ def report_cancellation_status(db: Session, uetr: str, body: dict) -> dict:
         raise resource_not_found(f"Payment {uetr} not found")
     status = body.get("investigation_execution_status", "CNCL")
     history = json.loads(p.history or "[]")
-    history.append({
-        "status": p.transaction_status,
-        "timestamp": now_utc().isoformat(),
-        "reason": f"Cancellation investigation: {status}",
-        "informing_party": body.get("from_") or body.get("from"),
-    })
+    history.append(
+        {
+            "status": p.transaction_status,
+            "timestamp": now_utc().isoformat(),
+            "reason": f"Cancellation investigation: {status}",
+            "informing_party": body.get("from_") or body.get("from"),
+        }
+    )
     p.history = json.dumps(history)
     p.updated_at = now_utc()
     db.commit()

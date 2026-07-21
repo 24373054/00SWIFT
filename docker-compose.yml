@@ -1,0 +1,27 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8765:8765"
+    env_file:
+      - backend/.env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8765
+      DB_URL: sqlite:////app/data/swift_dev.db
+      CERTS_DIR: /app/backend/certs
+    volumes:
+      - swift-data:/app/data
+      - swift-certs:/app/backend/certs
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  swift-data:
+  swift-certs:

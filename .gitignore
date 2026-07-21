@@ -25,3 +25,22 @@ Swift-SDK-2.17.12-10_1_RL.pdf
 .idea/
 .vscode/
 *.swp
+
+# Test, coverage, and tooling
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Packaging
+build/
+dist/
+*.whl
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+
+# Local compose overrides
+docker-compose.override.yml

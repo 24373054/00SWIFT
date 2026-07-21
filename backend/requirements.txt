@@ -1,35 +1,17 @@
-# SWIFT Developer Testing System — backend dependencies
-
-# Web framework
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-
-# DB
-sqlalchemy==2.0.36
-aiosqlite==0.20.0
-
-# Validation / config
-pydantic==2.10.3
-pydantic-settings>=2.6.0
-
-# Auth / PKI
-PyJWT[crypto]>=2.10.0
-cryptography>=43.0.0
-
-# HTTP client (live-mode forwarding)
-httpx==0.28.1
-
-# ISO 20022 — dual library
-# pyiso20022 covers pacs.008/002/009 + camt.056/029 etc. (xsdata dataclasses).
-# NOTE: pyiso20022's install_requires=[] is a packaging defect — xsdata must be
-#       installed explicitly or its imports fail.
+# Runtime dependencies. Compatible release ranges receive security fixes while
+# major versions remain intentionally bounded for reproducible CI.
+fastapi>=0.115.6,<1
+uvicorn[standard]>=0.34,<1
+sqlalchemy>=2.0.36,<3
+pydantic>=2.10.3,<3
+pydantic-settings>=2.6,<3
+python-multipart>=0.0.18,<1
+PyJWT[crypto]>=2.10,<3
+cryptography>=43,<47
+httpx>=0.28.1,<1
 pyiso20022==1.6.2
-xsdata>=24.0
-
-# pacs008 provides generate_xml_string() with built-in XSD validation for
-# pacs.008 (the highest-stakes outbound message). Its heavy deps (lxml,
-# defusedxml, jinja2) are listed explicitly below to pin versions.
+xsdata>=24,<26
 pacs008==0.0.4
-lxml==5.3.0
-defusedxml>=0.7.1
-jinja2>=3.1.0
+lxml>=5.3,<7
+defusedxml>=0.7.1,<1
+jinja2>=3.1,<4

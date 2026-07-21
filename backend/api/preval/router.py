@@ -5,22 +5,22 @@ All endpoints require:
 * ``x-bic`` header (lowercase, regex-validated) — enforced via require_x_bic.
 * ``X-SWIFT-Signature`` on POST (non-repudiation).
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from auth.dependencies import get_cred, require_scopes, require_signature, require_x_bic
-from database import get_db
-from api.preval import orchestrator, checks
+from api.preval import checks, orchestrator
 from api.preval.schemas import (
+    AccountFormatRequest,
+    AmountValidationRequest,
+    FiIdentityRequest,
     PaymentInstruction,
     PaymentInstructionValidation,
-    AccountFormatRequest,
-    FiIdentityRequest,
-    AmountValidationRequest,
-    PurposeCodeRequest,
 )
+from auth.dependencies import get_cred, require_scopes, require_signature, require_x_bic
+from database import get_db
 
 router = APIRouter(
     prefix="/swift-preval/v2",

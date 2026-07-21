@@ -6,11 +6,11 @@ transactions. Controlled-anonymity wallets (tier 3) remain untraceable for
 small amounts but are flagged when they exceed the large-cash threshold
 (threshold-based de-anonymization, matching the "controlled anonymity" model).
 """
+
 from __future__ import annotations
 
 import json
 import uuid
-from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
 
@@ -32,9 +32,14 @@ def check_kyc(wallet) -> None:
         return
 
 
-def check_transaction(db: Session, wallet, amount_fen: int, *,
-                      cross_border: bool = False,
-                      counterparty: Optional[str] = None) -> list:
+def check_transaction(
+    db: Session,
+    wallet,
+    amount_fen: int,
+    *,
+    cross_border: bool = False,
+    counterparty: str | None = None,
+) -> list:
     """Run AML rules on a prospective transaction. Returns generated report rows.
 
     Rules (expandable):
@@ -47,19 +52,26 @@ def check_transaction(db: Session, wallet, amount_fen: int, *,
 
     if amount_fen >= LARGE_CASH_THRESHOLD:
         r = EcnyComplianceReport(
-            report_id=_new_id("rpt"), tx_id=None,
-            report_type="large_cash", amount=amount_fen, currency="CNY",
+            report_id=_new_id("rpt"),
+            tx_id=None,
+            report_type="large_cash",
+            amount=amount_fen,
+            currency="CNY",
             threshold=LARGE_CASH_THRESHOLD,
-            details=json.dumps({"wallet": wallet.wallet_id, "tier": wallet.tier,
-                     "traceable": is_traceable(wallet)}),
+            details=json.dumps(
+                {"wallet": wallet.wallet_id, "tier": wallet.tier, "traceable": is_traceable(wallet)}
+            ),
         )
         db.add(r)
         reports.append(r)
 
     if cross_border:
         r = EcnyComplianceReport(
-            report_id=_new_id("rpt"), tx_id=None,
-            report_type="cross_border", amount=amount_fen, currency="CNY",
+            report_id=_new_id("rpt"),
+            tx_id=None,
+            report_type="cross_border",
+            amount=amount_fen,
+            currency="CNY",
             threshold=None,
             details=json.dumps({"wallet": wallet.wallet_id, "counterparty": counterparty}),
         )
@@ -70,8 +82,11 @@ def check_transaction(db: Session, wallet, amount_fen: int, *,
     # (smurfing-adjacent). Placeholder rule.
     if LARGE_CASH_THRESHOLD <= amount_fen < int(LARGE_CASH_THRESHOLD * 1.01):
         r = EcnyComplianceReport(
-            report_id=_new_id("rpt"), tx_id=None,
-            report_type="suspicious", amount=amount_fen, currency="CNY",
+            report_id=_new_id("rpt"),
+            tx_id=None,
+            report_type="suspicious",
+            amount=amount_fen,
+            currency="CNY",
             threshold=LARGE_CASH_THRESHOLD,
             details=json.dumps({"wallet": wallet.wallet_id, "reason": "threshold_adjacent"}),
         )
@@ -82,6 +97,9 @@ def check_transaction(db: Session, wallet, amount_fen: int, *,
 
 
 def list_reports(db: Session, limit: int = 100) -> list:
-    return db.query(EcnyComplianceReport).order_by(
-        EcnyComplianceReport.created_at.desc()
-    ).limit(limit).all()
+    return (
+        db.query(EcnyComplianceReport)
+        .order_by(EcnyComplianceReport.created_at.desc())
+        .limit(limit)
+        .all()
+    )

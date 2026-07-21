@@ -1,0 +1,48 @@
+name: Release validation
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements-dev.txt
+      - name: Verify version and quality gate
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE_VERSION="$(python -c 'from pathlib import Path; import re; print(re.search(r"version = \"([^\"]+)\"", Path("pyproject.toml").read_text()).group(1))')"
+          test "$TAG_VERSION" = "$PACKAGE_VERSION"
+          ruff check backend
+          ruff format --check backend
+          bandit -q -r backend -c pyproject.toml
+          pytest --cov=backend --cov-fail-under=68
+      - name: Build release assets
+        shell: bash
+        run: |
+          mkdir -p dist
+          git archive --format=tar.gz --prefix="00SWIFT-${GITHUB_REF_NAME#v}/" \
+            --output="dist/00SWIFT-${GITHUB_REF_NAME#v}.tar.gz" HEAD
+          python -m pip freeze > "dist/00SWIFT-${GITHUB_REF_NAME#v}-dependencies.txt"
+          sha256sum dist/* > dist/SHA256SUMS
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber

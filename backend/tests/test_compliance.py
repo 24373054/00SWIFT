@@ -1,7 +1,7 @@
 """Compliance layer tests."""
+
 from ecny.compliance import check_transaction, list_reports
 from ecny.wallet import LARGE_CASH_THRESHOLD, open_wallet
-from ecny.ledger import get_or_create_account, mint
 
 
 def _anon_wallet(db):

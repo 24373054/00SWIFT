@@ -21,21 +21,26 @@ Usage in routes::
 
 from __future__ import annotations
 
-from typing import Optional
+import secrets
 
 from fastapi import Depends, Header, Request
 from sqlalchemy.orm import Session
 
-from core.bic import HEADER_BIC_RE, validate_bic
-from config import get_settings
-from core.errors import SwiftApiException, insufficient_scope, malformed_request, xbic_not_included, xbic_not_valid
 from auth.oauth import get_token_scopes, verify_bearer_token
 from auth.signature import verify_swift_signature
+from config import get_settings
+from core.bic import validate_bic
+from core.errors import (
+    SwiftApiException,
+    insufficient_scope,
+    xbic_not_included,
+    xbic_not_valid,
+)
 from database import AppCredential, get_db
 
 
 def get_cred(
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
     db: Session = Depends(get_db),
 ) -> AppCredential:
     """Resolve the Bearer token to the owning AppCredential."""
@@ -52,7 +57,7 @@ def require_scopes(*required: str):
     required_set = set(required)
 
     def _check(
-        authorization: Optional[str] = Header(None),
+        authorization: str | None = Header(None),
         db: Session = Depends(get_db),
     ) -> None:
         if not required_set:
@@ -68,63 +73,27 @@ def require_scopes(*required: str):
     return _check
 
 
-def require_signature(
+async def require_signature(
     request: Request,
     cred: AppCredential = Depends(get_cred),
     db: Session = Depends(get_db),
-    x_swift_signature: Optional[str] = Header(None, alias="X-SWIFT-Signature"),
+    x_swift_signature: str | None = Header(None, alias="X-SWIFT-Signature"),
 ) -> None:
-    """Verify the ``X-SWIFT-Signature`` header against the raw request body.
-
-    The body must be read from the underlying ASGI stream (not FastAPI's parsed
-    body) so the digest matches exactly what the client signed. We cache it on
-    ``request.state`` so downstream handlers can reuse it without re-reading.
-    """
-    import asyncio
-
-    async def _get_body() -> bytes:
-        body = getattr(request.state, "_raw_body", None)
-        if body is None:
-            body = await request.body()
-            request.state._raw_body = body
-        return body
-
-    # FastAPI runs sync dependencies in a threadpool, so we can call asyncio.run
-    # to await the body read. This is simpler than making the dep async (which
-    # would force every consumer to be async too).
-    body = asyncio.get_event_loop().run_until_complete(_get_body()) if False else _read_body_sync(request)
+    """Verify the signature against the exact cached ASGI request body."""
+    body = getattr(request.state, "_raw_body", None)
+    if body is None:
+        body = await request.body()
+        request.state._raw_body = body
 
     host = request.url.hostname or "localhost"
     port = request.url.port
     netloc = f"{host}:{port}" if port and port not in (80, 443) else host
     audience = f"{netloc}{request.url.path}"
-
     verify_swift_signature(body, x_swift_signature, cred, audience, db)
 
 
-def _read_body_sync(request: Request) -> bytes:
-    """Read the raw body bytes from a Starlette request synchronously.
-
-    Sync dependencies run in a threadpool, so we cannot ``await`` the async
-    ``request.body()`` directly. ``anyio.from_thread.run`` schedules the
-    coroutine back onto the running event loop (the one Starlette owns),
-    avoiding the "bound to a different event loop" error.
-    """
-    body = getattr(request.state, "_raw_body", None)
-    if body is not None:
-        return body
-    try:
-        import anyio.from_thread
-        body = anyio.from_thread.run(request.body)
-    except Exception:
-        # Fallback: read the raw stream directly (works for TestClient).
-        body = b""
-    request.state._raw_body = body
-    return body
-
-
 def require_x_bic(
-    x_bic: Optional[str] = Header(None, alias="x-bic"),
+    x_bic: str | None = Header(None, alias="x-bic"),
 ) -> str:
     """Validate the lowercase ``x-bic`` header (required on Pre-validation)."""
     if not x_bic:
@@ -134,7 +103,7 @@ def require_x_bic(
     return x_bic
 
 
-def require_admin_token(x_admin_token: Optional[str] = Header(None, alias="X-Admin-Token")):
+def require_admin_token(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
     """Require an admin token for /api/* management endpoints.
 
     In sandbox mode an empty ADMIN_API_TOKEN disables the check (local dev
@@ -145,5 +114,5 @@ def require_admin_token(x_admin_token: Optional[str] = Header(None, alias="X-Adm
         if s.is_sandbox:
             return  # disabled in sandbox
         raise SwiftApiException("SwAP599", "Fatal", "Admin token required but not configured", 500)
-    if x_admin_token != s.admin_api_token:
+    if not x_admin_token or not secrets.compare_digest(x_admin_token, s.admin_api_token):
         raise SwiftApiException("SwAP502", "Fatal", "Invalid admin token", 401)
