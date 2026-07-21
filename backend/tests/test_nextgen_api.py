@@ -1,4 +1,5 @@
 """API-level tests for the next-generation platform."""
+
 from __future__ import annotations
 
 import uuid

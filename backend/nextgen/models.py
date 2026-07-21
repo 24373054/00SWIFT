@@ -1,4 +1,5 @@
 """Persistent models for standards, workflows, payment lifecycles, CIPS and CBDC research."""
+
 from __future__ import annotations
 
 import datetime as dt
@@ -19,7 +20,7 @@ from database import Base
 
 
 def utcnow() -> dt.datetime:
-    return dt.datetime.now(dt.timezone.utc)
+    return dt.datetime.now(dt.UTC)
 
 
 class StandardProfile(Base):

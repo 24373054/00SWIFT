@@ -1,4 +1,5 @@
 """Versioned ISO 20022, CBPR+ and CIPS profile validation."""
+
 from __future__ import annotations
 
 import copy
@@ -6,8 +7,9 @@ import datetime as dt
 import hashlib
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from typing import Any, Iterable
+from typing import Any
 from xml.etree import ElementTree
 
 SUPPORTED_MESSAGE_TYPES = {
@@ -72,7 +74,9 @@ BASE_RULES = (
     Rule("ISO-CCY-002", "pacs.009", "document.currency", "currency"),
 )
 CBPR_2025_RULES = BASE_RULES + (
-    Rule("CBPR-ADDR-2025", "pacs.008", "document.creditor.address", "address_any", severity="warning"),
+    Rule(
+        "CBPR-ADDR-2025", "pacs.008", "document.creditor.address", "address_any", severity="warning"
+    ),
 )
 CBPR_2026_RULES = BASE_RULES + (
     Rule("CBPR-ADDR-2026-D", "pacs.008", "document.debtor.address", "structured_or_hybrid"),
@@ -86,10 +90,26 @@ CIPS_2026_RULES = BASE_RULES + (
     Rule("CIPS-CNY-002", "pacs.009", "document.currency", "equals", "CNY"),
 )
 PROFILES = {
-    "iso20022-base:2026": Profile("iso20022-base", "2026", "2026-01-01", "Base behavioral subset", BASE_RULES),
-    "cbpr-plus:2025": Profile("cbpr-plus", "2025", "2025-01-01", "Pre-SR2026 sandbox profile", CBPR_2025_RULES),
-    "cbpr-plus:sr2026": Profile("cbpr-plus", "sr2026", "2026-11-14", "SR2026 structured/hybrid address profile", CBPR_2026_RULES),
-    "cips:2026": Profile("cips", "2026", "2026-01-01", "CIPS research profile; not an official implementation guide", CIPS_2026_RULES),
+    "iso20022-base:2026": Profile(
+        "iso20022-base", "2026", "2026-01-01", "Base behavioral subset", BASE_RULES
+    ),
+    "cbpr-plus:2025": Profile(
+        "cbpr-plus", "2025", "2025-01-01", "Pre-SR2026 sandbox profile", CBPR_2025_RULES
+    ),
+    "cbpr-plus:sr2026": Profile(
+        "cbpr-plus",
+        "sr2026",
+        "2026-11-14",
+        "SR2026 structured/hybrid address profile",
+        CBPR_2026_RULES,
+    ),
+    "cips:2026": Profile(
+        "cips",
+        "2026",
+        "2026-01-01",
+        "CIPS research profile; not an official implementation guide",
+        CIPS_2026_RULES,
+    ),
 }
 _UUID4 = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.I)
 _CURRENCY = re.compile(r"^[A-Z]{3}$")
@@ -133,7 +153,9 @@ def classify_address(value: Any) -> str:
     if not isinstance(value, dict):
         return "missing"
     lines = value.get("address_lines") or []
-    structured = any(value.get(key) for key in ("town", "country", "post_code", "street", "building_number"))
+    structured = any(
+        value.get(key) for key in ("town", "country", "post_code", "street", "building_number")
+    )
     if structured and lines:
         return "hybrid"
     if structured:
@@ -231,12 +253,23 @@ def build_iso20022_xml(message_type: str, payload: dict[str, Any]) -> str:
     root = ElementTree.Element("ISO20022Envelope", {"messageType": message_type})
     app = ElementTree.SubElement(root, "AppHdr")
     header = payload.get("header", {})
-    for tag, key in (("BizMsgIdr", "biz_msg_id"), ("MsgDefIdr", "message_definition"), ("BizSvc", "business_service"), ("Fr", "sender"), ("To", "receiver")):
+    for tag, key in (
+        ("BizMsgIdr", "biz_msg_id"),
+        ("MsgDefIdr", "message_definition"),
+        ("BizSvc", "business_service"),
+        ("Fr", "sender"),
+        ("To", "receiver"),
+    ):
         if header.get(key) is not None:
             ElementTree.SubElement(app, tag).text = str(header[key])
     document_element = ElementTree.SubElement(root, "Document")
     document = payload.get("document", {})
-    for tag, key in (("MsgId", "message_id"), ("UETR", "uetr"), ("IntrBkSttlmAmt", "amount"), ("Ccy", "currency")):
+    for tag, key in (
+        ("MsgId", "message_id"),
+        ("UETR", "uetr"),
+        ("IntrBkSttlmAmt", "amount"),
+        ("Ccy", "currency"),
+    ):
         if document.get(key) is not None:
             ElementTree.SubElement(document_element, tag).text = str(document[key])
     return ElementTree.tostring(root, encoding="unicode")

@@ -1,12 +1,13 @@
 """Alembic environment for SQLite sandbox and PostgreSQL deployments."""
+
 from __future__ import annotations
 
 import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from alembic import context
 from database import Base
 from nextgen import models as nextgen_models  # noqa: F401
 

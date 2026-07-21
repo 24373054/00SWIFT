@@ -1,4 +1,5 @@
 """Regression tests for standards profiles and durable runtime primitives."""
+
 from __future__ import annotations
 
 import uuid
@@ -65,8 +66,7 @@ def test_bah_definition_must_match_document():
     payload = _message()
     payload["header"]["message_definition"] = "pacs.009"
     assert "ISO-BAH-001" in {
-        finding.rule_id
-        for finding in validate_message("iso20022-base:2026", "pacs.008", payload)
+        finding.rule_id for finding in validate_message("iso20022-base:2026", "pacs.008", payload)
     }
 
 
