@@ -1,19 +1,7 @@
 """SWIFT Developer Testing System — FastAPI application assembly.
 
-Replaces the old prototype's ``main.py`` (which mounted a single sandbox
-router and served the frontend via FileResponse). Now assembles:
-
-* Lifespan: init_db + seed SwiftRef reference data + JTI cleanup scheduling.
-* Middleware: X-Request-ID + audit logging (core.middleware).
-* Exception handlers: canonical SWIFT error envelope (core.errors).
-* Routers:
-  - /oauth2/*           (auth.oauth)
-  - /swift-preval/*     (api.preval.router)        [mounted in stage C]
-  - /swiftrefdata/*     (api.swiftref.router)      [mounted in stage B]
-  - /swift-apitracker/* (api.gpi.router)           [mounted in stage D]
-  - /alliancecloud/*    (api.messaging.router)     [mounted in stage E]
-  - /api/*              (admin.*)                  [internal, admin-token gated]
-* Frontend: served from ../frontend (single-file SPA, retained for now).
+Assembles the authenticated SWIFT-style sandbox, e-CNY subsystem and the
+versioned next-generation standards and settlement research platform.
 """
 
 from __future__ import annotations
@@ -43,24 +31,18 @@ from config import get_settings
 from core.errors import register_exception_handlers
 from core.middleware import RequestContextMiddleware
 from database import SessionLocal, init_db, seed_ecny_data, seed_reference_data
+from nextgen.router import router as nextgen_router
 from version import __version__
 
 logger = logging.getLogger(__name__)
 
 
-# --------------------------------------------------------------------------
-# Lifespan
-# --------------------------------------------------------------------------
-
-
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: validate env, init DB, seed reference data, schedule JTI cleanup."""
+    """Validate configuration, initialize persistence and schedule cleanup."""
     settings = get_settings()
     if settings.is_live:
         settings.validate_for_live()
-        # Safety confirmation for live mode (defensive — would be interactive
-        # in a real shell; here we just log via print since uvicorn captures it).
         logger.warning("SWIFT_ENV=live — production mode active")
     elif settings.swift_env == "pilot":
         settings.validate_for_pilot()
@@ -71,7 +53,6 @@ async def lifespan(app: FastAPI):
     seed_ecny_data()
     logger.info("SWIFT sandbox started", extra={"swift_env": settings.swift_env})
 
-    # Schedule periodic JTI cleanup (every hour) on a background thread.
     stop_event = threading.Event()
 
     def _cleanup_loop():
@@ -84,33 +65,27 @@ async def lifespan(app: FastAPI):
             finally:
                 db.close()
 
-    t = threading.Thread(target=_cleanup_loop, daemon=True)
-    t.start()
-
+    thread = threading.Thread(target=_cleanup_loop, daemon=True)
+    thread.start()
     yield
-
     stop_event.set()
 
 
-# --------------------------------------------------------------------------
-# App
-# --------------------------------------------------------------------------
-
 app = FastAPI(
     title="SWIFT Developer Testing System",
-    description="Local sandbox mirroring SWIFT Developer Portal APIs (OAuth2, Pre-validation, SwiftRef, GPI Tracker, Messaging).",
+    description=(
+        "Local sandbox mirroring SWIFT Developer Portal APIs and a versioned "
+        "ISO 20022, CIPS and CBDC research platform."
+    ),
     version=__version__,
     lifespan=lifespan,
 )
 
-# CORS: tightened from the old allow_origins=["*"] + allow_credentials=True
-# (which is invalid per the CORS spec). Origins come from config; sandbox
-# defaults to localhost.
 settings = get_settings()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_credentials=False,  # credentials=True with wildcard origins is invalid
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=[
         "Authorization",
@@ -121,19 +96,13 @@ app.add_middleware(
         "X-SWIFT-Signature",
         "X-API-Minor-Version",
         "X-Admin-Token",
+        "Idempotency-Key",
     ],
 )
-
-# X-Request-ID + audit logging.
 app.add_middleware(RequestContextMiddleware)
-
-# SWIFT error envelope handlers.
 register_exception_handlers(app)
-
-# OAuth2 router.
 app.include_router(oauth_router)
 
-# Business and admin routers are imported explicitly so packaging failures are visible.
 for business_router in (
     swiftref_router,
     preval_router,
@@ -142,36 +111,25 @@ for business_router in (
     catalogue_router,
     ecny_router,
     ecny_admin_router,
+    nextgen_router,
 ):
     app.include_router(business_router)
 
-# Internal admin routers.
 app.include_router(credentials_router)
 app.include_router(admin_payments_router)
 app.include_router(dev_sign_router)
 
 
-# --------------------------------------------------------------------------
-# Internal /api/* — admin-token gated (replaces old unauthenticated /api/*).
-# --------------------------------------------------------------------------
-
-
 def require_admin_token(x_admin_token: str = Header(None, alias="X-Admin-Token")):
-    """Require an admin token for /api/* management endpoints.
+    """Require an admin token for management endpoints."""
+    from auth.dependencies import require_admin_token as implementation
 
-    In sandbox mode an empty ADMIN_API_TOKEN disables the check (local dev
-    convenience). In pilot/live the token is mandatory (validated at startup).
-
-    NOTE: also re-exported from auth.dependencies to avoid circular imports.
-    """
-    from auth.dependencies import require_admin_token as _impl
-
-    return _impl(x_admin_token)
+    return implementation(x_admin_token)
 
 
 @app.get("/api/states")
 def list_states(_: None = Depends(require_admin_token)):
-    """Return the full TransactionIndividualStatus5Code set (frontend source of truth)."""
+    """Return the full TransactionIndividualStatus5Code set."""
     from iso20022.states import all_states
 
     return {"states": all_states()}
@@ -179,19 +137,21 @@ def list_states(_: None = Depends(require_admin_token)):
 
 @app.get("/api/dashboard/stats")
 def dashboard_stats(_: None = Depends(require_admin_token)):
-    """Dashboard stats. Reuses the old shape but with real latency data."""
+    """Return operational dashboard statistics."""
     from database import ApiRequest, AppCredential, OAuthToken, PaymentState
 
     db = SessionLocal()
     try:
         total_creds = db.query(AppCredential).count()
-        active_tokens = db.query(OAuthToken).filter(OAuthToken.is_revoked == False).count()  # noqa: E712
+        active_tokens = (
+            db.query(OAuthToken).filter(OAuthToken.is_revoked == False).count()  # noqa: E712
+        )
         total_requests = db.query(ApiRequest).count()
         total_payments = db.query(PaymentState).count()
         payment_by_state = {}
-        for p in db.query(PaymentState).all():
-            payment_by_state[p.transaction_status] = (
-                payment_by_state.get(p.transaction_status, 0) + 1
+        for payment in db.query(PaymentState).all():
+            payment_by_state[payment.transaction_status] = (
+                payment_by_state.get(payment.transaction_status, 0) + 1
             )
         recent = db.query(ApiRequest).order_by(ApiRequest.created_at.desc()).limit(20).all()
         return {
@@ -202,24 +162,20 @@ def dashboard_stats(_: None = Depends(require_admin_token)):
             "payments_by_state": payment_by_state,
             "recent_requests": [
                 {
-                    "id": r.id,
-                    "api_name": r.api_name,
-                    "method": r.method,
-                    "endpoint": r.endpoint,
-                    "status": r.response_status,
-                    "latency_ms": r.latency_ms,
-                    "created_at": r.created_at.isoformat() if r.created_at else "",
+                    "id": request.id,
+                    "api_name": request.api_name,
+                    "method": request.method,
+                    "endpoint": request.endpoint,
+                    "status": request.response_status,
+                    "latency_ms": request.latency_ms,
+                    "created_at": request.created_at.isoformat() if request.created_at else "",
                 }
-                for r in recent
+                for request in recent
             ],
         }
     finally:
         db.close()
 
-
-# --------------------------------------------------------------------------
-# Frontend (single-file SPA — retained; will be split in stage H).
-# --------------------------------------------------------------------------
 
 _frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
 
@@ -231,7 +187,10 @@ def serve_frontend():
 
 @app.get("/app.js")
 def serve_app_js():
-    return FileResponse(os.path.join(_frontend_dir, "app.js"), media_type="application/javascript")
+    return FileResponse(
+        os.path.join(_frontend_dir, "app.js"),
+        media_type="application/javascript",
+    )
 
 
 @app.get("/style.css")
@@ -241,7 +200,7 @@ def serve_style_css():
 
 @app.get("/health")
 def health():
-    """Liveness probe (unauthenticated)."""
+    """Unauthenticated liveness probe."""
     return {"status": "ok", "env": get_settings().swift_env, "version": __version__}
 
 
