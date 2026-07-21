@@ -10,7 +10,9 @@ import re
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from typing import Any
-from xml.etree import ElementTree
+
+from defusedxml import ElementTree as SafeElementTree
+from lxml import etree as XmlBuilder
 
 SUPPORTED_MESSAGE_TYPES = {
     "pacs.008",
@@ -222,7 +224,7 @@ def _local_name(tag: str) -> str:
 def parse_iso20022_xml(xml_text: str) -> dict[str, Any]:
     if "<!DOCTYPE" in xml_text.upper() or "<!ENTITY" in xml_text.upper():
         raise ValueError("DTD and entity declarations are forbidden")
-    root = ElementTree.fromstring(xml_text)
+    root = SafeElementTree.fromstring(xml_text)
     values: dict[str, list[str]] = {}
     for element in root.iter():
         text = (element.text or "").strip()
@@ -250,8 +252,8 @@ def parse_iso20022_xml(xml_text: str) -> dict[str, Any]:
 def build_iso20022_xml(message_type: str, payload: dict[str, Any]) -> str:
     if message_type not in SUPPORTED_MESSAGE_TYPES:
         raise ValueError(f"Unsupported message type: {message_type}")
-    root = ElementTree.Element("ISO20022Envelope", {"messageType": message_type})
-    app = ElementTree.SubElement(root, "AppHdr")
+    root = XmlBuilder.Element("ISO20022Envelope", {"messageType": message_type})
+    app = XmlBuilder.SubElement(root, "AppHdr")
     header = payload.get("header", {})
     for tag, key in (
         ("BizMsgIdr", "biz_msg_id"),
@@ -261,8 +263,8 @@ def build_iso20022_xml(message_type: str, payload: dict[str, Any]) -> str:
         ("To", "receiver"),
     ):
         if header.get(key) is not None:
-            ElementTree.SubElement(app, tag).text = str(header[key])
-    document_element = ElementTree.SubElement(root, "Document")
+            XmlBuilder.SubElement(app, tag).text = str(header[key])
+    document_element = XmlBuilder.SubElement(root, "Document")
     document = payload.get("document", {})
     for tag, key in (
         ("MsgId", "message_id"),
@@ -271,8 +273,8 @@ def build_iso20022_xml(message_type: str, payload: dict[str, Any]) -> str:
         ("Ccy", "currency"),
     ):
         if document.get(key) is not None:
-            ElementTree.SubElement(document_element, tag).text = str(document[key])
-    return ElementTree.tostring(root, encoding="unicode")
+            XmlBuilder.SubElement(document_element, tag).text = str(document[key])
+    return XmlBuilder.tostring(root, encoding="unicode")
 
 
 def conformance_digest(vector: dict[str, Any]) -> str:
