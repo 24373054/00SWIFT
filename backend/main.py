@@ -1,7 +1,7 @@
-"""SWIFT Developer Testing System — FastAPI application assembly.
+"""Cross-Border Payment Infrastructure Lab — FastAPI application assembly.
 
-Assembles the authenticated SWIFT-style sandbox, e-CNY subsystem and the
-versioned next-generation standards and settlement research platform.
+Assembles the authenticated SWIFT-style sandbox, e-CNY subsystem, versioned
+standards and settlement research platform, and the institutional React UI.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import threading
 from fastapi import Depends, FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from admin.credentials import router as credentials_router
 from admin.dev_sign import router as dev_sign_router
@@ -33,6 +34,7 @@ from core.middleware import RequestContextMiddleware
 from database import SessionLocal, init_db, seed_ecny_data, seed_reference_data
 from nextgen.cbdc_router import router as cbdc_router
 from nextgen.router import router as nextgen_router
+from nextgen.ui_router import router as institutional_ui_router
 from version import __version__
 
 logger = logging.getLogger(__name__)
@@ -52,7 +54,7 @@ async def lifespan(app: FastAPI):
     init_db()
     seed_reference_data()
     seed_ecny_data()
-    logger.info("SWIFT sandbox started", extra={"swift_env": settings.swift_env})
+    logger.info("00SWIFT platform started", extra={"swift_env": settings.swift_env})
 
     stop_event = threading.Event()
 
@@ -73,10 +75,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="SWIFT Developer Testing System",
+    title="Cross-Border Payment Infrastructure Lab",
     description=(
-        "Local sandbox mirroring SWIFT Developer Portal APIs and a versioned "
-        "ISO 20022, CIPS and CBDC research platform."
+        "Independent research sandbox for SWIFT-style APIs, ISO 20022, CIPS, "
+        "e-CNY and multi-CBDC settlement workflows. No official certification "
+        "or production connectivity is claimed."
     ),
     version=__version__,
     lifespan=lifespan,
@@ -97,6 +100,8 @@ app.add_middleware(
         "X-SWIFT-Signature",
         "X-API-Minor-Version",
         "X-Admin-Token",
+        "X-User-Role",
+        "X-User-Subject",
         "Idempotency-Key",
     ],
 )
@@ -114,6 +119,7 @@ for business_router in (
     ecny_admin_router,
     nextgen_router,
     cbdc_router,
+    institutional_ui_router,
 ):
     app.include_router(business_router)
 
@@ -139,7 +145,7 @@ def list_states(_: None = Depends(require_admin_token)):
 
 @app.get("/api/dashboard/stats")
 def dashboard_stats(_: None = Depends(require_admin_token)):
-    """Return operational dashboard statistics."""
+    """Return legacy operational dashboard statistics."""
     from database import ApiRequest, AppCredential, OAuthToken, PaymentState
 
     db = SessionLocal()
@@ -179,24 +185,42 @@ def dashboard_stats(_: None = Depends(require_admin_token)):
         db.close()
 
 
-_frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
+_frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+_frontend_dist = os.path.join(_frontend_dir, "dist")
+_frontend_index = os.path.join(_frontend_dist, "index.html")
+_legacy_index = os.path.join(_frontend_dir, "legacy", "index.html")
+if not os.path.isfile(_legacy_index):
+    _legacy_index = os.path.join(_frontend_dir, "index.legacy.html")
+if not os.path.isfile(_legacy_index):
+    _legacy_index = os.path.join(_frontend_dir, "index.html")
+
+_assets_dir = os.path.join(_frontend_dist, "assets")
+if os.path.isdir(_assets_dir):
+    app.mount("/assets", StaticFiles(directory=_assets_dir), name="frontend-assets")
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def serve_frontend():
-    return FileResponse(os.path.join(_frontend_dir, "index.html"))
+    """Serve the built institutional frontend, with the legacy UI as a dev fallback."""
+    return FileResponse(_frontend_index if os.path.isfile(_frontend_index) else _legacy_index)
 
 
-@app.get("/app.js")
-def serve_app_js():
+@app.get("/legacy", include_in_schema=False)
+def serve_legacy_frontend():
+    """Keep the previous developer console available during the migration window."""
+    return FileResponse(_legacy_index)
+
+
+@app.get("/app.js", include_in_schema=False)
+def serve_legacy_app_js():
     return FileResponse(
         os.path.join(_frontend_dir, "app.js"),
         media_type="application/javascript",
     )
 
 
-@app.get("/style.css")
-def serve_style_css():
+@app.get("/style.css", include_in_schema=False)
+def serve_legacy_style_css():
     return FileResponse(os.path.join(_frontend_dir, "style.css"), media_type="text/css")
 
 
@@ -217,3 +241,16 @@ def readiness():
     finally:
         db.close()
     return {"status": "ready", "version": __version__}
+
+
+@app.get("/{path:path}", include_in_schema=False)
+def serve_frontend_route(path: str):
+    """Serve a built asset or the SPA shell for client-side routes."""
+    candidate = os.path.abspath(os.path.join(_frontend_dist, path))
+    if (
+        os.path.isdir(_frontend_dist)
+        and os.path.commonpath([candidate, _frontend_dist]) == _frontend_dist
+        and os.path.isfile(candidate)
+    ):
+        return FileResponse(candidate)
+    return FileResponse(_frontend_index if os.path.isfile(_frontend_index) else _legacy_index)
