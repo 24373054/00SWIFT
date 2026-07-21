@@ -28,12 +28,15 @@ jobs:
           text = path.read_text()
           text = text.replace(
               "from xml.etree import ElementTree\n",
-              "from defusedxml import ElementTree as SafeElementTree\nfrom xml.etree import ElementTree\n",
+              "from defusedxml import ElementTree as SafeElementTree\nfrom lxml import etree as XmlBuilder\n",
           )
           text = text.replace(
               "root = ElementTree.fromstring(xml_text)",
               "root = SafeElementTree.fromstring(xml_text)",
           )
+          text = text.replace("ElementTree.Element(", "XmlBuilder.Element(")
+          text = text.replace("ElementTree.SubElement(", "XmlBuilder.SubElement(")
+          text = text.replace("ElementTree.tostring(", "XmlBuilder.tostring(")
           path.write_text(text)
           PY
           rm .github/workflows/nextgen-xml-security-fix.yml
@@ -43,6 +46,7 @@ jobs:
           ruff check --fix backend
           ruff format backend
           bandit -q -r backend -c pyproject.toml
+          pytest backend/tests/test_nextgen_standards.py backend/tests/test_nextgen_api.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
