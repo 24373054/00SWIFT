@@ -153,3 +153,17 @@ jobs:
             --draft
           gh release upload "$TAG" dist/* --clobber
           gh release edit "$TAG" --draft=false --latest
+
+      - name: Record publication success
+        if: steps.release.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.release.outputs.tag }}"
+          STATUS_PATH=".release/${TAG}.published"
+          STATUS_CONTENT="$(printf 'status=published\ntag=%s\ncommit=%s\nworkflow_run=%s\n' \
+            "$TAG" "${{ steps.release.outputs.sha }}" "${{ github.run_id }}" | base64 -w0)"
+          gh api --method PUT "repos/${REPOSITORY}/contents/${STATUS_PATH}" \
+            -f message="chore: record ${TAG} publication" \
+            -f content="$STATUS_CONTENT" \
+            -f branch=main >/dev/null
