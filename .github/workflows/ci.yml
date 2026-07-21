@@ -82,6 +82,43 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  release-integrity:
+    name: Published release integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Verify release metadata and assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(python -c 'from pathlib import Path; import re; print(re.search(r"version = \"([^\"]+)\"", Path("pyproject.toml").read_text()).group(1))')"
+          TAG="v${VERSION}"
+          gh release view "$TAG" \
+            --json tagName,isDraft,isPrerelease,targetCommitish,assets \
+            > /tmp/release.json
+          jq -e --arg tag "$TAG" '
+            .tagName == $tag and
+            .isDraft == false and
+            .isPrerelease == false and
+            ([.assets[].name] | sort) ==
+              (["00SWIFT-'"$VERSION"'-dependencies.txt", "00SWIFT-'"$VERSION"'.tar.gz", "SHA256SUMS"] | sort)
+          ' /tmp/release.json
+          mkdir -p /tmp/release-assets
+          gh release download "$TAG" --dir /tmp/release-assets --clobber
+          test -s "/tmp/release-assets/00SWIFT-${VERSION}.tar.gz"
+          test -s "/tmp/release-assets/00SWIFT-${VERSION}-dependencies.txt"
+          test -s /tmp/release-assets/SHA256SUMS
+          sed 's#  dist/#  #' /tmp/release-assets/SHA256SUMS > /tmp/SHA256SUMS.normalized
+          (cd /tmp/release-assets && sha256sum --check /tmp/SHA256SUMS.normalized)
+          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          TAG_VERSION="$(git show "${TAG}:pyproject.toml" | python -c 'import re, sys; print(re.search(r"version = \"([^\"]+)\"", sys.stdin.read()).group(1))')"
+          test "$TAG_VERSION" = "$VERSION"
+
   docker:
     name: Container build and smoke test
     runs-on: ubuntu-latest
