@@ -1,4 +1,5 @@
-"""Policy, key-management, telemetry, audit-chain and reconciliation primitives."""
+"""Policy, key-management, telemetry, audit-chain, and reconciliation primitives."""
+
 from __future__ import annotations
 
 import base64
@@ -24,7 +25,10 @@ from .models import (
     RuntimeAuditEvent,
 )
 
-_TRACE_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar("00swift_trace_id", default=None)
+_TRACE_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "00swift_trace_id",
+    default=None,
+)
 
 
 def _json(value: Any) -> str:
@@ -218,42 +222,48 @@ class ReconciliationService:
         self.db = db
 
     def run(self) -> dict[str, Any]:
-        failures: list[dict[str, Any]] = []
-        for account in self.db.query(CipsAccount).all():
-            if account.balance < 0 or account.reserved < 0 or account.reserved > account.balance:
-                failures.append(
-                    {
-                        "domain": "cips",
-                        "account_id": account.account_id,
-                        "reason": "invalid liquidity position",
-                    }
-                )
-        for operator in self.db.query(EcnyOperator).all():
-            if operator.issued_amount < 0 or operator.issued_amount > operator.issuance_limit:
-                failures.append(
-                    {
-                        "domain": "ecny",
-                        "operator_id": operator.operator_id,
-                        "reason": "issuance outside authorized range",
-                    }
-                )
-        for pvp in self.db.query(PvpSettlement).all():
-            if pvp.state not in {"CREATED", "LOCKED", "COMMITTED", "ABORTED"}:
-                failures.append(
-                    {
-                        "domain": "pvp",
-                        "pvp_id": pvp.pvp_id,
-                        "reason": "unknown terminal or workflow state",
-                    }
-                )
+        cips_accounts = self.db.query(CipsAccount).all()
+        operators = self.db.query(EcnyOperator).all()
+        pvp_settlements = self.db.query(PvpSettlement).all()
+
+        failures: list[dict[str, Any]] = [
+            {
+                "domain": "cips",
+                "account_id": account.account_id,
+                "reason": "invalid liquidity position",
+            }
+            for account in cips_accounts
+            if account.balance < 0
+            or account.reserved < 0
+            or account.reserved > account.balance
+        ]
+        failures.extend(
+            {
+                "domain": "ecny",
+                "operator_id": operator.operator_id,
+                "reason": "issuance outside authorized range",
+            }
+            for operator in operators
+            if operator.issued_amount < 0
+            or operator.issued_amount > operator.issuance_limit
+        )
+        failures.extend(
+            {
+                "domain": "pvp",
+                "pvp_id": pvp.pvp_id,
+                "reason": "unknown terminal or workflow state",
+            }
+            for pvp in pvp_settlements
+            if pvp.state not in {"ABORTED", "COMMITTED", "CREATED", "LOCKED"}
+        )
         report = {
             "trace_id": current_trace_id(),
             "ok": not failures,
             "failures": failures,
             "counts": {
-                "cips_accounts": self.db.query(CipsAccount).count(),
-                "ecny_operators": self.db.query(EcnyOperator).count(),
-                "pvp_settlements": self.db.query(PvpSettlement).count(),
+                "cips_accounts": len(cips_accounts),
+                "ecny_operators": len(operators),
+                "pvp_settlements": len(pvp_settlements),
             },
         }
         AuditChainService(self.db).append("reconciliation.completed", "system", report)
