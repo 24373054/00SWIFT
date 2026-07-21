@@ -1,0 +1,155 @@
+name: Publish release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing .release marker tag (for example v2.1.0)
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+    steps:
+      - name: Resolve release commit and tag
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            SHA="${{ github.sha }}"
+            TAG="${{ inputs.tag }}"
+          else
+            SHA="${{ github.event.workflow_run.head_sha }}"
+            mapfile -t MARKERS < <(
+              gh api "repos/${REPOSITORY}/commits/${SHA}" \
+                --jq '.files[].filename' | grep '^\.release/v[0-9]' || true
+            )
+            if [[ ${#MARKERS[@]} -eq 0 ]]; then
+              echo "No release marker changed in ${SHA}; nothing to publish."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [[ ${#MARKERS[@]} -ne 1 ]]; then
+              echo "Expected exactly one release marker, found ${#MARKERS[@]}." >&2
+              exit 1
+            fi
+            TAG="$(basename "${MARKERS[0]}")"
+          fi
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for successful CodeQL on the same commit
+        if: steps.release.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA="${{ steps.release.outputs.sha }}"
+          for attempt in {1..60}; do
+            RUN="$(
+              gh api --method GET "repos/${REPOSITORY}/actions/runs" \
+                -f head_sha="$SHA" -f event=push -f per_page=100 \
+                --jq '[.workflow_runs[] | select(.name == "CodeQL")] | sort_by(.run_number) | last // {}'
+            )"
+            STATUS="$(jq -r '.status // "missing"' <<<"$RUN")"
+            CONCLUSION="$(jq -r '.conclusion // ""' <<<"$RUN")"
+            if [[ "$STATUS" == "completed" ]]; then
+              [[ "$CONCLUSION" == "success" ]] || {
+                echo "CodeQL concluded with: $CONCLUSION" >&2
+                exit 1
+              }
+              exit 0
+            fi
+            echo "CodeQL status: $STATUS (attempt $attempt/60)"
+            sleep 10
+          done
+          echo "Timed out waiting for CodeQL." >&2
+          exit 1
+
+      - uses: actions/checkout@v6
+        if: steps.release.outputs.skip != 'true'
+        with:
+          ref: ${{ steps.release.outputs.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        if: steps.release.outputs.skip != 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Validate release source
+        if: steps.release.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.release.outputs.tag }}"
+          VERSION="${TAG#v}"
+          PACKAGE_VERSION="$(python -c 'from pathlib import Path; import re; print(re.search(r"version = \"([^\"]+)\"", Path("pyproject.toml").read_text()).group(1))')"
+          test "$VERSION" = "$PACKAGE_VERSION"
+          test -f ".release/$TAG"
+          test -f "docs/releases/$TAG.md"
+          grep -Fq "## [$VERSION]" CHANGELOG.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists." >&2
+            exit 1
+          fi
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements-dev.txt
+          python -m pip check
+          ruff check backend
+          ruff format --check backend
+          python -m compileall -q backend
+          node --check frontend/app.js
+          bandit -q -r backend -c pyproject.toml
+          pytest --cov=backend --cov-report=term-missing --cov-fail-under=68
+
+      - name: Build release assets
+        if: steps.release.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.release.outputs.tag }}"
+          VERSION="${TAG#v}"
+          mkdir -p dist
+          git archive --format=tar.gz --prefix="00SWIFT-${VERSION}/" \
+            --output="dist/00SWIFT-${VERSION}.tar.gz" HEAD
+          python -m pip freeze > "dist/00SWIFT-${VERSION}-dependencies.txt"
+          sha256sum dist/* > dist/SHA256SUMS
+
+      - name: Create, populate, and publish release
+        if: steps.release.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.release.outputs.tag }}"
+          gh release create "$TAG" \
+            --target "${{ steps.release.outputs.sha }}" \
+            --title "00SWIFT $TAG" \
+            --notes-file "docs/releases/$TAG.md" \
+            --draft
+          gh release upload "$TAG" dist/* --clobber
+          gh release edit "$TAG" --draft=false --latest
