@@ -1,5 +1,7 @@
 """End-to-end e-CNY sandbox flow through the public/admin API surfaces."""
 
+from version import __version__
+
 ADMIN = {"X-Admin-Token": "test-admin-token"}
 
 
@@ -104,7 +106,7 @@ def test_full_ecny_flow(client):
 
 
 def test_operational_endpoints(client):
-    assert client.get("/health").json()["version"] == "3.0.0"
+    assert client.get("/health").json()["version"] == __version__
     assert client.get("/ready").json()["status"] == "ready"
     catalogue = client.get("/api/catalogue", headers=ADMIN)
     assert catalogue.status_code == 200
