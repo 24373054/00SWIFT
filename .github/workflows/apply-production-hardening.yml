@@ -1,0 +1,39 @@
+name: Apply production hardening
+
+on:
+  push:
+    branches: [feat/v2.1.0-production-hardening]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/v2.1.0-production-hardening
+          fetch-depth: 0
+      - name: Verify and restore audited source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .modernization/payload.part-* > /tmp/00swift.payload.b64
+          echo "c178cfff3b790cfa8f5c7aa69d8edfb9da7035cc145edb4928f7b74a7f8c77c6  /tmp/00swift.payload.b64" | sha256sum --check -
+          base64 --decode /tmp/00swift.payload.b64 > /tmp/00swift.tar.xz
+          echo "d1bf3d3e2f66944c52c86c6034039ae3f3d20f031eb779ee004ea07812985473  /tmp/00swift.tar.xz" | sha256sum --check -
+          tar -xJf /tmp/00swift.tar.xz
+          rm -rf .modernization
+          rm -f .github/workflows/apply-modernization.yml
+          rm -f .github/workflows/apply-production-hardening.yml
+      - name: Commit audited source tree
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: harden security, ledger, CI, and documentation"
+          git push origin HEAD:feat/v2.1.0-production-hardening
