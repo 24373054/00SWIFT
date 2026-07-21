@@ -2,73 +2,97 @@
 
 # 00SWIFT
 
-**A contract-aligned SWIFT API and e-CNY cross-border payment sandbox**
+**A standards-driven SWIFT, CIPS, e-CNY, and multi-CBDC payment research platform**
 
 [![CI](https://github.com/24373054/00SWIFT/actions/workflows/ci.yml/badge.svg)](https://github.com/24373054/00SWIFT/actions/workflows/ci.yml)
+[![Migrations](https://github.com/24373054/00SWIFT/actions/workflows/migrations.yml/badge.svg)](https://github.com/24373054/00SWIFT/actions/workflows/migrations.yml)
 [![CodeQL](https://github.com/24373054/00SWIFT/actions/workflows/codeql.yml/badge.svg)](https://github.com/24373054/00SWIFT/actions/workflows/codeql.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.139%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/24373054/00SWIFT)](https://github.com/24373054/00SWIFT/releases)
 
-A local-first research and integration environment for OAuth2/PKI-protected SWIFT-style APIs and a ledger-backed digital-yuan cross-border payment prototype.
+A local-first environment for standards conformance, authenticated payment APIs,
+end-to-end transaction lifecycles, ledger-backed digital currency, and atomic
+cross-border settlement research.
 
-[Quick start](#quick-start) · [Architecture](docs/ARCHITECTURE.md) · [API guide](docs/API.md) · [Security](SECURITY.md) · [Operations](docs/OPERATIONS.md)
+[Quick start](#quick-start) · [V3 platform](docs/NEXTGEN.md) · [Architecture](docs/ARCHITECTURE.md) · [API guide](docs/API.md) · [Security](SECURITY.md) · [Operations](docs/OPERATIONS.md)
 
 </div>
 
 > [!IMPORTANT]
-> 00SWIFT is an independent technical sandbox. It is not affiliated with, endorsed by, or connected to SWIFT, the People's Bank of China, CIPS, mBridge, or any participating institution. It does not connect to production financial infrastructure by default and must not be used to move real funds.
+> 00SWIFT is an independent technical sandbox. It is not affiliated with, endorsed by, connected to, or certified by SWIFT, CIPS, the People's Bank of China, HKMA, BIS Innovation Hub, mBridge, or any participating institution. It does not contain production participant directories or restricted implementation guides, and it must not be used to move real funds.
 
-## Why this project exists
+## What version 3 adds
 
-Real payment integrations are difficult to prototype safely: authentication is certificate-bound, messages are contract-heavy, state transitions are asynchronous, and operational mistakes can be expensive. 00SWIFT provides one coherent environment in which teams can:
+00SWIFT began as a contract-aligned SWIFT API and e-CNY prototype. Version 3
+turns it into a standards-driven research platform with four separate bounded
+contexts:
 
-- exercise OAuth2 JWT-bearer grants, PKI identities, request signatures, replay protection, and canonical error envelopes;
-- build against SWIFT-inspired Pre-validation, SwiftRef, GPI Tracker, and Messaging routes;
-- model e-CNY wallets, issuance/redemption, double-entry accounting, compliance flags, and cross-border routing;
-- switch between a fully local sandbox and guarded pilot/live forwarding paths without changing the client contract;
-- test failure modes before integrating with institutional infrastructure.
+- **SWIFT-style integration:** OAuth2/PKI, exact-body signatures, Pre-validation,
+  SwiftRef fixtures, GPI-style tracking, messaging, and structured errors.
+- **ISO 20022 and CBPR+:** versioned profiles, SR2026 structured/hybrid address
+  rules, Business Application Header integrity, nine payment/investigation
+  message families, and deterministic conformance vectors.
+- **CIPS and e-CNY research:** synthetic participant routing, RTGS and DNS
+  settlement, two-tier issuance, wallet limits, Hong Kong retail behavior,
+  offline value, and constrained programmable money.
+- **Multi-CBDC settlement:** jurisdictional policy, participant nodes, FX quotes,
+  atomic payment-versus-payment, privacy-preserving identifiers, durable
+  workflows, KMS interfaces, audit chains, and reconciliation.
 
 ## Capabilities
 
 | Area | Included | Design notes |
 | --- | --- | --- |
-| Authentication | JWT-bearer OAuth2, RS256 client assertions, JTI replay protection, revocation | Secrets are salted and hashed; access tokens are stored as digests |
-| Request integrity | `X-SWIFT-Signature`, digest verification, certificate identity binding | Signed write routes validate the exact request body |
-| SWIFT-style APIs | Pre-validation v2, SwiftRef v4, GPI Tracker v4, Alliance Cloud Messaging v2 | Canonical base paths and structured error envelopes |
-| e-CNY | Tiered wallets, mint/burn, exchange, transfers, mBridge/CIPS simulations | Integer fen amounts and a double-entry ledger |
-| Compliance | KYC gates, wallet limits, large/cross-border/suspicious flags | Extensible hooks, not a production AML decision engine |
-| Operations | Health/readiness probes, bounded/redacted audit logging, Docker | Sandbox/pilot/live environment profiles |
-| Quality | Python 3.11/3.12 matrix, 50 tests, coverage gate, Ruff, Bandit, CodeQL | CI and release validation are repository-enforced |
+| Identity and integrity | JWT-bearer OAuth2, PKI identity, JTI replay protection, revocation, exact-body signatures | Secrets are salted and hashed; bearer tokens are persisted only as digests |
+| Standards profiles | ISO 20022 base 2026, CBPR+ 2025, CBPR+ SR2026, CIPS 2026 research profile | Every finding includes profile, rule, path, severity, and effective version |
+| Message families | `pacs.008`, `pacs.009`, `pacs.002`, `pacs.004`, `camt.056`, `camt.029`, `camt.110`, `camt.111`, `admi.024` | JSON/XML behavioral adapters with hardened XML parsing |
+| Payment lifecycle | UUIDv4 UETR, guarded transitions, cover inheritance, transaction copies, field lineage, cases and SLAs | Hash-chain integrity and optimistic concurrency are enforced |
+| CIPS research | Direct/indirect participants, route ranking, settlement accounts, RTGS queues, DNS netting, Payment Lens | Synthetic behavior only; no production directory or certification claim |
+| e-CNY | Double-entry ledger, central-bank/operator issuance, wallet tiers, HK retail profile, offline value | Integer fen values and ledger-authoritative balances |
+| Programmable money | Directed subsidy, merchant category, expiry, staged release, escrow, refund, multi-approval | Allow-listed deterministic templates; no arbitrary-code VM |
+| Multi-CBDC and FX | Jurisdictions, policy, nodes, quote expiry/capacity, two-leg PvP | Both legs commit or the workflow aborts |
+| Runtime | Idempotency, transactional outbox, durable workflows, dead-letter state, database leases | Designed for retry and crash recovery |
+| Platform security | RBAC/ABAC decisions, KMS/HSM protocol, authenticated local provider, trace context, audit hash chain | Local key provider is development-only |
+| Persistence | SQLite development profile, PostgreSQL runtime, Alembic migrations | Both databases run migration round trips in CI |
+| Quality | Python 3.11/3.12, 93 tests, 68% coverage gate, Ruff, Bandit, CodeQL, Docker smoke tests | Release publication is gated by main CI and same-commit CodeQL |
 
 ## Architecture at a glance
 
 ```mermaid
 flowchart LR
-    Client[Client / Partner System] --> Auth[OAuth2 + PKI + JTI]
-    Client --> Sig[Request Signature Verification]
-    Auth --> API[FastAPI Contract Layer]
-    Sig --> API
-    API --> Swift[SWIFT-style Services]
-    API --> ECNY[e-CNY Services]
-    Swift --> Ref[(SwiftRef Fixtures)]
-    Swift --> Tracker[(Payment State)]
-    ECNY --> Wallet[Wallet & Limits]
-    ECNY --> Ledger[(Double-entry Ledger)]
-    ECNY --> Bridge[mBridge / CIPS Simulation]
-    API --> Audit[(Redacted Audit Log)]
+    Client[Client / Partner System] --> Edge[FastAPI Edge]
+    Edge --> Identity[OAuth2 + PKI + JTI]
+    Edge --> Standards[Versioned Standards Profiles]
+
+    Standards --> Swift[SWIFT-style Services]
+    Standards --> Lifecycle[UETR Lifecycle + Cases]
+    Standards --> CIPS[CIPS Research Context]
+    Standards --> CBDC[e-CNY / Multi-CBDC Context]
+
+    Lifecycle --> Copy[(Transaction Copy + Lineage)]
+    CIPS --> Settlement[(RTGS / DNS Accounts)]
+    CBDC --> Ledger[(Double-entry Ledger)]
+    CBDC --> PVP[(FX Quote + Atomic PvP)]
+
+    Identity --> Runtime[Idempotency + Workflows + Outbox]
+    Runtime --> Data[(SQLite / PostgreSQL)]
+    Runtime --> Audit[(Trace + Audit Hash Chain)]
 ```
 
-The backend is intentionally modular: transport/authentication, contract adapters, domain services, persistence, and the static frontend are separated. See [Architecture](docs/ARCHITECTURE.md) for trust boundaries and invariants.
+The contexts intentionally do not collapse SWIFT, CIPS, e-CNY, and mBridge into
+one generic “channel.” Each has independent participants, policies, states, and
+settlement invariants.
 
 ## Quick start
 
 ### Prerequisites
 
 - Python 3.11 or 3.12
-- Node.js only for the optional frontend syntax check
-- Docker 24+ for the container workflow
+- Node.js for the optional frontend syntax check
+- Docker 24+ for container workflows
+- PostgreSQL 16+ for the durable deployment profile
 
 ### Native development
 
@@ -85,6 +109,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r backend/requirements-dev.txt
 cp backend/.env.example backend/.env
+alembic upgrade head
 cd backend
 python -m uvicorn main:app --host 127.0.0.1 --port 8765 --reload
 ```
@@ -96,8 +121,6 @@ Open:
 - Liveness: `http://127.0.0.1:8765/health`
 - Readiness: `http://127.0.0.1:8765/ready`
 
-On Windows, `start.bat` provides the same sandbox startup path.
-
 ### Docker
 
 ```bash
@@ -105,39 +128,43 @@ cp backend/.env.example backend/.env
 docker compose up --build
 ```
 
-The compose profile stores SQLite data and generated sandbox certificates in named volumes.
-
 ## Configuration
 
-All settings are environment driven. Copy `backend/.env.example` and review every value before using pilot or live mode.
+All settings are environment driven. Copy `backend/.env.example` and review
+every value before using pilot or live mode.
 
 | Variable | Purpose | Sandbox default |
 | --- | --- | --- |
 | `SWIFT_ENV` | `sandbox`, `pilot`, or `live` | `sandbox` |
-| `DB_URL` | SQLAlchemy database URL | `sqlite:///swift_dev.db` |
-| `ADMIN_API_TOKEN` | Protects internal `/api/*` and sandbox e-CNY routes | Empty only in local sandbox |
+| `DB_URL` | SQLAlchemy URL; PostgreSQL recommended outside local development | `sqlite:///swift_dev.db` |
+| `ADMIN_API_TOKEN` | Protects `/api/*` and next-generation management routes | Empty only in local sandbox |
+| `LOCAL_KMS_MASTER_KEY` | Enables the development-only local KMS adapter | Empty |
 | `CERTS_DIR` | Generated or supplied certificate material | `certs` |
 | `CORS_ORIGINS` | Comma-separated browser origins | Localhost only |
 | `AUDIT_BODY_LIMIT` | Maximum audited request-body bytes | `4096` |
 | `LIVE_HOST_*` | Upstream hosts for guarded forwarding | Empty |
 
-Pilot/live startup fails closed when mandatory settings are missing. Production secrets and certificates must be supplied through a secret manager or mounted files, never committed.
+Pilot/live startup fails closed when mandatory settings are missing. Production
+keys belong in an HSM/KMS or secret manager, never in source control.
 
 ## API families
 
-| Family | Base path | Typical scope |
+| Family | Base path | Purpose |
 | --- | --- | --- |
-| OAuth2 | `/oauth2` | Client authentication |
-| Pre-validation | `/swift-preval/v2` | `swift.preval` |
-| SwiftRef | `/swiftrefdata/v4` | `swift.swiftref` |
-| GPI Tracker | `/swift-apitracker/v4` | Viewer/update scopes |
-| Messaging | `/alliancecloud/v2` | `swift.messaging` |
-| e-CNY | `/ecny/v1` | `ecny.wallet`, `ecny.issuance`, `ecny.bridge`, `ecny.ledger` |
-| Internal administration | `/api` | `X-Admin-Token` |
+| OAuth2 | `/oauth2` | Client authentication and revocation |
+| Pre-validation | `/swift-preval/v2` | SWIFT-style payment checks |
+| SwiftRef | `/swiftrefdata/v4` | Synthetic BIC, IBAN, currency, and country fixtures |
+| GPI Tracker | `/swift-apitracker/v4` | Payment and cancellation state |
+| Messaging | `/alliancecloud/v2` | Deterministic sandbox messaging |
+| e-CNY baseline | `/ecny/v1` | Wallet, issuance, ledger, bridge, and compliance operations |
+| Standards and runtime | `/nextgen/v1/standards`, `/nextgen/v1/runtime` | Profiles, validation, conformance, and outbox |
+| Payment lifecycle | `/nextgen/v1/payments`, `/nextgen/v1/cases` | UETR, copies, cases, quality, and timelines |
+| CIPS research | `/nextgen/v1/cips` | Participants, routing, validation, RTGS, and DNS |
+| CBDC research | `/nextgen/v1/hk-retail`, `/nextgen/v1/offline`, `/nextgen/v1/programmable`, `/nextgen/v1/cbdc`, `/nextgen/v1/pvp` | Retail, offline, programmable, multi-CBDC, and PvP |
+| Platform controls | `/nextgen/v1/policy`, `/nextgen/v1/kms`, `/nextgen/v1/reconciliation`, `/nextgen/v1/audit` | Explainable policy, key abstraction, reconciliation, and integrity |
+| Internal administration | `/api` | Local management plane protected by `X-Admin-Token` |
 
-The complete request flow, signature rules, endpoint inventory, and examples are in [docs/API.md](docs/API.md).
-
-## Development checks
+## Development and verification
 
 ```bash
 make install-dev
@@ -145,54 +172,68 @@ make check
 make test
 make coverage
 make security
+
+alembic upgrade head
+alembic downgrade base
+alembic upgrade head
 ```
 
-Equivalent commands:
+The GitHub pipeline additionally performs:
 
-```bash
-ruff check backend
-ruff format --check backend
-python -m compileall -q backend
-bandit -q -r backend -c pyproject.toml
-pytest -q
-pytest --cov=backend --cov-report=term-missing --cov-fail-under=68
-node --check frontend/app.js
-```
+- Python 3.11 and 3.12 regression testing;
+- Ruff lint and canonical formatting;
+- Python compilation and frontend JavaScript parsing;
+- Bandit and Python/JavaScript CodeQL;
+- SQLite and PostgreSQL migration round trips;
+- non-root Docker build plus live `/health` and `/ready` probes;
+- release-candidate or published-asset verification;
+- source archive, dependency snapshot, and SHA-256 validation after publication.
 
-## Security model
+## Security and financial invariants
 
-The sandbox now enforces several invariants that are easy to accidentally weaken:
+1. Client secrets are stored as salted hashes and revealed only once.
+2. Access tokens are stored as digests; raw bearer values are not recoverable.
+3. Signed routes verify the exact transmitted body.
+4. Standards profiles are explicit and versioned; historical behavior remains reproducible.
+5. Every payment lifecycle and case transition is allow-listed and version checked.
+6. Transaction copies and operational evidence form independently verifiable hash chains.
+7. Wallet, operator, RTGS, DNS, offline, programmable, and PvP value movements use authoritative ledger or settlement-account state.
+8. RTGS and e-CNY accounts cannot be overdrawn; DNS applies only after every net debit is fundable.
+9. Offline vouchers are reserved online and redeem exactly once.
+10. Programmable instruments cannot execute arbitrary code or alter monetary supply.
+11. Both PvP legs commit together or the settlement enters an aborted state.
+12. Policy and quality results are explainable evidence, not automated legal or regulatory conclusions.
 
-1. Client secrets are stored as salted PBKDF2 hashes and revealed only once.
-2. Access tokens are stored as deterministic digests; raw bearer tokens are returned only to the caller.
-3. Signed endpoints verify the exact body and do not fall back to an empty payload.
-4. JTI values are persisted to reject replayed client assertions.
-5. Audit logs redact credentials, assertions, tokens, and sensitive nested fields.
-6. Wallet balances and issuance are derived from balanced ledger entries rather than mutable caches.
-7. Sandbox convenience authentication is never silently carried into pilot/live mode.
-
-Read [SECURITY.md](SECURITY.md) before exposing the service beyond localhost.
+Read [SECURITY.md](SECURITY.md) and the [threat model](docs/THREAT_MODEL.md)
+before exposing the service beyond localhost.
 
 ## Project status
 
-Version **2.1.0** is a hardened research beta. The API surface is useful for integration tests and architecture exploration, but it is not a replacement for official specifications, certification, legal review, operational controls, or regulated infrastructure.
-
-Planned work is tracked through GitHub Issues. High-value directions include PostgreSQL migrations, asynchronous job processing, HSM/KMS integration, official-schema conformance suites, tamper-evident audit storage, and deployment reference architectures.
+Version **3.0.0** is a standards-driven research beta. It is intended for
+architecture exploration, conformance experiments, integration tests, payment
+lifecycle research, and deterministic failure simulation. It is not a substitute
+for official specifications, licensed implementation guides, certification,
+legal review, operating rules, sanctions data, production security controls, or
+regulated financial infrastructure.
 
 ## Documentation
 
+- [Next-generation platform](docs/NEXTGEN.md)
+- [Lifecycle, CIPS, and two-tier e-CNY invariants](docs/BATCH2_LIFECYCLE.md)
 - [Architecture and invariants](docs/ARCHITECTURE.md)
 - [API integration guide](docs/API.md)
 - [Operations runbook](docs/OPERATIONS.md)
 - [Threat model](docs/THREAT_MODEL.md)
-- [Design baseline](docs/DESIGN.md)
 - [Release process](docs/RELEASE.md)
+- [v3.0.0 release notes](docs/releases/v3.0.0.md)
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
 
 ## Contributing and responsible disclosure
 
-Contributions are welcome through focused pull requests with tests. See [CONTRIBUTING.md](CONTRIBUTING.md). Do not open public issues for suspected vulnerabilities; follow [SECURITY.md](SECURITY.md).
+Contributions are welcome through focused pull requests with tests. See
+[CONTRIBUTING.md](CONTRIBUTING.md). Do not open public issues for suspected
+vulnerabilities; follow [SECURITY.md](SECURITY.md).
 
 ## License
 
