@@ -55,7 +55,7 @@ class IdempotencyService:
             if record.request_hash != digest:
                 raise IdempotencyConflict(
                     "Concurrent request used the key with a different request"
-                )
+                ) from None
             return record, True
         return record, False
 
