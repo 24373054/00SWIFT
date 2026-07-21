@@ -77,13 +77,26 @@ jobs:
         with:
           node-version: "22"
       - name: Install frontend dependencies
-        run: npm install --prefix frontend --no-audit --no-fund
+        shell: bash
+        run: |
+          set -o pipefail
+          touch frontend.log
+          npm install --prefix frontend --no-audit --no-fund 2>&1 | tee -a frontend.log
       - name: Typecheck frontend
-        run: npm run typecheck --prefix frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run typecheck --prefix frontend 2>&1 | tee -a frontend.log
       - name: Test frontend
-        run: npm run test --prefix frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test --prefix frontend 2>&1 | tee -a frontend.log
       - name: Build frontend
-        run: npm run build --prefix frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build --prefix frontend 2>&1 | tee -a frontend.log
       - name: Verify institutional bundle
         shell: bash
         run: |
@@ -91,7 +104,16 @@ jobs:
           test -s frontend/dist/index.html
           test -n "$(find frontend/dist/assets -type f -name '*.js' -print -quit)"
           grep -Fq "Cross-Border Payment Infrastructure Lab" frontend/dist/index.html
+      - name: Upload frontend diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-diagnostics
+          path: frontend.log
+          if-no-files-found: error
+          retention-days: 7
       - name: Upload frontend bundle
+        if: success()
         uses: actions/upload-artifact@v7
         with:
           name: frontend-dist
