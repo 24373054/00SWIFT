@@ -1,0 +1,62 @@
+name: Database migrations
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrations-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sqlite-roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Upgrade, downgrade, and re-upgrade
+        env:
+          SWIFT_ENV: sandbox
+          DB_URL: sqlite:////tmp/00swift-migration.db
+        run: |
+          rm -f /tmp/00swift-migration.db
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+          python - <<'PY'
+          import os
+          import sqlite3
+          connection = sqlite3.connect("/tmp/00swift-migration.db")
+          tables = {
+              row[0]
+              for row in connection.execute(
+                  "SELECT name FROM sqlite_master WHERE type='table'"
+              )
+          }
+          required = {
+              "ng_standard_profiles",
+              "ng_idempotency_records",
+              "ng_outbox_events",
+              "ng_workflows",
+              "ng_payment_lifecycles",
+              "ng_cips_settlements",
+              "ng_pvp_settlements",
+          }
+          missing = required - tables
+          if missing:
+              raise SystemExit(f"Missing migrated tables: {sorted(missing)}")
+          print(f"Verified {len(tables)} tables for {os.environ['DB_URL']}")
+          PY
