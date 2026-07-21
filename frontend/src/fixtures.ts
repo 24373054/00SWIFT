@@ -1,0 +1,168 @@
+import type { BootstrapPayload, CommandCenterPayload, ReplayScenario } from "./types";
+
+export const roles = [
+  ["executive_viewer", "Executive Viewer", "高层观察员"],
+  ["settlement_operator", "Settlement Operator", "结算操作员"],
+  ["payment_operations", "Payment Operations Analyst", "支付运营分析员"],
+  ["compliance_investigator", "Compliance Investigator", "合规调查员"],
+  ["standards_engineer", "Standards Engineer", "标准工程师"],
+  ["cbdc_researcher", "CBDC Researcher", "数字货币研究员"],
+  ["platform_administrator", "Platform Administrator", "平台管理员"],
+] as const;
+
+export const representativeScenarios: ReplayScenario[] = [
+  {
+    id: "normal-cross-border",
+    name: "Normal cross-border payment",
+    name_zh: "正常跨境支付",
+    duration: 84,
+    expected_state: "SETTLED",
+    events: [
+      { at: 0, system: "Origin Bank", title: "Payment initiated", title_zh: "付款发起", detail: "pacs.008 accepted and UETR allocated.", detail_zh: "pacs.008 已受理并分配 UETR。", state: "INITIATED", focus: "payments" },
+      { at: 14, system: "Standards", title: "SR2026 validation passed", title_zh: "SR2026 校验通过", detail: "Structured debtor and hybrid creditor addresses are valid.", detail_zh: "结构化付款人地址与混合收款人地址有效。", state: "VALIDATED", focus: "standards" },
+      { at: 29, system: "CIPS Router", title: "Direct participant selected", title_zh: "选择直接参与者", detail: "Route selected using destination BIC and RTGS capability.", detail_zh: "依据目标 BIC 与 RTGS 能力选择路由。", state: "ROUTED", focus: "settlement" },
+      { at: 47, system: "RTGS", title: "Liquidity reserved", title_zh: "流动性已预留", detail: "No-overdraft invariant remains satisfied.", detail_zh: "无透支约束保持满足。", state: "RESERVED", focus: "settlement" },
+      { at: 66, system: "PvP", title: "Both legs committed", title_zh: "双腿原子提交", detail: "CNY and HKD legs committed in one atomic state transition.", detail_zh: "人民币与港币两腿在一次原子状态迁移中提交。", state: "COMMITTED", focus: "settlement" },
+      { at: 84, system: "Tracker", title: "Universal confirmation received", title_zh: "收到通用确认", detail: "The payment lifecycle is complete and auditable.", detail_zh: "支付生命周期完成并可审计。", state: "SETTLED", focus: "payments" },
+    ],
+  },
+  {
+    id: "rtgs-liquidity-release",
+    name: "RTGS liquidity shortage and release",
+    name_zh: "RTGS 流动性不足与释放",
+    duration: 96,
+    expected_state: "SETTLED_AFTER_QUEUE",
+    events: [
+      { at: 0, system: "RTGS", title: "Payment queued", title_zh: "支付进入队列", detail: "Available liquidity is below the outgoing amount.", detail_zh: "可用流动性低于待汇出金额。", state: "QUEUED", focus: "settlement" },
+      { at: 25, system: "Liquidity", title: "Incoming dependency detected", title_zh: "识别入账依赖", detail: "An incoming settlement can release two queued payments.", detail_zh: "一笔入账可释放两笔排队支付。", state: "DEPENDENCY", focus: "settlement" },
+      { at: 51, system: "RTGS", title: "Incoming payment settled", title_zh: "入账支付完成", detail: "Available liquidity increased without overdraft.", detail_zh: "可用流动性在无透支条件下增加。", state: "FUNDED", focus: "settlement" },
+      { at: 73, system: "Queue", title: "Priority release executed", title_zh: "执行优先级释放", detail: "Priority 2 and 4 items advanced atomically.", detail_zh: "优先级 2 与 4 的项目原子推进。", state: "RELEASED", focus: "settlement" },
+      { at: 96, system: "Tracker", title: "Queue cleared", title_zh: "队列清空", detail: "All dependent payments reached final settlement.", detail_zh: "所有依赖支付达到最终结算。", state: "SETTLED_AFTER_QUEUE", focus: "payments" },
+    ],
+  },
+  {
+    id: "pvp-rollback",
+    name: "PvP second-leg failure and rollback",
+    name_zh: "PvP 第二腿失败与回滚",
+    duration: 72,
+    expected_state: "ABORTED",
+    events: [
+      { at: 0, system: "FX", title: "Quote validated", title_zh: "报价有效", detail: "Quote is within amount and expiry bounds.", detail_zh: "报价满足金额与时效约束。", state: "QUOTE_VALID", focus: "settlement" },
+      { at: 17, system: "Policy", title: "Jurisdiction policy allowed", title_zh: "法域政策允许", detail: "The declared trade purpose is permitted.", detail_zh: "申报贸易用途被允许。", state: "AUTHORIZED", focus: "risk-policy" },
+      { at: 34, system: "CNY Leg", title: "Debit leg locked", title_zh: "人民币腿锁定", detail: "Funds are reserved but not finally transferred.", detail_zh: "资金已预留但尚未最终划转。", state: "LEG_A_LOCKED", focus: "settlement" },
+      { at: 49, system: "HKD Leg", title: "Credit leg rejected", title_zh: "港币腿被拒绝", detail: "Counterparty liquidity is insufficient.", detail_zh: "对手方流动性不足。", state: "LEG_B_FAILED", focus: "settlement" },
+      { at: 61, system: "PvP", title: "Atomic rollback", title_zh: "原子回滚", detail: "The debit reserve is released; neither leg settles.", detail_zh: "借方预留解除，两腿均未结算。", state: "ROLLBACK", focus: "settlement" },
+      { at: 72, system: "Audit", title: "Abort evidence sealed", title_zh: "终止证据封存", detail: "Policy and state transition evidence is appended to the audit chain.", detail_zh: "策略与状态迁移证据已写入审计链。", state: "ABORTED", focus: "risk-policy" },
+    ],
+  },
+];
+
+export const fallbackBootstrap: BootstrapPayload = {
+  product: { name: "Cross-Border Payment Infrastructure Lab", version: "4.0.0", environment: "sandbox", data_mode: "representative", independent_sandbox: true },
+  identity: { subject: "sandbox-user", role: "executive_viewer", role_label: "Executive Viewer", role_label_zh: "高层观察员", source: "frontend-fallback" },
+  permissions: ["view:command", "view:payments", "view:settlement", "view:standards", "view:risk-policy"],
+  workspaces: [
+    { id: "command", label: "Command Center", label_zh: "指挥中心", enabled: true },
+    { id: "payments", label: "Payments", label_zh: "支付运营", enabled: true },
+    { id: "investigations", label: "Investigations", label_zh: "调查与案件", enabled: true },
+    { id: "settlement", label: "Settlement", label_zh: "清算结算", enabled: true },
+    { id: "standards", label: "Standards", label_zh: "标准与报文", enabled: true },
+    { id: "digital-currency", label: "Digital Currency", label_zh: "数字货币", enabled: true },
+    { id: "risk-policy", label: "Risk & Policy", label_zh: "风险与政策", enabled: true },
+    { id: "developer", label: "Developer", label_zh: "开发者", enabled: true },
+    { id: "administration", label: "Administration", label_zh: "系统管理", enabled: false, reason: "Platform administrator role required" },
+  ],
+  decision: { decision_id: "fallback-decision", subject: "sandbox-user", action: "view", resource: "workspace.command", result: "allow", reasons: ["Representative frontend fallback"], obligations: [], redactions: [], policy_version: "ui-v4" },
+};
+
+export const fallbackCommandCenter: CommandCenterPayload = {
+  generated_at: "2026-07-22T07:30:00Z",
+  data_mode: "representative",
+  totals: { cross_border_volume: 12845000000, currency: "CNY", active_payments: 1842, queued_value: 438000000, open_cases: 17, available_liquidity: 7200000000, reserved_liquidity: 1180000000, system_availability: 99.982 },
+  corridors: [
+    { id: "cn-hk", from: "Beijing", to: "Hong Kong", from_country: "CN", to_country: "HK", volume: 4200000000, currency: "CNY", state: "settled", channel: "CIPS / e-CNY", message_state: "delivered", value_state: "reserved", settlement_state: "settled", start: [-3.2, 0.7, 0.1], end: [-1.7, -0.15, 0.55] },
+    { id: "cn-th", from: "Shanghai", to: "Bangkok", from_country: "CN", to_country: "TH", volume: 2810000000, currency: "CNY", state: "moving", channel: "CIPS / PvP", message_state: "accepted", value_state: "locked", settlement_state: "pending", start: [-2.1, 0.4, -0.1], end: [0.0, -1.1, 0.35] },
+    { id: "cn-ae", from: "Shenzhen", to: "Abu Dhabi", from_country: "CN", to_country: "AE", volume: 1780000000, currency: "CNY", state: "queued", channel: "Multi-CBDC", message_state: "delivered", value_state: "reserved", settlement_state: "queued", start: [-1.9, -0.2, -0.1], end: [2.6, -0.25, 0.7] },
+    { id: "hk-gb", from: "Hong Kong", to: "London", from_country: "HK", to_country: "GB", volume: 1410000000, currency: "HKD", state: "blocked", channel: "SWIFT / PvP", message_state: "delivered", value_state: "not-moved", settlement_state: "policy-blocked", start: [-1.7, -0.15, 0.55], end: [3.4, 1.35, 0.2] },
+  ],
+  interventions: [
+    { id: "INT-0041", severity: "critical", title: "PvP second leg rejected", title_zh: "PvP 第二腿被拒绝", owner: "Settlement Ops", due: "06:18", reason: "HKD counterparty liquidity below reserved amount", reason_zh: "港币对手方流动性低于预留金额" },
+    { id: "INT-0037", severity: "warning", title: "RTGS queue approaching SLA", title_zh: "RTGS 队列接近 SLA", owner: "Liquidity Desk", due: "11:42", reason: "Three priority payments depend on one incoming settlement", reason_zh: "三笔优先支付依赖同一笔入账" },
+    { id: "INT-0029", severity: "warning", title: "SR2026 address exception", title_zh: "SR2026 地址异常", owner: "Standards", due: "19:05", reason: "Creditor town name is missing for a hybrid address", reason_zh: "混合地址缺少收款人城镇名称" },
+  ],
+  events: [
+    { id: "EV-81", time: "07:29:54", system: "CIPS RTGS", type: "settlement", state: "SETTLED", text: "Priority 2 payment released after incoming liquidity", text_zh: "优先级 2 支付在入账流动性到位后释放" },
+    { id: "EV-80", time: "07:29:41", system: "Policy", type: "decision", state: "DENY", text: "GB corridor held for purpose-code review", text_zh: "英国通道因用途代码复核被暂停" },
+    { id: "EV-79", time: "07:29:17", system: "PvP", type: "lock", state: "LOCKED", text: "CNY debit leg reserved for quote Q-91", text_zh: "报价 Q-91 的人民币借方腿已预留" },
+    { id: "EV-78", time: "07:28:58", system: "Standards", type: "validation", state: "WARNING", text: "Hybrid address accepted with one remediation note", text_zh: "混合地址已接受，附一项修复建议" },
+  ],
+  liquidity: [
+    { participant: "CIPS-CN-A", opening: 2400000000, balance: 1920000000, reserved: 460000000, queued: 510000000, expected_incoming: 720000000, currency: "CNY" },
+    { participant: "CIPS-HK-B", opening: 1680000000, balance: 1020000000, reserved: 310000000, queued: 640000000, expected_incoming: 190000000, currency: "CNY" },
+    { participant: "CIPS-TH-C", opening: 980000000, balance: 760000000, reserved: 210000000, queued: 180000000, expected_incoming: 340000000, currency: "CNY" },
+    { participant: "CIPS-AE-D", opening: 740000000, balance: 510000000, reserved: 120000000, queued: 230000000, expected_incoming: 95000000, currency: "CNY" },
+  ],
+  dns: { participants: ["CN-A", "HK-B", "TH-C", "AE-D"], obligations: [[0, 420, 180, 90], [260, 0, 120, 70], [80, 160, 0, 140], [110, 90, 130, 0]], net_positions: [-250, 240, 30, -20], gross_required: 1850000000, net_required: 510000000, savings_ratio: 72.43, blocked_participant: "HK-B", state: "LIQUIDITY_CHECK" },
+  lifecycle: [
+    { code: "INITIATED", label: "Initiated", label_zh: "已发起", system: "Origin Bank", time: "07:24:02", status: "completed", reason: "UETR allocated", reason_zh: "已分配 UETR" },
+    { code: "VALIDATED", label: "Validated", label_zh: "已校验", system: "Standards", time: "07:24:04", status: "completed", reason: "CBPR+ SR2026 valid", reason_zh: "CBPR+ SR2026 有效" },
+    { code: "ROUTED", label: "Routed", label_zh: "已路由", system: "CIPS", time: "07:24:07", status: "completed", reason: "Direct participant selected", reason_zh: "已选择直接参与者" },
+    { code: "RESERVED", label: "Liquidity reserved", label_zh: "流动性预留", system: "RTGS", time: "07:24:11", status: "active", reason: "Awaiting counter-leg lock", reason_zh: "等待对手腿锁定" },
+    { code: "COMMITTED", label: "Atomic commit", label_zh: "原子提交", system: "PvP", time: "—", status: "pending", reason: "Both legs required", reason_zh: "需要两腿同时满足" },
+    { code: "CONFIRMED", label: "Universal confirmation", label_zh: "通用确认", system: "Tracker", time: "—", status: "pending", reason: "Final confirmation pending", reason_zh: "等待最终确认" },
+  ],
+  pvp: [
+    { code: "QUOTE", label: "Quote validated", label_zh: "报价校验", state: "complete" },
+    { code: "POLICY", label: "Policy authorized", label_zh: "策略授权", state: "complete" },
+    { code: "LEG_A", label: "CNY leg reserved", label_zh: "人民币腿预留", state: "active" },
+    { code: "LEG_B", label: "HKD leg reserved", label_zh: "港币腿预留", state: "waiting" },
+    { code: "LOCK", label: "Both legs locked", label_zh: "双腿锁定", state: "waiting" },
+    { code: "COMMIT", label: "Atomic commit", label_zh: "原子提交", state: "waiting" },
+    { code: "CONFIRM", label: "Confirmation", label_zh: "结算确认", state: "waiting" },
+  ],
+  policy_matrix: [
+    { source: "CN", destination: "HK", status: "allow", ceiling: 50000000, purposes: ["trade", "services", "retail"], residency: "CN/HK split", reason: "Approved bilateral profile", reason_zh: "已批准双边配置" },
+    { source: "CN", destination: "TH", status: "limited", ceiling: 20000000, purposes: ["trade", "services"], residency: "local copy required", reason: "Retail P2P excluded", reason_zh: "不包含零售个人转账" },
+    { source: "CN", destination: "AE", status: "allow", ceiling: 35000000, purposes: ["trade", "treasury"], residency: "federated digest", reason: "Multi-CBDC policy predicates satisfied", reason_zh: "多 CBDC 策略条件满足" },
+    { source: "HK", destination: "GB", status: "deny", ceiling: 0, purposes: [], residency: "review required", reason: "Purpose code and participant role not permitted", reason_zh: "用途代码与参与者角色不被允许" },
+    { source: "TH", destination: "CN", status: "limited", ceiling: 15000000, purposes: ["trade"], residency: "TH source record", reason: "Enhanced due diligence above threshold", reason_zh: "超过阈值需增强尽调" },
+  ],
+  iso_tree: [
+    { path: "AppHdr", label: "Business Application Header", value: "head.001.001.03", required: true, children: [
+      { path: "AppHdr/Fr/FIId/FinInstnId/BICFI", label: "From BIC", value: "AAAACNBJXXX", required: true },
+      { path: "AppHdr/To/FIId/FinInstnId/BICFI", label: "To BIC", value: "BBBBHKHHXXX", required: true },
+      { path: "AppHdr/BizMsgIdr", label: "Business message ID", value: "BIZ-20260722-0081", required: true },
+    ] },
+    { path: "Document/FIToFICstmrCdtTrf/GrpHdr", label: "Group Header", value: "pacs.008.001.13", required: true, children: [
+      { path: "Document/.../GrpHdr/MsgId", label: "Message ID", value: "MSG-20260722-0081", required: true },
+      { path: "Document/.../GrpHdr/SttlmInf/SttlmMtd", label: "Settlement method", value: "CLRG", required: true },
+    ] },
+    { path: "Document/.../CdtTrfTxInf/Dbtr", label: "Debtor", value: "Beihang Research Settlement Lab", required: true },
+    { path: "Document/.../CdtTrfTxInf/Cdtr/PstlAdr/TwnNm", label: "Creditor town name", value: "", required: true, severity: "warning", rule: "SR2026-HYBRID-TOWN" },
+    { path: "Document/.../CdtTrfTxInf/RmtInf/Ustrd", label: "Remittance information", value: "Research infrastructure service", required: false },
+  ],
+  message_diff: [
+    { path: "AppHdr/BizMsgIdr", kind: "unchanged", before: "BIZ-20260722-0081", after: "BIZ-20260722-0081", source_party: "Origin Bank", reason: "Identifier retained", payload_hash: "2b278...8c1", previous_hash: null },
+    { path: "Document/.../Cdtr/PstlAdr/TwnNm", kind: "added", before: null, after: "Hong Kong", source_party: "Intermediary Bank", reason: "SR2026 remediation", payload_hash: "a4f11...3d9", previous_hash: "2b278...8c1" },
+    { path: "Document/.../IntrBkSttlmAmt", kind: "modified", before: "1000000.00", after: "999850.00", source_party: "Settlement Adapter", reason: "Fee settlement copy", payload_hash: "47e6d...118", previous_hash: "a4f11...3d9" },
+    { path: "Document/.../RmtInf/Ustrd", kind: "removed", before: "Internal project code P-71", after: null, source_party: "Privacy Gateway", reason: "Data minimisation policy", payload_hash: "e80b1...12c", previous_hash: "47e6d...118" },
+  ],
+  scenarios: representativeScenarios,
+};
+
+export function replayStateAt(scenario: ReplayScenario, time: number): string {
+  let state = "READY";
+  for (const event of scenario.events) {
+    if (event.at <= time) state = event.state;
+  }
+  return state;
+}
+
+export function formatMoney(value: number, currency = "CNY", locale = "en-US"): string {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+    notation: value >= 1_000_000_000 ? "compact" : "standard",
+  }).format(value);
+}

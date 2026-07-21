@@ -20,7 +20,7 @@ concurrency:
 jobs:
   validate-and-package:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       GH_TOKEN: ${{ github.token }}
       REPOSITORY: ${{ github.repository }}
@@ -43,11 +43,16 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r backend/requirements-dev.txt
           python -m pip check
+          npm install --prefix frontend --no-audit --no-fund
 
       - name: Verify published metadata and existing assets
         shell: bash
@@ -80,22 +85,34 @@ jobs:
           test -f ".release/$RELEASE_TAG"
           test -f "docs/releases/$RELEASE_TAG.md"
           grep -Fq "## [$TAG_VERSION]" CHANGELOG.md
+          npm run typecheck --prefix frontend
+          npm run test --prefix frontend
+          npm run build --prefix frontend
           ruff check backend
           ruff format --check backend
           python -m compileall -q backend
           node --check frontend/app.js
           bandit -q -r backend -c pyproject.toml
           pytest --cov=backend --cov-report=term-missing --cov-fail-under=68
+          test -s frontend/dist/index.html
 
       - name: Rebuild release assets from the immutable tag
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"
-          mkdir -p dist
-          git archive --format=tar.gz --prefix="00SWIFT-${VERSION}/" \
-            --output="dist/00SWIFT-${VERSION}.tar.gz" HEAD
-          python -m pip freeze > "dist/00SWIFT-${VERSION}-dependencies.txt"
+          rm -rf dist /tmp/00swift-release
+          mkdir -p dist "/tmp/00swift-release/00SWIFT-${VERSION}"
+          git archive HEAD | tar -x -C "/tmp/00swift-release/00SWIFT-${VERSION}"
+          cp -R frontend/dist "/tmp/00swift-release/00SWIFT-${VERSION}/frontend/dist"
+          tar -C /tmp/00swift-release -czf "dist/00SWIFT-${VERSION}.tar.gz" "00SWIFT-${VERSION}"
+          {
+            echo "[python]"
+            python -m pip freeze
+            echo
+            echo "[frontend]"
+            npm ls --prefix frontend --all
+          } > "dist/00SWIFT-${VERSION}-dependencies.txt"
           sha256sum dist/* > dist/SHA256SUMS
 
       - name: Replace assets and verify published checksums

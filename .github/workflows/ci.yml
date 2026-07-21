@@ -48,7 +48,7 @@ jobs:
         run: |
           set -o pipefail
           python -m compileall -q backend 2>&1 | tee -a quality.log
-      - name: Parse frontend JavaScript
+      - name: Parse legacy frontend JavaScript
         shell: bash
         run: |
           set -o pipefail
@@ -66,6 +66,60 @@ jobs:
           path: quality.log
           if-no-files-found: error
           retention-days: 7
+
+  frontend:
+    name: Frontend typecheck, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Install frontend dependencies
+        shell: bash
+        run: |
+          set -o pipefail
+          touch frontend.log
+          npm install --prefix frontend --no-audit --no-fund 2>&1 | tee -a frontend.log
+      - name: Typecheck frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run typecheck --prefix frontend 2>&1 | tee -a frontend.log
+      - name: Test frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test --prefix frontend 2>&1 | tee -a frontend.log
+      - name: Build frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build --prefix frontend 2>&1 | tee -a frontend.log
+      - name: Verify institutional bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend/dist/index.html
+          test -n "$(find frontend/dist/assets -type f -name '*.js' -print -quit)"
+          grep -Fq "Cross-Border Payment Infrastructure Lab" frontend/dist/index.html
+      - name: Upload frontend diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-diagnostics
+          path: frontend.log
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload frontend bundle
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          if-no-files-found: error
+          retention-days: 14
 
   tests:
     name: Tests / Python ${{ matrix.python-version }}
@@ -164,8 +218,8 @@ jobs:
   docker:
     name: Container build and smoke test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [quality, tests]
+    timeout-minutes: 25
+    needs: [quality, frontend, tests]
     steps:
       - uses: actions/checkout@v7
       - name: Build image
@@ -177,12 +231,15 @@ jobs:
             --env SWIFT_ENV=sandbox \
             --env DB_URL=sqlite:////tmp/swift_dev.db \
             00swift:ci
-      - name: Wait for readiness
+      - name: Wait for readiness and verify frontend
         shell: bash
         run: |
-          for attempt in {1..30}; do
+          for attempt in {1..40}; do
             if curl --fail --silent http://127.0.0.1:8765/ready >/dev/null; then
               curl --fail --silent http://127.0.0.1:8765/health
+              curl --fail --silent http://127.0.0.1:8765/ | grep -Fq "Cross-Border Payment Infrastructure Lab"
+              curl --fail --silent http://127.0.0.1:8765/legacy | grep -Fq "Legacy Testing System"
+              curl --fail --silent http://127.0.0.1:8765/nextgen/v1/ui/command-center | jq -e '.authorization.result == "allow"'
               exit 0
             fi
             sleep 1

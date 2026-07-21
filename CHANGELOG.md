@@ -2,6 +2,29 @@
 
 All notable changes are documented here. The project follows [Semantic Versioning](https://semver.org/) where practical.
 
+## [4.0.0] - 2026-07-22
+
+### Institutional frontend
+
+- Replace the primary vanilla-JavaScript dashboard with a Vite, React 19 and strict TypeScript application while retaining the previous developer console under `/legacy`.
+- Introduce the **Cross-Border Payment Infrastructure Lab** product identity for government, bank, CIPS and institutional-partner workflows.
+- Add graphite, ivory and restrained burgundy Daylight and Operations Dark themes with complete Chinese and English resources.
+- Add workflow-oriented, role-aware navigation backed by persisted RBAC/ABAC policy decisions, decision reasons, obligations and redaction instructions.
+
+### Operational visualisation
+
+- Add a semantic 3D settlement-infrastructure scene with geographic, infrastructure and hybrid views plus complete 2D and Reduced Motion fallbacks.
+- Add deterministic live/replay controls and representative incident scenarios using the same operational components.
+- Add UETR lifecycle, RTGS liquidity and release dependencies, DNS gross-to-net matrix, atomic PvP sequence, multi-CBDC policy matrix, ISO 20022 structure explorer and Transaction Copy diff/hash-chain views.
+- Distinguish message movement, value reservation, queueing, policy blocking and final settlement instead of rendering all movement as one decorative flow.
+
+### Platform and delivery
+
+- Add institutional UI bootstrap, authorization and Command Center read-model APIs with database overlays for payment, CIPS, case, liquidity and PvP state.
+- Build the frontend in a dedicated container stage and serve the immutable production bundle from FastAPI, with SPA routing and legacy compatibility.
+- Add frontend typecheck, unit-test, production-build, artifact, Docker smoke and release-package gates to CI.
+- Package the verified frontend bundle inside release archives and repeat frontend and backend quality gates during independent post-publication validation.
+
 ## [3.0.0] - 2026-07-21
 
 ### Standards and interoperability
@@ -68,7 +91,7 @@ All notable changes are documented here. The project follows [Semantic Versionin
 ### Quality and delivery
 
 - Expand the suite from 36 to 50 tests, including authentication, API-security, e-CNY flow, and regression coverage.
-- Add a 68% line-coverage gate, Ruff, Bandit, compile checks, JavaScript parsing, Docker builds, CodeQL, and release validation.
+- Add a 68% line-coverage gate, Ruff, Bandit, compile checks, JavaScript parsing, Docker builds, CodeQL, release validation.
 - Add a production-grade README, architecture/API/operations/threat-model documentation, contribution policy, security policy, issue templates, Dependabot, container assets, and release process.
 
 ## [2.0.0] - 2026-07-20
