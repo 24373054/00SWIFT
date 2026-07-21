@@ -245,12 +245,6 @@ def readiness():
 
 @app.get("/{path:path}", include_in_schema=False)
 def serve_frontend_route(path: str):
-    """Serve a built asset or the SPA shell for client-side routes."""
-    candidate = os.path.abspath(os.path.join(_frontend_dist, path))
-    if (
-        os.path.isdir(_frontend_dist)
-        and os.path.commonpath([candidate, _frontend_dist]) == _frontend_dist
-        and os.path.isfile(candidate)
-    ):
-        return FileResponse(candidate)
+    """Return the SPA shell for client-side routes without filesystem path resolution."""
+    del path
     return FileResponse(_frontend_index if os.path.isfile(_frontend_index) else _legacy_index)
