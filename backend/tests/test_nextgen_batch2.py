@@ -1,4 +1,5 @@
 """Tests for payment lifecycle, CIPS settlement and two-tier e-CNY operations."""
+
 from __future__ import annotations
 
 import json

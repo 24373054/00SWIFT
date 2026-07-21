@@ -1,4 +1,5 @@
 """End-to-end payment lifecycle, transaction-copy, case and quality services."""
+
 from __future__ import annotations
 
 import datetime as dt
@@ -102,9 +103,7 @@ class PaymentService:
         if lifecycle.version != expected_version:
             raise PaymentLifecycleError("Payment lifecycle version conflict")
         if new_status not in ALLOWED_TRANSITIONS.get(lifecycle.status, set()):
-            raise PaymentLifecycleError(
-                f"Illegal transition: {lifecycle.status} -> {new_status}"
-            )
+            raise PaymentLifecycleError(f"Illegal transition: {lifecycle.status} -> {new_status}")
         old_status = lifecycle.status
         lifecycle.status = new_status
         lifecycle.version += 1
@@ -172,10 +171,7 @@ class PaymentService:
 
     def verify_copy_chain(self, uetr: str) -> bool:
         copies = (
-            self.db.query(TransactionCopy)
-            .filter_by(uetr=uetr)
-            .order_by(TransactionCopy.id)
-            .all()
+            self.db.query(TransactionCopy).filter_by(uetr=uetr).order_by(TransactionCopy.id).all()
         )
         previous_hash = None
         for copy in copies:
@@ -279,10 +275,7 @@ class PaymentService:
 
     def timeline(self, uetr: str) -> list[PaymentLensEvent]:
         return (
-            self.db.query(PaymentLensEvent)
-            .filter_by(uetr=uetr)
-            .order_by(PaymentLensEvent.id)
-            .all()
+            self.db.query(PaymentLensEvent).filter_by(uetr=uetr).order_by(PaymentLensEvent.id).all()
         )
 
     def _lens(

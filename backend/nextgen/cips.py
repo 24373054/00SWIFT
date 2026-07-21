@@ -1,4 +1,5 @@
 """CIPS participant routing, RTGS/DNS settlement and two-tier e-CNY services."""
+
 from __future__ import annotations
 
 import json
@@ -251,10 +252,7 @@ class CipsService:
 
     def timeline(self, uetr: str) -> list[PaymentLensEvent]:
         return (
-            self.db.query(PaymentLensEvent)
-            .filter_by(uetr=uetr)
-            .order_by(PaymentLensEvent.id)
-            .all()
+            self.db.query(PaymentLensEvent).filter_by(uetr=uetr).order_by(PaymentLensEvent.id).all()
         )
 
     def _account(self, participant_id: str, currency: str) -> CipsAccount:
@@ -345,9 +343,7 @@ class EcnyOperatorService:
     def reconcile(self, operator_id: str) -> dict[str, int | bool]:
         operator = self.db.query(EcnyOperator).filter_by(operator_id=operator_id).one()
         account = (
-            self.db.query(EcnyAccount)
-            .filter_by(account_id=f"acct-operator-{operator_id}")
-            .one()
+            self.db.query(EcnyAccount).filter_by(account_id=f"acct-operator-{operator_id}").one()
         )
         return {
             "issued_amount": operator.issued_amount,
