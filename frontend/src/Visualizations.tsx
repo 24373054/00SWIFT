@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { formatMoney } from "./fixtures";
 import { t } from "./i18n";
-import type { DiffEntry, DnsMatrix, IsoNode, LifecycleStage, LiquidityAccount, Locale, PolicyCell, PvpStage } from "./types";
+import type { CommandCenterPayload, DiffEntry, DnsMatrix, IsoNode, LifecycleStage, LiquidityAccount, Locale, PolicyCell, PvpStage } from "./types";
 
 const statusText = (locale: Locale, value: string): string => {
   const labels: Record<string, [string, string]> = {
@@ -72,4 +72,14 @@ export function IsoExplorer({ nodes, locale }: { nodes: IsoNode[]; locale: Local
 export function MessageDiff({ entries, locale }: { entries: DiffEntry[]; locale: Locale }) {
   const [selected, setSelected] = useState(entries.find((entry) => entry.kind !== "unchanged") ?? entries[0]);
   return <section className="visual-section" aria-labelledby="diff-title"><header className="section-header"><div><p className="eyebrow">TRANSACTION COPY · HASH CHAIN VALID</p><h2 id="diff-title">{t(locale, "messageDiff")}</h2></div><span className="plain-status success">INTEGRITY VERIFIED</span></header><div className="diff-layout"><div className="diff-list">{entries.map((entry, index) => <button type="button" key={entry.path} className={`diff-row ${entry.kind} ${selected?.path === entry.path ? "selected" : ""}`} onClick={() => setSelected(entry)}><span>{String(index + 1).padStart(2, "0")}</span><code>{entry.path}</code><strong>{entry.kind}</strong></button>)}</div>{selected && <aside className="diff-inspector"><div className="hash-chain"><code>{selected.previous_hash ?? "GENESIS"}</code><span>→</span><code>{selected.payload_hash}</code></div><div className="before-after"><div><small>{t(locale, "before")}</small><pre>{selected.before ?? "∅"}</pre></div><div><small>{t(locale, "after")}</small><pre>{selected.after ?? "∅"}</pre></div></div><dl><div><dt>Source party</dt><dd>{selected.source_party}</dd></div><div><dt>Reason</dt><dd>{selected.reason}</dd></div></dl></aside>}</div></section>;
+}
+
+export function ExecutiveMetrics({ data, locale }: { data: CommandCenterPayload; locale: Locale }) {
+  return <div className="executive-strip" aria-label="Executive payment infrastructure metrics">
+    <div className="dominant-metric"><small>{t(locale, "paymentVolume")}</small><strong>{formatMoney(data.totals.cross_border_volume, data.totals.currency, locale === "zh" ? "zh-CN" : "en-US")}</strong><span>{data.data_mode === "representative" ? t(locale, "representative") : t(locale, "live")}</span></div>
+    <div className="metric-column"><small>{locale === "zh" ? "进行中支付" : "Active payments"}</small><strong>{data.totals.active_payments.toLocaleString()}</strong><span>UETR</span></div>
+    <div className="metric-column"><small>{locale === "zh" ? "排队金额" : "Queued value"}</small><strong>{formatMoney(data.totals.queued_value, data.totals.currency, locale === "zh" ? "zh-CN" : "en-US")}</strong><span>RTGS / DNS</span></div>
+    <div className="metric-column"><small>{locale === "zh" ? "开放案件" : "Open cases"}</small><strong>{data.totals.open_cases}</strong><span>SLA monitored</span></div>
+    <div className="metric-column"><small>{locale === "zh" ? "可用性" : "Availability"}</small><strong>{data.totals.system_availability.toFixed(3)}%</strong><span>24H</span></div>
+  </div>;
 }
