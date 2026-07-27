@@ -1058,3 +1058,23 @@
 - 外部证据：`[EXT-BLOCKED]` 当前无 0003 PostgreSQL/SQLite fixture，且 clean install 被 0002 frozen schema guard 阻断。
 - 未解决风险：需批准 baseline replacement/fixture 方案后再验收本项。
 - 执行者：Codex
+
+### B1.4.5 — backup/restore script and runbook
+
+- 状态：DONE（运行时 `pg_dump` 缺失保持 `[EXT-BLOCKED]`）
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`0cfa087`
+- 修改文件：`backend/scripts/backup_production_db.py`、`backend/tests/production/test_backup_production_db.py`、`docs/runbooks/DATABASE_RESTORE.md`
+- 新增实现：PostgreSQL custom-format `pg_dump`、SHA-256 sidecar manifest、PostgreSQL URL gate、缺少 client 明确 `[EXT-BLOCKED]`；runbook 覆盖双控、隔离恢复、schema/audit/RLS/reconciliation 验证和 rollback。
+- 新增/修改测试：命令参数真实断言；缺 pg_dump 外部依赖负向测试。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_backup_production_db.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/scripts/backup_production_db.py backend/tests/production/test_backup_production_db.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 正常路径证据：备份命令不可替换为 SQLite/JSON；生成 dump 后计算并写入 manifest hash/size/time。
+- 负向路径证据：无 `pg_dump` 抛 `[EXT-BLOCKED]`；非 PostgreSQL URL 拒绝执行。
+- 并发/重复/超时/恢复证据：输出路径显式、manifest 可重复校验；恢复 runbook 禁止覆盖 source。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：manifest/evidence id 接入备份审计；恢复失败触发 incident。
+- 外部证据：本机未执行真实 `pg_dump/pg_restore`，依赖安装与目标库属于运维环境。
+- 未解决风险：需要实际 PostgreSQL 备份文件完成一次恢复演练后才可关闭运维 Gate。
+- 执行者：Codex

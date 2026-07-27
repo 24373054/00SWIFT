@@ -243,7 +243,7 @@
 - [x] B1.4.2 `.github/workflows/migrations.yml`：required table/column/constraint 集合加入全部 `prod_*`，不再只验 `ng_*`。
 - [ ] B1.4.3 CI 执行 PostgreSQL upgrade → downgrade one revision → re-upgrade；比较 schema snapshot。
 - [ ] B1.4.4 新增 `backend/tests/production/test_migration_data_preservation.py`，用旧 0003 fixture 数据升级并验证数据、FK、tenant、金额不丢失。
-- [ ] B1.4.5 新增备份/恢复脚本和 runbook：`backend/scripts/backup_production_db.py`、`docs/runbooks/DATABASE_RESTORE.md`。
+- [x] B1.4.5 新增备份/恢复脚本和 runbook：`backend/scripts/backup_production_db.py`、`docs/runbooks/DATABASE_RESTORE.md`。
 
 ## B1 Gate
 
