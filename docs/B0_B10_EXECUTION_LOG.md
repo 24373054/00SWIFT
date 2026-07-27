@@ -800,3 +800,23 @@
 - 外部证据：无。
 - 未解决风险：旧历史数据库中的本地时区来源需 B1.2 数据修复脚本确认。
 - 执行者：Codex
+
+### B1.2.1 — 只读生产数据审计
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`b477241`
+- 修改文件：`backend/scripts/audit_production_data.py`、`backend/tests/production/test_audit_production_data.py`
+- 新增迁移：无
+- 新增/修改测试：orphan、重复/空键、非法金额、tenant mismatch、hash 缺失检查；验证脚本不写数据。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_audit_production_data.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/scripts/audit_production_data.py backend/tests/production/test_audit_production_data.py`
+- 测试结果：`1 passed`; `ruff`：`All checks passed`
+- 正常路径证据：`audit(engine)` 输出 JSON `tables_scanned/finding_count/findings`，无修复副作用。
+- 负向路径证据：临时库中的 null/hash/negative 数据被逐类报告，行数保持不变。
+- 并发/重复/超时/恢复证据：只读连接、重复运行结果一致；修复需单独 B1.2.2 operator/checker 流程。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：finding type 可直接接入数据质量告警。
+- 外部证据：无。
+- 未解决风险：脚本目前以 SQLite/通用 SQL 为主，PostgreSQL 运行需 B1 migration pipeline 验证。
+- 执行者：Codex
