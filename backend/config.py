@@ -87,6 +87,12 @@ class Settings(BaseSettings):
     production_qualification_expected_connector: str | None = None
     production_broker_url: str | None = None
     production_hsm_provider: Literal["unconfigured", "qualified"] = "unconfigured"
+    production_key_provider: Literal["sandbox", "qualified", "file"] = "sandbox"
+    production_trust_domain: str = "sandbox"
+    production_key_label: str | None = None
+    production_ocsp_url: str | None = None
+    production_crl_url: str | None = None
+    production_key_rotation_interval_seconds: int = 2_592_000
     production_worker_heartbeat_timeout_seconds: float = 30.0
 
     # ---- derived helpers ----
@@ -157,6 +163,10 @@ class Settings(BaseSettings):
         self._validate_production_gate()
 
     def _validate_production_gate(self) -> None:
+        if self.production_key_provider != "qualified" or self.production_hsm_provider != "qualified":
+            raise RuntimeError("Pilot/live requires qualified HSM/KMS key provider; file/private-key providers are forbidden")
+        if not self.production_trust_domain or not self.production_key_label:
+            raise RuntimeError("PRODUCTION_TRUST_DOMAIN and PRODUCTION_KEY_LABEL are required in pilot/live")
         if self.production_connector_mode != "qualified":
             raise RuntimeError(
                 "Production payment domain is fail-closed: PRODUCTION_CONNECTOR_MODE=qualified is required"

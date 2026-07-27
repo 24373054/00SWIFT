@@ -51,6 +51,10 @@ def _pilot_settings(**overrides) -> Settings:
         "live_host_messaging": "https://messaging.example",
         "production_connector_mode": "qualified",
         "production_signature_verifier": "qualified",
+        "production_hsm_provider": "qualified",
+        "production_key_provider": "qualified",
+        "production_trust_domain": "cn-hk-qualified",
+        "production_key_label": "payment-signing-key",
         "production_worker_enabled": False,
     }
     values.update(overrides)
@@ -87,4 +91,15 @@ def test_pilot_gate_rejects_connector_mismatch(tmp_path):
         production_qualification_expected_connector="qualified-value-v1",
     )
     with pytest.raises(RuntimeError, match="does not match"):
+        settings.validate_for_pilot()
+
+
+def test_pilot_gate_rejects_file_key_provider_even_with_attestation(tmp_path):
+    path, trust_anchor = _qualified_attestation(tmp_path)
+    settings = _pilot_settings(
+        production_key_provider="file",
+        production_qualified_attestation_path=path,
+        production_qualification_trust_anchor=trust_anchor,
+    )
+    with pytest.raises(RuntimeError, match="qualified HSM/KMS"):
         settings.validate_for_pilot()
