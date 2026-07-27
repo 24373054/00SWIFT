@@ -366,6 +366,26 @@
 - 未解决风险：sandbox header 隔离和统一 bundle 全量替换在 B0.3.5/B0.3.6。
 - 执行者：Codex
 
+### B0.3.5 — 生产身份头隔离
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`01ddbb8`
+- 修改文件：`backend/production/security.py`、`frontend/src/api.ts`、`frontend/src/vite-env.d.ts`、`backend/tests/production/test_identity_header_boundary.py`
+- 新增迁移：无
+- 新增/修改测试：pilot/live 下 X-User-Role、X-User-Subject、X-Participant-ID 明确拒绝；sandbox principal 明确标记；前端 typecheck/build。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_identity_header_boundary.py backend/tests/production/test_route_semantics.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/security.py backend/tests/production/test_identity_header_boundary.py`; `npm run typecheck`; `npm run build`
+- 测试结果：`5 passed`; `ruff`：`All checks passed`; frontend typecheck/build 通过（仅既有 chunk size warning）。
+- 正常路径证据：production UI API 不再发送角色/参与方伪造头；sandbox headers 只有 `VITE_SIMULATION_MODE=true` 时显式发送。
+- 负向路径证据：非 sandbox 任一测试身份头返回 403；production principal 不读取 role/subject header。
+- 并发/重复/超时/恢复证据：身份解析在每次请求重新执行；credential scope 与持久化 service identity 仍为信任来源。
+- OpenAPI/AsyncAPI 影响：无新增接口；production headers 不再作为身份契约。
+- Metrics/alerts/runbook 影响：身份头越界返回 403，可作为安全告警。
+- 外部证据：真实 OAuth/mTLS/CA 仍需外部资格，保持 `[EXT-BLOCKED]`。
+- 未解决风险：nextgen UI 的 sandbox role header 仍仅限显式 simulation mode，B0.3.6 完成全路由负向矩阵。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
