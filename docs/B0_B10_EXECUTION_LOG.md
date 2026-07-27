@@ -386,6 +386,26 @@
 - 未解决风险：nextgen UI 的 sandbox role header 仍仅限显式 simulation mode，B0.3.6 完成全路由负向矩阵。
 - 执行者：Codex
 
+### B0.3.6 — 全路由授权矩阵负向测试
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`4a04fda`
+- 修改文件：`backend/production/security.py`、`backend/tests/production/test_route_authorization_matrix.py`
+- 新增迁移：无
+- 新增/修改测试：遍历 29 个 production APIRoute；无身份 pilot 401；错 scope 403；sandbox admin 不再绕过 tenant；自审批/测试头负向覆盖。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_route_authorization_matrix.py backend/tests/test_production_domain.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/security.py backend/tests/production/test_route_authorization_matrix.py`
+- 测试结果：`6 passed`; `ruff`：`All checks passed`
+- 正常路径证据：每个非 health route 都有 principal 参数；sandbox payment/worker 正常通过明确 simulation principal。
+- 负向路径证据：pilot 无身份 401、错 scope 403、跨 participant 读取 409、maker=checker 409、pilot/live 测试 identity header 403。
+- 并发/重复/超时/恢复证据：支付 tenant 过滤和幂等依赖保持；路由矩阵覆盖重复/重放入口。
+- OpenAPI/AsyncAPI 影响：29 个 APIRoute 全部被纳入 security matrix。
+- Metrics/alerts/runbook 影响：401/403/409 维度可用于授权拒绝和越权告警。
+- 外部证据：无；真实 OAuth/mTLS 仍 `[EXT-BLOCKED]`。
+- 未解决风险：统一 bundle 尚未替换全部 handler 参数，但每项已有可验证 principal/integrity 约束。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
