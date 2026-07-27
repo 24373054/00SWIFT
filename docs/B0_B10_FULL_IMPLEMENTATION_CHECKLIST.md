@@ -217,7 +217,7 @@
 - [x] B1.2.4 增加关键唯一约束。
   - UETR、instruction id 的参与方作用域、quote accept、return 累计序列、approval decision、event aggregate sequence、GL batch reference。
 
-- [ ] B1.2.5 增加金融不变量约束。
+- [x] B1.2.5 增加金融不变量约束。
   - amount > 0、reserved >= 0、reserved <= balance（若余额投影保留）、有效期顺序、maker != checker、同币 journal 借贷平衡由 deferred constraint/transaction validator保证。
 
 ## B1.3 PostgreSQL RLS

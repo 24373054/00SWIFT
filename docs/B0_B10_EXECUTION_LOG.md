@@ -880,3 +880,23 @@
 - 外部证据：PostgreSQL clean install/rollback 仍待 B1 Gate 外部实例。
 - 未解决风险：历史 return/outbox 业务排序依据当前 id；如外部系统提供权威序列，需在生产迁移前导入并审计比对。
 - 执行者：Codex
+
+### B1.2.5 — 金融不变量约束
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`a27a4d3`
+- 修改文件：`backend/production/financial_invariants.py`、`backend/alembic/versions/0013_production_financial_invariants.py`、`backend/tests/production/test_financial_invariants.py`
+- 新增迁移：`0013_production_financial_invariants`；金额正数、fee/reserved 非负、reserved 不超过 balance、有效期顺序、maker/checker 不同等 DB CHECK 约束。
+- 新增/修改测试：按币种借贷平衡、空 journal/负金额/不平衡、有效期和双控 validator 负向测试。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_financial_invariants.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/financial_invariants.py backend/alembic/versions/0013_production_financial_invariants.py backend/tests/production/test_financial_invariants.py`; `\\.venv\\Scripts\\python.exe -m alembic upgrade head`
+- 测试结果：`3 passed`；`ruff: All checks passed`；Alembic `0012 -> 0013` 成功；SQLite inspector 验证 ledger/approval/mandate/FX/corridor 约束已落库。
+- 正常路径证据：事务提交前可调用 `validate_journal_balance`，按 currency 分桶要求 DEBIT=CREDIT；数据库迁移先扫描违规行再创建约束。
+- 负向路径证据：不平衡 journal、非正金额、相同 maker/checker、无效时间窗均抛 `ValueError`；历史违规行会使迁移失败而不是弱化 Gate。
+- 并发/重复/超时/恢复证据：金额/余额/双控由数据库原子 CHECK 保证；借贷平衡校验为纯函数，可在同一事务内重试且无副作用。
+- OpenAPI/AsyncAPI 影响：无接口结构变化；ledger posting 服务必须在 commit 前调用平衡 validator。
+- Metrics/alerts/runbook 影响：约束冲突接入金融不变量告警；unbalanced journal 进入人工调查队列。
+- 外部证据：PostgreSQL deferred constraint/并发事务验证仍待 B1 Gate 外部 PostgreSQL 实例。
+- 未解决风险：跨行借贷平衡不能由 SQLite 普通 CHECK 表达，已用事务 validator；生产 PostgreSQL 可再升级 deferred constraint trigger。
+- 执行者：Codex
