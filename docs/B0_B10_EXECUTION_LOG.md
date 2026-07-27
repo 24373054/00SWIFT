@@ -411,6 +411,17 @@
 - 测试结果：`1 passed`；ruff 全部通过。
 - 执行者：Codex
 
+### B5.6.1 — GL mapping and batch builder
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`0bb468a`、`38c998b`
+- 修改文件：`backend/production/gl_bridge.py`、`backend/tests/production/test_gl_bridge.py`
+- 新增/修改实现：GlBridge build_batch 按 mapping_version 和排序后的 journal scope 生成 deterministic payload/hash；persist_batch 校验 debit/credit totals 后写 SENT batch。
+- 测试结果：`1 passed`；ruff 全部通过。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
