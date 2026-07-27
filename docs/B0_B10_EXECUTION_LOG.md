@@ -860,3 +860,23 @@
 - 外部证据：PostgreSQL clean install/rollback 仍待 B1 Gate 的外部 PostgreSQL 环境（当前无可用实例）。
 - 未解决风险：历史库若包含未纳入词典的业务状态，必须先走 B1.2.1 audit 与受控 repair，不得放宽约束。
 - 执行者：Codex
+
+### B1.2.4 — 关键业务唯一约束
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`67c0fd2`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0012_production_business_uniques.py`、`backend/tests/production/test_unique_constraints.py`
+- 新增迁移：`0012_production_business_uniques`；增加参与方作用域 instruction id、quote accept、return `(original_order_id, return_sequence)`、approval decision、outbox `(topic, aggregate_id, aggregate_sequence)`、GL `(legal_entity, book, business_date, gl_batch_reference)` 唯一键。
+- 新增/修改测试：模型元数据约束覆盖与 sequence/batch 非空断言；Alembic schema inspection。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production -q`; `\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_unique_constraints.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/models.py backend/alembic/versions/0012_production_business_uniques.py backend/tests/production/test_unique_constraints.py`; `\\.venv\\Scripts\\python.exe -m alembic upgrade head`
+- 测试结果：production `51 passed`；唯一约束 `2 passed`；`ruff: All checks passed`；Alembic `0011 -> 0012` 成功；SQLite inspector 返回 6 个目标唯一约束。
+- 正常路径证据：旧数据升级时按稳定 id 为 return/outbox 序列回填，GL batch 缺失时回填 journal_id，再创建唯一约束并收紧非空。
+- 负向路径证据：模型 metadata 中所有目标约束名称存在；同一业务作用域无法重复接受 quote、审批、事件序列或 GL batch。
+- 并发/重复/超时/恢复证据：数据库唯一索引在并发提交层提供原子冲突；回填按确定排序重复执行结果稳定。
+- OpenAPI/AsyncAPI 影响：无破坏性接口变化；事件 envelope 需使用新增 aggregate_sequence。
+- Metrics/alerts/runbook 影响：唯一冲突应映射业务幂等/重复告警；序列冲突进入 outbox DLQ 处理。
+- 外部证据：PostgreSQL clean install/rollback 仍待 B1 Gate 外部实例。
+- 未解决风险：历史 return/outbox 业务排序依据当前 id；如外部系统提供权威序列，需在生产迁移前导入并审计比对。
+- 执行者：Codex

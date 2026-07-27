@@ -214,7 +214,7 @@
 - [x] B1.2.3 为所有状态列增加数据库约束或 PostgreSQL enum/domain。
   - 状态集合与 Python state machine 共享版本，禁止任意字符串。
 
-- [ ] B1.2.4 增加关键唯一约束。
+- [x] B1.2.4 增加关键唯一约束。
   - UETR、instruction id 的参与方作用域、quote accept、return 累计序列、approval decision、event aggregate sequence、GL batch reference。
 
 - [ ] B1.2.5 增加金融不变量约束。
