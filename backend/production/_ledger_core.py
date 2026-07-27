@@ -163,6 +163,22 @@ class ProductionLedgerService:
         self.db.flush()
         return journal
 
+    def post_multi_currency(self, *, journal_id: str, legal_entity: str, book: str, reason_code: str, entries: list[dict[str, Any]], fx_clearing_accounts: dict[str, str]) -> list[ProductionJournal]:
+        currencies = sorted({entry.get("currency") for entry in entries})
+        if len(currencies) < 2:
+            raise ProductionConflict("Multi-currency posting requires at least two currencies")
+        groups = {currency: [entry for entry in entries if entry.get("currency") == currency] for currency in currencies}
+        journals = []
+        for currency, group in groups.items():
+            clearing = fx_clearing_accounts.get(currency)
+            if not clearing:
+                raise ProductionConflict(f"FX clearing account required for {currency}")
+            if not any(entry.get("account_id") == clearing for entry in group):
+                raise ProductionConflict(f"FX clearing leg missing for {currency}")
+            self._validate_entries(group)
+            journals.append(self.post_journal(journal_id=f"{journal_id}:{currency}", legal_entity=legal_entity, book=book, reason_code=reason_code, entries=group))
+        return journals
+
     @staticmethod
     def _validate_entries(entries: list[dict[str, Any]]) -> None:
         if len(entries) < 2:

@@ -33,3 +33,11 @@ def test_journal_lifecycle_and_posted_immutability(db):
     posted.reason_code = "tampered"
     with pytest.raises(ValueError, match="immutable"):
         db.flush()
+
+
+def test_multi_currency_requires_balanced_clearing_legs(db):
+    service = ProductionLedgerService(db)
+    for account_id, currency in (("cny-a", "CNY"), ("cny-fx", "CNY"), ("hkd-a", "HKD"), ("hkd-fx", "HKD")):
+        service.create_account(account_id, "LE-CN", "SUBLEDGER", currency, "asset", opening_balance_minor=100)
+    journals = service.post_multi_currency(journal_id="j-fx", legal_entity="LE-CN", book="SUBLEDGER", reason_code="fx", entries=[{"account_id": "cny-a", "direction": "DEBIT", "currency": "CNY", "amount_minor": 10}, {"account_id": "cny-fx", "direction": "CREDIT", "currency": "CNY", "amount_minor": 10}, {"account_id": "hkd-a", "direction": "DEBIT", "currency": "HKD", "amount_minor": 20}, {"account_id": "hkd-fx", "direction": "CREDIT", "currency": "HKD", "amount_minor": 20}], fx_clearing_accounts={"CNY": "cny-fx", "HKD": "hkd-fx"})
+    assert {journal.journal_id for journal in journals} == {"j-fx:CNY", "j-fx:HKD"}
