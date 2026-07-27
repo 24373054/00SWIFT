@@ -1,0 +1,39 @@
+asyncapi: 3.0.0
+info:
+  title: Production Cross-Border Payment Events
+  version: 1.0.0
+  description: Canonical EventEnvelope topics; payloads are versioned and hashable.
+defaultContentType: application/json
+channels:
+  productionEvents:
+    address: production.events
+    messages:
+      ProductionEvent:
+        $ref: '#/components/messages/ProductionEvent'
+components:
+  messages:
+    ProductionEvent:
+      name: ProductionEvent
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+  schemas:
+    EventEnvelope:
+      type: object
+      additionalProperties: false
+      required: [event_id, event_type, schema_version, tenant_id, participant_id, aggregate_id, aggregate_type, aggregate_version, sequence, partition_key, correlation_id, trace_id, occurred_at, payload]
+      properties:
+        event_id: {type: string}
+        event_type: {type: string, enum: [payment.created, funding.reserved, fx.accepted, message.delivered, settlement.submitted, compliance.screened, reconciliation.matched, case.opened, report.generated]}
+        schema_version: {type: string, pattern: '^\d+\.\d+$'}
+        tenant_id: {type: string}
+        participant_id: {type: string}
+        aggregate_id: {type: string}
+        aggregate_type: {type: string}
+        aggregate_version: {type: integer, minimum: 1}
+        sequence: {type: integer, minimum: 1}
+        partition_key: {type: string}
+        correlation_id: {type: string}
+        causation_id: {type: string, nullable: true}
+        trace_id: {type: string}
+        occurred_at: {type: string, format: date-time}
+        payload: {type: object}
