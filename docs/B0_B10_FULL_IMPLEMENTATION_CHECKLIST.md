@@ -389,7 +389,7 @@
   - 修改：`backend/production/runtime.py`。
   - migration backfill 旧 PROCESSING 事件；claim 条件包含 null/过期 lease。
 
-- [ ] B3.3.2 使用 PostgreSQL 原子 claim。
+- [x] B3.3.2 使用 PostgreSQL 原子 claim。
   - `SELECT ... FOR UPDATE SKIP LOCKED` 与状态更新同一事务。
   - 对相同 partition/aggregate 只允许处理最低 sequence。
 

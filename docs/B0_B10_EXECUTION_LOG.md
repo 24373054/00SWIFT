@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.3.2 — atomic partition-ordered claim
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`1102eda`
+- 修改文件：`backend/production/runtime.py`、`backend/tests/production/test_outbox_partition_order.py`
+- 新增实现：claim 使用 `FOR UPDATE SKIP LOCKED`，并以 correlated `NOT EXISTS` 保证同 partition 只取最低 aggregate sequence；不同 partition 可并行。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_outbox_partition_order.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/runtime.py backend/tests/production/test_outbox_partition_order.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 外部证据：真实 PostgreSQL 锁竞争仍需外部 fixture，已在后续 Gate 保留。
+- 执行者：Codex
+
 ### B3.3.1 — null lease recovery and fencing
 
 - 状态：DONE
