@@ -94,7 +94,7 @@
   - 覆盖组件：method、target URI、authority、content-digest、content-type、date、nonce、participant/service identity。
   - 算法策略：配置允许列表；拒绝未知算法、弱算法、缺失 covered component。
 
-- [ ] B0.2.2 重写 `backend/production/integrity.py`。
+- [x] B0.2.2 重写 `backend/production/integrity.py`。
   - 删除 pilot/live 固定 503 占位。
   - 使用依赖注入取得 verifier；先校验 body digest，再校验 RFC 9421 签名和证书/密钥身份绑定。
   - 无 qualified verifier 时仍 fail-closed，但 health/readiness 必须显示未完成，不能声称功能完成。
