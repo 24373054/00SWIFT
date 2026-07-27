@@ -538,16 +538,16 @@
 
 ## B4.7 Timeout、UNKNOWN 与补偿
 
-- [ ] B4.7.1 新增 `prod_payment_timers` 和 timer worker。
+- [x] B4.7.1 新增 `prod_payment_timers` 和 timer worker。
   - timer 类型：authorization、compliance、funding、FX、delivery、settlement、beneficiary、reconciliation。
 
-- [ ] B4.7.2 外部 timeout 一律进入 UNKNOWN/QUERY_REQUIRED。
+- [x] B4.7.2 外部 timeout 一律进入 UNKNOWN/QUERY_REQUIRED。
   - 禁止直接标失败并自动重发可能已成功的资金操作。
 
-- [ ] B4.7.3 新增 `backend/production/recovery_service.py`。
+- [x] B4.7.3 新增 `backend/production/recovery_service.py`。
   - 根据 connector client reference 查询并恢复；无法判断时开 case，不自动猜测。
 
-- [ ] B4.7.4 定义 compensation table。
+- [x] B4.7.4 定义 compensation table。
   - 每一步明确 release/return/reversal/manual action；补偿本身也幂等、有事件、有证据。
 
 ## B4.8 Completion projection

@@ -51,6 +51,32 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.7.1 — payment timers
+
+- 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
+- 修改文件：`backend/production/models.py`、`backend/production/timer_service.py`、`backend/alembic/versions/0030_payment_timers.py`、`backend/tests/production/test_payment_timers.py`
+- 证据：authorization/compliance/funding/FX/delivery/settlement/beneficiary/reconciliation timer 类型、唯一调度、due claim；SQLite migration 和测试通过。
+
+### B4.7.2 — timeout UNKNOWN/query-required
+
+- 状态：DONE；完成时间：2026-07-27；commit：`55455c0`
+- 修改文件：`backend/production/timeout_policy.py`、`backend/tests/production/test_timeout_policy.py`
+- 证据：TIMEOUT/UNKNOWN/UNAVAILABLE 统一转 UNKNOWN + query_required，不直接失败或重发；1 passed。
+
+### B4.7.3 — recovery service
+
+- 状态：DONE；完成时间：2026-07-27；commit：`ede539a`
+- 修改文件：`backend/production/recovery_service.py`、`backend/tests/production/test_recovery_service.py`
+- 证据：按 stable client reference query；仍 UNKNOWN 时开 P1 investigation case，不猜测成功；1 passed。
+
+### B4.7.4 — compensation table
+
+- 状态：DONE；完成时间：2026-07-27；commit：`a13d231`
+- 修改文件：`docs/domain/COMPENSATION_TABLE.md`、`backend/tests/production/test_compensation_table.py`
+- 证据：reserve/FX/message/settlement/cancel/return 每步均有 release/query/return/manual action、证据和幂等要求；1 passed。
+- 外部证据：真实 connector finality/compensation 演练仍需外部依赖。
+- 执行者：Codex
+
 ### B4.6.1 — independent return aggregate
 
 - 状态：DONE；完成时间：2026-07-27；commit：`3e4d5c1`
