@@ -326,6 +326,26 @@
 - 未解决风险：统一 dependency bundle 在 B0.3.3 接入。
 - 执行者：Codex
 
+### B0.3.3 — 统一生产依赖 bundle
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`67829d0`
+- 修改文件：`backend/production/dependencies.py`、`backend/tests/production/test_dependencies.py`
+- 新增迁移：无
+- 新增/修改测试：bundle 字段完整性和 read/write/operator/admin dependency 参数检查。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_dependencies.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/dependencies.py backend/tests/production/test_dependencies.py`
+- 测试结果：`1 passed`; `ruff`：`All checks passed`
+- 正常路径证据：`ProductionDependencyBundle` 同时携带 principal、scope 派生身份、tenant、idempotency key、integrity result 和 audit context。
+- 负向路径证据：write bundle 的 `Idempotency-Key` 和 `require_request_integrity` 都是强制依赖；scope 不足由既有 security dependency 拒绝。
+- 并发/重复/超时/恢复证据：幂等和 nonce store 的原子门槛由 B0.2/B1 提供，bundle 不绕过这些依赖。
+- OpenAPI/AsyncAPI 影响：后续 mutation 路由可统一声明依赖，避免遗漏安全组件。
+- Metrics/alerts/runbook 影响：audit_context 提供 request/trace/route 维度。
+- 外部证据：无；真实身份信任域仍 `[EXT-BLOCKED]`。
+- 未解决风险：现有 handler 仍有旧式逐参数依赖，B0.3.4 将按矩阵替换。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
