@@ -590,7 +590,7 @@
 
 ## B5.2 不可变分录
 
-- [ ] B5.2.1 Journal 先 DRAFT/VALIDATED，再原子 POSTED。
+- [x] B5.2.1 Journal 先 DRAFT/VALIDATED，再原子 POSTED。
   - POSTED journal/entry 禁止 UPDATE/DELETE。
   - journal idempotency key 和 business reference 唯一。
 
