@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 
 from config import get_settings
 from database import get_db
-from nextgen.standards import list_profiles, parse_iso20022_xml
 
 from .connectors import connector_capabilities
 from .integrity import require_request_integrity
@@ -36,7 +35,7 @@ from .reporting import build_regulatory_report
 from .runtime import ProductionConflict, ProductionEvidenceService
 from .security import ProductionPrincipal, ensure_participant, require_production_scope
 from .service import ProductionPaymentService
-from .standards import ensure_artifact, validate_and_record
+from .standards import ensure_artifact, list_profiles, parse_iso20022_xml, validate_and_record
 from .telemetry import dependency_snapshot, health_snapshot
 from .worker import ProductionWorker
 

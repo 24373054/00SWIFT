@@ -11,7 +11,6 @@ from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from config import get_settings
-from nextgen.standards import finding_dicts, validate_message
 
 from .connectors import SandboxFxQuoteProvider
 from .corridors import assert_corridor_admitted
@@ -49,7 +48,7 @@ from .runtime import (
     minor_amount,
 )
 from .security import ProductionPrincipal, assert_account_access, assert_entitlement, assert_limit
-from .standards import ensure_artifact, validate_and_record
+from .standards import ensure_artifact, validate_and_record, validate_payload
 
 ORCHESTRATION_TERMINAL = {
     "OPERATIONALLY_CLOSED",
@@ -270,7 +269,7 @@ class ProductionPaymentService:
                 "creditor": payload.get("creditor"),
             },
         }
-        findings = finding_dicts(validate_message("iso20022-base:2026", message_type, standards_payload))
+        findings = validate_payload(message_type, standards_payload)
         if any(item["severity"].lower() == "error" for item in findings):
             raise ProductionConflict(f"Standards validation failed: {canonical_json(findings)}")
         if currency == settlement_currency and payload.get("quote_id"):
