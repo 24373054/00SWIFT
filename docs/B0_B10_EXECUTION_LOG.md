@@ -266,6 +266,26 @@
 - 未解决风险：尚未把 nonce consume 接入 `require_request_integrity`，B0.2.4 完成。
 - 执行者：Codex
 
+### B0.2.4 — HTTP 签名与 replay 负向验收
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`1352cc7`
+- 修改文件：`backend/production/integrity.py`、`backend/production/signatures.py`、`backend/production/replay.py`、`backend/config.py`、`backend/.env.example`、`backend/tests/production/test_http_signatures.py`、`backend/tests/production/test_integrity_injection.py`、`backend/tests/production/test_replay_store.py`
+- 新增迁移：使用已完成的 `0005_production_replay_store`
+- 新增/修改测试：正确签名、body/URI 篡改、过期/未来时间、缺 component、弱算法、吊销 key、身份绑定、digest-first、nonce 重放和并发双提交。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_replay_store.py backend/tests/production/test_http_signatures.py backend/tests/production/test_integrity_injection.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/integrity.py backend/production/signatures.py backend/production/replay.py backend/tests/production/test_replay_store.py backend/tests/production/test_http_signatures.py backend/tests/production/test_integrity_injection.py backend/config.py`
+- 测试结果：`11 passed`; `ruff`：`All checks passed`
+- 正常路径证据：integrity 注入真实 sandbox Ed25519 verifier，签名通过后将 nonce/digest 写入 `prod_request_nonces`。
+- 负向路径证据：body/URI、窗口、覆盖字段、算法、吊销 key、参与方身份错误均拒绝；同 nonce 第二次 409；并发两个事务严格一胜一败。
+- 并发/重复/超时/恢复证据：并发测试使用独立 SQLite sessions 和唯一约束；过期窗口和 nonce replay 在请求边界阻断。
+- OpenAPI/AsyncAPI 影响：production mutation 通过统一 integrity dependency，错误码 `INVALID_CONTENT_DIGEST`、`INVALID_MESSAGE_SIGNATURE`、`MESSAGE_REPLAY_DETECTED`。
+- Metrics/alerts/runbook 影响：可按错误码统计签名失败/replay；nonce 清理和 trust-domain 运维待 B7。
+- 外部证据：吊销列表/HSM/CA 真实来源未提供，测试中的 revoked key 为确定性负向证据，生产资格保持 `[EXT-BLOCKED]`。
+- 未解决风险：qualified verifier callback 尚未绑定真实证书链和 OCSP/CRL。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
