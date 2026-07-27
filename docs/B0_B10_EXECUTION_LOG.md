@@ -51,6 +51,19 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.1.1 — canonical EventEnvelope
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`6428fa3`
+- 修改文件：`backend/production/events.py`、`backend/tests/production/test_events.py`
+- 新增实现：严格冻结的 EventEnvelope，包含 event/tenant/participant/aggregate/sequence/partition/correlation/causation/trace/time/payload 全字段；UTC、版本、事件族和未知字段均校验。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_events.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/events.py backend/tests/production/test_events.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 负向证据：naive timestamp、未知字段和破坏性 major schema 变更均被拒绝。
+- 外部证据：无。
+- 执行者：Codex
+
 ### B2.G5 — fail-closed rulebook/certificate/mandate enforcement
 
 - 状态：DONE

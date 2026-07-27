@@ -358,7 +358,7 @@
 
 ## B3.1 标准事件 Envelope 与 schema
 
-- [ ] B3.1.1 新增 `backend/production/events.py`。
+- [x] B3.1.1 新增 `backend/production/events.py`。
   - EventEnvelope 字段：event_id、event_type、schema_version、tenant_id、participant_id、aggregate_id/type/version、sequence、partition_key、correlation_id、causation_id、trace_id、occurred_at、payload。
 
 - [ ] B3.1.2 扩展 outbox schema 和迁移。
