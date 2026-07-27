@@ -1112,3 +1112,39 @@
 - 外部证据：PostgreSQL clean install/legacy upgrade 尚未完成，保留 G1/G3 `[EXT-BLOCKED]`。
 - 未解决风险：当前 audit 结果不能替代真实 PostgreSQL RLS/rollback 证据。
 - 执行者：Codex
+
+### B1.G1 — PostgreSQL migration acceptance
+
+- 状态：`[EXT-BLOCKED]`
+- 开始时间：2026-07-27
+- 完成时间：—
+- commit：`8aa4356`（roundtrip 实现）；本 Gate 证据追加于本日志提交
+- 修改文件：`backend/scripts/migration_roundtrip.py`、`.github/workflows/migrations.yml`、`backend/tests/production/test_migration_roundtrip.py`、`backend/tests/production/test_migration_data_preservation.py`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_migration_roundtrip.py backend/tests/production/test_migration_data_preservation.py -q`
+- 测试结果：roundtrip clean upgrade 在 `0002_production_domain._assert_frozen_schema()` 失败；legacy fixture 测试因 `PRODUCTION_LEGACY_DB_URL` 缺失 skip；不能宣称 Gate 通过。
+- 正常路径证据：CI 已配置 PostgreSQL 16 service，执行 upgrade/downgrade/re-upgrade/snapshot/contract verifier。
+- 负向路径证据：baseline hash mismatch 保持 fail-closed，未修改冻结 0002、未绕过 migration。
+- 并发/重复/超时/恢复证据：roundtrip 每阶段独立 subprocess，schema diff 非零退出。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：migration CI failure 阻断发布。
+- 外部证据：`[EXT-BLOCKED]` 当前 PostgreSQL service/0003 fixture 不可用，且历史 baseline 与当前 ORM 不一致。
+- 未解决风险：需批准 baseline replacement plan 并提供 PostgreSQL clean/legacy fixture 后重跑。
+- 执行者：Codex
+
+### B1.G3 — RLS + service-layer cross-tenant negative acceptance
+
+- 状态：`[EXT-BLOCKED]`
+- 开始时间：2026-07-27
+- 完成时间：—
+- commit：`6850cb5`（RLS integration test）；本 Gate 证据追加于本日志提交
+- 修改文件：`backend/tests/production/test_postgres_rls.py`、`backend/alembic/versions/0014_production_rls.py`、`backend/production/db_context.py`、`backend/production/router.py`、`backend/production/service.py`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_postgres_rls.py -q`; `\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_tenant_filters.py -q`
+- 测试结果：PostgreSQL integration `1 skipped [EXT-BLOCKED]`（无 `PRODUCTION_TEST_POSTGRES_URL`）；service tenant negative `1 passed`，不能以 SQLite 结果替代 RLS Gate。
+- 正常路径证据：测试已覆盖两 tenant payment read/write、join/count、outbox/evidence join 及 pool reuse context reset；需真实 fixture 才执行。
+- 负向路径证据：无 URL 明确 skip，不伪造 RLS 成功；服务层 admin 跨租户 order lookup 已验证拒绝。
+- 并发/重复/超时/恢复证据：PostgreSQL test 使用 pool_size=1 + rollback 后 current_setting 清空断言。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：RLS denial/context leak 接安全告警。
+- 外部证据：`[EXT-BLOCKED]` 无 PostgreSQL 实例和两租户 fixture。
+- 未解决风险：真实 PostgreSQL 上的 RLS policy、write denial、report/evidence isolation 未完成。
+- 执行者：Codex
