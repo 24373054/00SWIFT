@@ -51,6 +51,19 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B0.G2 — pilot/live 真实 cryptographic request verification
+
+- 状态：EXT-BLOCKED
+- 完成时间：2026-07-27
+- commit：无（外部 qualified verifier/HSM/CA 未提供）
+- 修改文件：无新增；实现边界见 `362f18d`、`7181575`、`1352cc7`。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_http_signatures.py backend/tests/production/test_integrity_injection.py -q`
+- 测试结果：`8 passed`；sandbox 使用真实 Ed25519，qualified adapter 仅验证 callback；不能声称 pilot/live 已完成。
+- 验收证据：没有 qualified verifier 注入时 pilot/live integrity 返回 503，readiness 明确未就绪。
+- 外部证据：待真实 HSM/CA、证书链、OCSP/CRL 和 participant key attestation。
+- 未解决风险：B0 COMPLETE 不得勾选，直到 qualified request verification 在真实 pilot/live 环境完成。
+- 执行者：Codex
+
 ### R0.1 — 执行证据机制
 
 - 状态：DONE
