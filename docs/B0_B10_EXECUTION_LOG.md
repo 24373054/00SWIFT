@@ -506,6 +506,26 @@
 - 未解决风险：法律实体、双法域矩阵和责任签字文档待 B0.5.3/B0.5.4。
 - 执行者：Codex
 
+### B0.5.3 — 产品边界、CN–HK 矩阵与 RACI
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`64b2f80`
+- 修改文件：`docs/governance/PRODUCT_REGULATORY_BOUNDARY.md`、`docs/governance/CN_HK_CORRIDOR_ADMISSION_MATRIX.md`、`docs/governance/RACI.md`、`backend/production/telemetry.py`、`backend/tests/production/test_readiness_dependencies.py`
+- 新增迁移：无（使用 `0007_corridor_admission`）
+- 新增/修改测试：readiness 依赖矩阵新增 corridor_admission；现有 corridor model/default-deny 测试继续通过。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_readiness_dependencies.py backend/tests/production/test_corridor_models.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/telemetry.py backend/tests/production/test_readiness_dependencies.py`
+- 测试结果：`6 passed`; `ruff`：`All checks passed`
+- 正常路径证据：治理文档版本化列出法律实体/资金流边界、CN–HK 场景矩阵、RACI 与不承诺项；readiness 输出 admission_id、rulebook_version、valid_to。
+- 负向路径证据：缺 admission、过期、simulation-only 在 pilot/live 均显示 `missing_or_expired` 并阻断 ready。
+- 并发/重复/超时/恢复证据：admission validity 每次 health/payment 重新计算；版本唯一约束已由 B0.5.1 验证。
+- OpenAPI/AsyncAPI 影响：health response 新增 corridor admission 版本/有效期状态。
+- Metrics/alerts/runbook 影响：rulebook/admission expiry 可告警；文档列出外部 owner 和签字需求。
+- 外部证据：法律/监管/持牌合作方签字未提供，文档明确 `[EXT-BLOCKED]` 与 non-commitments。
+- 未解决风险：真实 CN/HK 法域签字和 P0 owner/date 尚未取得，B0.5.4 保持阻断。
+- 执行者：Codex
+
 ### B0.4.4 — 真实 HSM/CA/OCSP/CRL 与密钥仪式
 
 - 状态：EXT-BLOCKED
