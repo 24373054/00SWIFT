@@ -51,6 +51,40 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.G1 — null lease deadlock gate
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- 证据 commit：`0724ff8`
+- 测试：`test_outbox_leases.py` 2 passed；`PROCESSING + NULL lease` 可回收，旧 owner fencing 生效。
+- 执行者：Codex
+
+### B3.G2 — multi-worker/broker restart gate
+
+- 状态：`[EXT-BLOCKED]`
+- 完成时间：2026-07-27
+- 本地证据：memory broker duplicate/nack 与 SQLite partition tests 通过；但没有配置 PostgreSQL 多 worker fixture 或 approved broker restart endpoint。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_broker_recovery.py backend/tests/production/test_outbox_partition_order.py -q`
+- 测试结果：本地模拟通过，但不足以宣称真实多 worker/重启 Gate；保留未勾选。
+- 未解决风险：需 PostgreSQL `SKIP LOCKED` + approved broker restart/timeout 实测。
+- 执行者：Codex
+
+### B3.G3 — external success crash recovery gate
+
+- 状态：`[EXT-BLOCKED]`
+- 完成时间：2026-07-27
+- 本地证据：`connector_recovery.py` 已实现 query-before-dispatch，6 个 handler wrapper 测试通过；真实 connector query-by-client-reference 未配置。
+- 未解决风险：必须以真实 connector 外部成功后进程崩溃演练证明不重复扣款/结算，当前不勾选。
+- 执行者：Codex
+
+### B3.G4 — DLQ replay dual-control gate
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- 证据 commit：`1395367`
+- 测试：`test_dlq_replay.py` 通过；maker/checker、hash、重复 replay、tenant scope 与审计字段均验证。
+- 执行者：Codex
+
 ### B3.7.1 — outbox lease tests
 
 - 状态：DONE；commit：`0724ff8`

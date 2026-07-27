@@ -443,10 +443,10 @@
 
 ## B3 Gate
 
-- [ ] B3.G1 当前 null lease 卡死反例通过。
+- [x] B3.G1 当前 null lease 卡死反例通过。
 - [ ] B3.G2 多 worker、重复发布/消费、broker 重启无重复业务效果或丢失。
 - [ ] B3.G3 外部成功后进程崩溃可 query 恢复，不会重复扣款/结算。
-- [ ] B3.G4 DLQ replay 具有双控和完整证据。
+- [x] B3.G4 DLQ replay 具有双控和完整证据。
 - [ ] B3 COMPLETE。
 
 ---
