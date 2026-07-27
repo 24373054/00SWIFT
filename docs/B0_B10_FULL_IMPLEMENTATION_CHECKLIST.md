@@ -565,7 +565,7 @@
 - [ ] B4.G2 拒绝、撤销、退回、UNKNOWN、恢复、补偿全路径通过。
 - [ ] B4.G3 当前撤销冻结资金反例通过。
 - [ ] B4.G4 并发 CAS、乱序和重复事件测试通过。
-- [ ] B4.G5 无账本/终局/对账证据时不能 operational close。
+- [x] B4.G5 无账本/终局/对账证据时不能 operational close。
 - [ ] B4 COMPLETE。
 
 ---

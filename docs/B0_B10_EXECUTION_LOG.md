@@ -101,6 +101,19 @@
 - 验收证据：worker 在 operational close 前生成可追溯 policy evidence，并将 evidence id 放入拒绝异常。
 - 执行者：Codex
 
+### B4.G5 — completion fail-closed gate
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`755fa09`
+- 修改文件：`backend/tests/production/test_completion_policy.py`
+- 新增/修改测试：新增缺少 reconciliation、finality、beneficiary evidence 时 evaluator 必须返回 `allowed=False` 的负向测试。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_completion_policy.py -q`
+- 测试结果：`2 passed`。
+- 验收证据：无账本/终局/对账证据不能 operational close；正式 provider 仍由 B5/B7/B8 外部工件决定。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
