@@ -508,7 +508,7 @@ class ProductionPaymentService:
                 },
             )
         intent.reservation_ids = json.dumps(reservation_ids, separators=(",", ":"))
-        self._replace_fact(order.order_id, "FX", "ACCEPTANCE_PENDING", intent.trade_intent_id, {})
+        self.append_fact(order.order_id, "FX", "ACCEPTANCE_PENDING", intent.trade_intent_id, {})
         response = {
             "trade_intent_id": intent.trade_intent_id,
             "order_id": order.order_id,
@@ -693,7 +693,13 @@ class ProductionPaymentService:
         state: str,
         reference: str | None,
         payload: dict[str, Any],
+        *,
+        fact_sequence: int = 1,
+        supersedes_fact_id: str | None = None,
+        actor: str = "system",
     ) -> ProductionPaymentFact:
+        input_hash = digest({"order_id": order.order_id, "fact_type": fact_type, "reference": reference, "payload": payload})
+        output_hash = digest({"state": state, "payload": payload})
         fact = ProductionPaymentFact(
             fact_id=f"fact_{uuid.uuid4().hex}",
             order_id=order.order_id,
@@ -701,11 +707,17 @@ class ProductionPaymentService:
             state=state,
             reference=reference or f"{fact_type.lower()}-{uuid.uuid4().hex[:12]}",
             payload=canonical_json(payload),
+            fact_sequence=fact_sequence,
+            supersedes_fact_id=supersedes_fact_id,
+            input_hash=input_hash,
+            output_hash=output_hash,
+            rule_version=str(payload.get("rule_version", "unspecified")),
+            actor=actor,
         )
         self.db.add(fact)
         return fact
 
-    def _replace_fact(
+    def append_fact(
         self, order_id: str, fact_type: str, state: str, reference: str | None, payload: dict[str, Any]
     ) -> ProductionPaymentFact:
         existing = (
@@ -716,16 +728,18 @@ class ProductionPaymentService:
         )
         order = self.get_order(order_id)
         if existing is None:
-            return self._fact(order, fact_type, state, reference, payload)
-        next_reference = f"{reference or fact_type.lower()}:{uuid.uuid4().hex[:12]}"
+            fact = self._fact(order, fact_type, state, reference, payload)
+            self.db.flush()
+            return fact
         next_fact = self._fact(
             order,
             fact_type,
             state,
-            next_reference,
-            {"supersedes_fact_id": existing.fact_id, **payload},
+            reference,
+            payload,
+            fact_sequence=existing.fact_sequence + 1,
+            supersedes_fact_id=existing.fact_id,
         )
-        next_fact.supersedes_fact_id = existing.fact_id
         next_fact.evidence_ref = payload.get("evidence_id")
         return next_fact
 

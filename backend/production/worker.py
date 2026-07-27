@@ -156,7 +156,7 @@ class ProductionWorker:
             authorization_ok = mandate is not None and approval is not None
         if auth_decision is not None:
             outcome = "PASSED" if authorization_ok else "REJECTED"
-            self.payments._replace_fact(order.order_id, "AUTHORIZATION", outcome, auth_decision.decision_id, {"rule_version": auth_decision.rule_version})
+            self.payments.append_fact(order.order_id, "AUTHORIZATION", outcome, auth_decision.decision_id, {"rule_version": auth_decision.rule_version})
             auth_decision.outcome = outcome
         if not authorization_ok:
             self._transition(order, "SUSPENDED", "REJECTED")
@@ -165,11 +165,11 @@ class ProductionWorker:
         if decision is not None:
             outcome = ProductionComplianceService(self.db).evaluate(order)
             if outcome != "PASSED":
-                self.payments._replace_fact(order.order_id, "COMPLIANCE", outcome, decision.decision_id, {"rule_version": decision.rule_version})
+                self.payments.append_fact(order.order_id, "COMPLIANCE", outcome, decision.decision_id, {"rule_version": decision.rule_version})
                 self._transition(order, "COMPLIANCE_REJECTED", "REJECTED")
                 self._transition(order, "OPERATIONALLY_CLOSED_UNSUCCESSFUL", "REJECTED")
                 return
-            self.payments._replace_fact(order.order_id, "COMPLIANCE", "PASSED", decision.decision_id, {"rule_version": decision.rule_version})
+            self.payments.append_fact(order.order_id, "COMPLIANCE", "PASSED", decision.decision_id, {"rule_version": decision.rule_version})
             decision.outcome = "PASSED"
         existing_intent = self.db.query(ProductionFxTradeIntent).filter_by(order_id=order.order_id).first()
         if existing_intent:
@@ -225,7 +225,7 @@ class ProductionWorker:
             "funding.reservation", reservation.reservation_id, result.evidence
         ).evidence_id
         order = self.db.query(ProductionPaymentOrder).filter_by(order_id=reservation.order_id).one()
-        self.payments._replace_fact(order.order_id, "FUNDING", result.state, reservation.reservation_id, result.evidence)
+        self.payments.append_fact(order.order_id, "FUNDING", result.state, reservation.reservation_id, result.evidence)
         reservations = self.db.query(ProductionFundingReservation).filter_by(reservation_intent_id=reservation.reservation_intent_id).all()
         if not reservations or not all(item.state == "RESERVED" for item in reservations):
             return
@@ -257,7 +257,7 @@ class ProductionWorker:
         intent.evidence_ref = ProductionEvidenceService(self.db).record(
             "fx.trade.acceptance", intent.trade_intent_id, result.evidence
         ).evidence_id
-        self.payments._replace_fact(order.order_id, "FX", result.state, intent.trade_intent_id, result.evidence)
+        self.payments.append_fact(order.order_id, "FX", result.state, intent.trade_intent_id, result.evidence)
         trade = ProductionFxTrade(
             trade_id=f"trade_{uuid.uuid4().hex}",
             trade_intent_id=intent.trade_intent_id,
@@ -310,7 +310,7 @@ class ProductionWorker:
             "settlement.finality", leg.leg_id, result.evidence
         ).evidence_id
         order = self.db.query(ProductionPaymentOrder).filter_by(order_id=leg.order_id).one()
-        self.payments._replace_fact(order.order_id, "SETTLEMENT", result.state, leg.leg_role, result.evidence)
+        self.payments.append_fact(order.order_id, "SETTLEMENT", result.state, leg.leg_role, result.evidence)
         if leg.leg_role in {"FX_SELL", "FX_BUY"}:
             fx_legs = (
                 self.db.query(ProductionSettlementLeg)
@@ -329,7 +329,7 @@ class ProductionWorker:
         message_evidence = ProductionEvidenceService(self.db).record(
             "message.delivery", order.order_id, result.evidence
         ).evidence_id
-        self.payments._replace_fact(order.order_id, "MESSAGE", result.state, "payment-message", {"evidence_id": message_evidence, **result.evidence})
+        self.payments.append_fact(order.order_id, "MESSAGE", result.state, "payment-message", {"evidence_id": message_evidence, **result.evidence})
         if result.state in {"DELIVERED", "NETWORK_ACKED"}:
             self._transition(order, "MESSAGE_DELIVERED")
             if not self._has_event("payment.value.requested", order.order_id):
@@ -349,7 +349,7 @@ class ProductionWorker:
         leg.state = result.state
         leg.external_reference = result.external_reference
         leg.evidence_ref = ProductionEvidenceService(self.db).record("settlement.finality", leg.leg_id, result.evidence).evidence_id
-        self.payments._replace_fact(order.order_id, "SETTLEMENT", result.state, leg.leg_role, result.evidence)
+        self.payments.append_fact(order.order_id, "SETTLEMENT", result.state, leg.leg_role, result.evidence)
         if result.state == "FINAL":
             self._transition(order, "VALUE_SETTLEMENT")
             self._complete_payment(order)
@@ -366,7 +366,7 @@ class ProductionWorker:
             reservation.evidence_ref = ProductionEvidenceService(self.db).record(
                 "funding.consumption", reservation.reservation_id, result.evidence
             ).evidence_id
-            self.payments._replace_fact(order.order_id, "FUNDING", result.state, reservation.reservation_id, {"evidence_id": reservation.evidence_ref, **result.evidence})
+            self.payments.append_fact(order.order_id, "FUNDING", result.state, reservation.reservation_id, {"evidence_id": reservation.evidence_ref, **result.evidence})
         credit = self.db.query(ProductionBeneficiaryCredit).filter_by(order_id=order.order_id).first()
         if credit is None:
             credit = ProductionBeneficiaryCredit(
@@ -379,7 +379,7 @@ class ProductionWorker:
                 "beneficiary.credit", credit.credit_id, {"state": credit.state}
             ).evidence_id
             self.db.add(credit)
-        self.payments._replace_fact(order.order_id, "BENEFICIARY", "CREDITED", credit.credit_id, {})
+        self.payments.append_fact(order.order_id, "BENEFICIARY", "CREDITED", credit.credit_id, {})
         self._transition(order, "CUSTOMER_COMPLETED", "COMPLETED")
         reservations = self.db.query(ProductionFundingReservation).filter_by(order_id=order.order_id).all()
         legs = self.db.query(ProductionSettlementLeg).filter_by(order_id=order.order_id).all()
@@ -394,7 +394,7 @@ class ProductionWorker:
             break_details="[]",
         )
         self.db.add(recon)
-        self.payments._replace_fact(order.order_id, "RECONCILIATION", "MATCHED", recon.run_id, {})
+        self.payments.append_fact(order.order_id, "RECONCILIATION", "MATCHED", recon.run_id, {})
         self._transition(order, "OPERATIONALLY_CLOSED", "COMPLETED")
         ProductionAuditService(self.db).append("payment.completed", order.order_id, {"uetr": order.uetr}, "production-worker")
 
@@ -406,7 +406,7 @@ class ProductionWorker:
         request.state = result.state
         request.external_reference = result.external_reference
         request.evidence_ref = ProductionEvidenceService(self.db).record("payment.cancellation", request.cancellation_request_id, result.evidence).evidence_id
-        self.payments._replace_fact(order.order_id, "CANCELLATION", result.state, request.cancellation_request_id, result.evidence)
+        self.payments.append_fact(order.order_id, "CANCELLATION", result.state, request.cancellation_request_id, result.evidence)
         if result.state == "ACCEPTED" and leg.state != "FINAL":
             self._transition(order, "EXECUTION_CANCELLED", "CANCELLED")
 
@@ -425,7 +425,7 @@ class ProductionWorker:
         leg.external_reference = result.external_reference
         leg.evidence_ref = return_payment.evidence_ref
         order = self.db.query(ProductionPaymentOrder).filter_by(order_id=return_payment.original_order_id).one()
-        self.payments._replace_fact(
+        self.payments.append_fact(
             order.order_id,
             "RETURN",
             result.state,

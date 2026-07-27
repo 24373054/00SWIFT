@@ -438,12 +438,17 @@ class ProductionPaymentFact(Base):
     fact_type = Column(String(60), nullable=False, index=True)
     state = Column(String(60), nullable=False)
     reference = Column(String(160), nullable=True, index=True)
-    supersedes_fact_id = Column(String(80), nullable=True, index=True)
+    supersedes_fact_id = Column(String(80), ForeignKey("prod_payment_facts.fact_id", ondelete="RESTRICT"), nullable=True, index=True)
     payload = Column(Text, nullable=False, default="{}")
-    evidence_ref = Column(String(120), nullable=True)
     occurred_at = Column(DateTime, nullable=False, default=utcnow)
     version = Column(Integer, nullable=False, default=1)
-    __table_args__ = (UniqueConstraint("order_id", "fact_type", "reference", name="uq_prod_fact_ref"),)
+    fact_sequence = Column(Integer, nullable=False, default=1)
+    input_hash = Column(String(64), nullable=False, default="")
+    output_hash = Column(String(64), nullable=False, default="")
+    rule_version = Column(String(80), nullable=False, default="unspecified")
+    evidence_ref = Column(String(120), nullable=True)
+    actor = Column(String(160), nullable=False, default="system")
+    __table_args__ = (UniqueConstraint("order_id", "fact_type", "reference", "fact_sequence", name="uq_prod_fact_sequence"),)
 
 
 class ProductionAuthorizationDecision(Base):
