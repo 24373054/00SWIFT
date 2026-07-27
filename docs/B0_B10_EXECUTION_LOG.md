@@ -503,6 +503,17 @@
 - 测试结果：mapping、batch totals/hash、ACK receipt 和缺失 receipt 负向测试 `1 passed`；REJECT/replay transport 需真实 GL provider，清单项保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B5.G1 — zero-journal completion rejection
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`a8c15b3`、`f730add`
+- 修改文件：`backend/production/completion_policy.py`、`backend/tests/production/test_completion_policy.py`、`backend/tests/test_production_domain.py`
+- 新增/修改实现：CompletionPolicyEvaluator 在所有环境都查询 `prod_journals.state=POSTED`，移除 sandbox journals=1 shortcut；无 posted journal 时 `allowed=False`，worker 不 operational close。
+- 测试结果：completion/domain tests `4 passed`；sandbox domain negative evidence 为 beneficiary UNKNOWN，证明零 journal 不再完成。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
