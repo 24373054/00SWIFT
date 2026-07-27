@@ -605,6 +605,20 @@ class ProductionIdempotencyKey(Base):
     __table_args__ = (UniqueConstraint("scope", "key", name="uq_prod_idempotency_scope"),)
 
 
+class ProductionRequestNonce(Base):
+    __tablename__ = "prod_request_nonces"
+    id = Column(Integer, primary_key=True)
+    trust_domain = Column(String(80), nullable=False)
+    key_id = Column(String(160), nullable=False)
+    nonce = Column(String(240), nullable=False)
+    request_digest = Column(String(64), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    first_used_at = Column(DateTime, nullable=False, default=utcnow)
+    __table_args__ = (
+        UniqueConstraint("trust_domain", "key_id", "nonce", name="uq_prod_request_nonce_identity"),
+    )
+
+
 class ProductionOutboxEvent(Base):
     __tablename__ = "prod_outbox_events"
     id = Column(Integer, primary_key=True)
