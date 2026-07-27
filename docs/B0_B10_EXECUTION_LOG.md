@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.5.4 — test-only fault injection hooks
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`3526064`
+- 修改文件：`backend/production/faults.py`、`backend/tests/production/test_fault_injection.py`
+- 新增实现：覆盖 claim 后、inbox 后、外部调用前、外部成功/DB commit 前、commit/ack 前五个 crash point；非 test 环境构造即拒绝。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_fault_injection.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/faults.py backend/tests/production/test_fault_injection.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 安全证据：pilot/live 无法启用 fault injection。
+- 执行者：Codex
+
 ### B3.5.3 — handler-specific recovery functions
 
 - 状态：DONE

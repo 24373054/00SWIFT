@@ -421,7 +421,7 @@
 - [x] B3.5.3 为每个 handler 定义恢复函数。
   - reserve、FX accept、message send、settlement submit、cancel、return 都必须有 query/recover。
 
-- [ ] B3.5.4 新增 fault injection hooks，仅测试环境启用。
+- [x] B3.5.4 新增 fault injection hooks，仅测试环境启用。
   - crash points：claim 后、inbox 后、外部调用前、外部成功后/DB commit 前、DB commit 后/ack 前。
 
 ## B3.6 DLQ、重放和运营
