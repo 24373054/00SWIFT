@@ -189,7 +189,7 @@
   - 使用显式 `op.create_table/op.create_foreign_key/op.create_index/op.create_check_constraint`。
   - 为 tenant、participant、account、order、fact、decision、reservation、leg、journal、entry、case、report、outbox/inbox 建立 Foreign Key。
 
-- [ ] B1.1.3 修复当前 production 模型完全没有 Foreign Key 的问题。
+- [x] B1.1.3 修复当前 production 模型完全没有 Foreign Key 的问题。
   - 修改：`backend/production/models.py`。
   - 指定删除策略：金融/审计记录 `RESTRICT`；不可使用级联删除抹掉历史。
   - 增加 relationship 仅用于导航，不得依赖 ORM cascade 删除。
