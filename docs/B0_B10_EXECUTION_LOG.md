@@ -1492,6 +1492,26 @@
 - 未解决风险：现有 payment authorization flow 尚未调用该服务，B2.5.4 接线并删除 direct APPROVED。
 - 执行者：Codex
 
+### B2.5.2 — split approval create/decision API
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`7a6e269`
+- 修改文件：`backend/production/approval_api.py`、`backend/production/approval_router.py`、`backend/production/router.py`、`backend/tests/production/test_approval_router.py`
+- 新增实现：`POST /approvals` 只能由 authenticated principal 作为 maker 创建 PENDING；`POST /approvals/{id}/decisions` checker 从 authenticated principal 取得，禁止请求体传 maker/checker，maker=checker 拒绝。
+- 新增/修改测试：create 与 decision 路由拆分存在性测试。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_approval_router.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/approval_api.py backend/production/approval_router.py backend/production/router.py backend/tests/production/test_approval_router.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 正常路径证据：create 固定 PENDING，decision 更新 checker/state/approved_at 在同一事务提交。
+- 负向路径证据：不存在 pending approval、maker 自决、请求体伪造 checker 均无法完成审批。
+- 并发/重复/超时/恢复证据：query 按 approval_id+PENDING；重复 decision 返回 404；事务失败回滚。
+- OpenAPI/AsyncAPI 影响：新增 approval decision endpoint；旧直接 APPROVED route 不再注册。
+- Metrics/alerts/runbook 影响：maker/checker SoD violation 接双控告警。
+- 外部证据：无。
+- 未解决风险：append-only `prod_approval_decisions` 尚待 B2.5.3；当前 projection update 仍需不可变 decision 证据。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE

@@ -327,7 +327,7 @@
   - Mandate 校验 participant、tenant、account、debtor、amount、currency、purpose、validity、revocation 和 payment hash。
   - Approval 校验 aggregate type/id、action、payment hash、金额、审批策略和签字人。
 
-- [ ] B2.5.2 重写审批 API。
+- [x] B2.5.2 重写审批 API。
   - `POST /approvals` 只能由 maker 创建 PENDING。
   - 新增 `POST /approvals/{id}/decisions`，checker 身份来自 authenticated principal，不能来自请求 body。
   - 同一 subject、credential、人员组或不满足 SoD policy 时拒绝。
