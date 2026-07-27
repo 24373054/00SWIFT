@@ -103,6 +103,19 @@
 - 未解决风险：Gate G5 不得勾选，B0 COMPLETE 不得勾选。
 - 执行者：Codex
 
+### B0.G6 — corridor admission/rulebook/责任签字缺失
+
+- 状态：EXT-BLOCKED
+- 完成时间：2026-07-27
+- commit：无（对应 B0.5.4 外部阻断）
+- 修改文件：无新增；B0.5.1/B0.5.2 已实现 default-deny 代码。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_corridor_models.py backend/tests/production/test_readiness_dependencies.py -q`
+- 测试结果：通过；本地只有显式 `simulation_only` admission，pilot/live 无真实 admission 时 payment/readiness 拒绝。
+- 验收证据：无 ACTIVE 非 simulation admission、rulebook、法律/合规/结算/数据保护/安全 sign-off 可供生产使用。
+- 外部证据：待持牌合作方、CN/HK 法律和责任角色签字、rulebook 和资金流批准版本。
+- 未解决风险：Gate G6 不得勾选，B0 COMPLETE 不得勾选。
+- 执行者：Codex
+
 ### R0.1 — 执行证据机制
 
 - 状态：DONE
