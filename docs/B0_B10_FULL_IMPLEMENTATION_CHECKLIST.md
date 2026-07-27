@@ -552,12 +552,12 @@
 
 ## B4.8 Completion projection
 
-- [ ] B4.8.1 新增 `CompletionPolicyEvaluator`。
+- [x] B4.8.1 新增 `CompletionPolicyEvaluator`。
   - 从 versioned CompletionProfile 读取必需事实；不得在 worker 里硬编码“执行完就完成”。
 
-- [ ] B4.8.2 `CUSTOMER_COMPLETED` 前必须有 beneficiary credit 的已验证证据。
-- [ ] B4.8.3 `OPERATIONALLY_CLOSED` 前必须满足 B5 journal、B7 finality、B8 reconciliation 和无未决 reservation/case。
-- [ ] B4.8.4 completion evaluation 结果本身写 evidence，包含 profile/version/input facts/hash。
+- [x] B4.8.2 `CUSTOMER_COMPLETED` 前必须有 beneficiary credit 的已验证证据。
+- [ ] B4.8.3 `[EXT-BLOCKED]` `OPERATIONALLY_CLOSED` 前必须满足 B5 journal、B7 finality、B8 reconciliation 和无未决 reservation/case。
+- [x] B4.8.4 completion evaluation 结果本身写 evidence，包含 profile/version/input facts/hash。
 
 ## B4 Gate
 

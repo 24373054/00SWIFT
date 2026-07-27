@@ -51,6 +51,56 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.8.1 — CompletionPolicyEvaluator
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`d2a0256`
+- 修改文件：`backend/production/completion_policy.py`、`backend/tests/production/test_completion_policy.py`
+- 新增/修改实现：从 active、versioned CompletionProfile 读取必需事实；聚合最新 fact，检查 reservation/case、MATCHED reconciliation、全部 settlement legs FINAL、journal 证据和 beneficiary credit evidence；worker 仅依据 evaluator 结果执行 operational close。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_completion_policy.py backend/tests/test_production_domain.py -q`
+- 测试结果：`3 passed`（1 个既有 httpx/Starlette deprecation warning）。
+- 验收证据：缺少任一必需事实、终局、对账、beneficiary credit evidence 或 journal 时 allowed 为 false；sandbox 测试路径通过完整证据集合。
+- 外部证据：正式 B5 journal、B7 finality、B8 reconciliation provider 尚未接入，B4.8.3 保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
+### B4.8.2 — beneficiary credit verified evidence
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`d2a0256`
+- 修改文件：`backend/production/completion_policy.py`、`backend/tests/production/test_completion_policy.py`
+- 新增/修改实现：`CompletionPolicyEvaluator` 强制要求 `ProductionBeneficiaryCredit(state=CREDITED)` 且 `evidence_ref` 非空；测试构造并验证 credit evidence。
+- 测试结果：同 B4.8.1，`3 passed`。
+- 验收证据：beneficiary fact 存在但 credit evidence 缺失时不会允许完成（由 evaluator 条件 fail-closed）。
+- 执行者：Codex
+
+### B4.8.3 — operational close prerequisites
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`d2a0256`
+- 修改文件：`backend/production/completion_policy.py`、`backend/production/worker.py`
+- 新增/修改实现：已在代码侧串联 journal、finality、reconciliation、无未决 reservation/case 与 beneficiary evidence 检查；非 sandbox 强制查询真实 journal 表，worker 在 CAS close 前写 policy evidence 并拒绝不满足条件的订单。
+- 测试结果：sandbox domain/completion tests pass；正式 journal/connector 尚未提供。
+- 外部证据：B5/B7/B8 外部账本、终局 provider 和合作机构对账工件缺失，按清单保留 `[EXT-BLOCKED]`，未伪造通过。
+- 执行者：Codex
+
+### B4.8.4 — completion evaluation evidence
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`3bb1b69`
+- 修改文件：`backend/production/worker.py`
+- 新增/修改实现：每次 completion evaluation 都通过 `ProductionEvidenceService` 写入 `completion.policy` evidence，包含 profile/version、missing facts、reservation/case、reconciliation/finality/journal/beneficiary evidence 结果；不允许完成时保留 evidence id。
+- 测试结果：`backend/tests/test_production_domain.py` completion path pass。
+- 验收证据：worker 在 operational close 前生成可追溯 policy evidence，并将 evidence id 放入拒绝异常。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
