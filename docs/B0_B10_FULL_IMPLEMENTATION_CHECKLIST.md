@@ -37,7 +37,7 @@
 
 - [x] R0.1 每一项必须同时交付：实现代码、迁移（如涉及数据）、自动化测试、错误/恢复路径和必要文档。
 - [x] R0.2 “新增 ORM 类”“新增 Protocol”“固定返回成功”“写 TODO”“仅在文档声明未来接入”都不算完成。
-- [ ] R0.3 sandbox simulator 与 qualified implementation 必须物理或配置隔离；不得用 simulator 的 `FINAL/PASSED/MATCHED` 冒充外部结果。
+- [x] R0.3 sandbox simulator 与 qualified implementation 必须物理或配置隔离；不得用 simulator 的 `FINAL/PASSED/MATCHED` 冒充外部结果。
 - [ ] R0.4 每项勾选时填写：提交 SHA、变更文件、测试名称、测试命令、关键输出。没有证据不得勾选。
 - [ ] R0.5 不再修改已经应用的 `0001/0002/0003` 历史迁移；所有修复从 `0004_*.py` 开始追加。
 - [ ] R0.6 所有金额使用整数最小单位和 `BigInteger`；所有时间使用 UTC 且数据库列必须带时区语义。

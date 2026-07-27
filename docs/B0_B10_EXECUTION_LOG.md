@@ -50,6 +50,17 @@
 - 外部证据：无
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
+
+### R0.3 — Simulator/qualified 隔离
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg 'simulator|qualified|FINAL|PASSED|MATCHED' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；规则要求模拟结果不得冒充外部结果，并要求独立 connector/finality 验证
+- 验收证据：B7.3、B7.4、B8.2、B5.4 均包含隔离和真实来源检查
+- 未解决风险：当前代码仍有 sandbox 路径，后续 B7/B8 必须按本规则修复
+- 执行者：Codex
 - 复核者：待用户/Luna 复核
 
 ### R0.2 — 禁止占位冒充完成
