@@ -41,3 +41,13 @@ def test_multi_currency_requires_balanced_clearing_legs(db):
         service.create_account(account_id, "LE-CN", "SUBLEDGER", currency, "asset", opening_balance_minor=100)
     journals = service.post_multi_currency(journal_id="j-fx", legal_entity="LE-CN", book="SUBLEDGER", reason_code="fx", entries=[{"account_id": "cny-a", "direction": "DEBIT", "currency": "CNY", "amount_minor": 10}, {"account_id": "cny-fx", "direction": "CREDIT", "currency": "CNY", "amount_minor": 10}, {"account_id": "hkd-a", "direction": "DEBIT", "currency": "HKD", "amount_minor": 20}, {"account_id": "hkd-fx", "direction": "CREDIT", "currency": "HKD", "amount_minor": 20}], fx_clearing_accounts={"CNY": "cny-fx", "HKD": "hkd-fx"})
     assert {journal.journal_id for journal in journals} == {"j-fx:CNY", "j-fx:HKD"}
+
+
+def test_trial_balance_rebuilds_from_posted_entries(db):
+    service = ProductionLedgerService(db)
+    service.create_account("tb-a", "LE-CN", "SUBLEDGER", "CNY", "asset", opening_balance_minor=999)
+    service.create_account("tb-l", "LE-CN", "SUBLEDGER", "CNY", "liability", opening_balance_minor=999)
+    service.post_journal(journal_id="tb-j", legal_entity="LE-CN", book="SUBLEDGER", reason_code="test", entries=[{"account_id": "tb-a", "direction": "DEBIT", "currency": "CNY", "amount_minor": 15}, {"account_id": "tb-l", "direction": "CREDIT", "currency": "CNY", "amount_minor": 15}])
+    result = service.trial_balance("CNY")
+    balances = {item["account_id"]: item["balance_minor"] for item in result["accounts"]}
+    assert balances["tb-a"] == 15 and balances["tb-l"] == 15

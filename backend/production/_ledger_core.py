@@ -196,24 +196,35 @@ class ProductionLedgerService:
         if currency:
             query = query.filter_by(currency=currency.upper())
         accounts = query.all()
+        reconstructed = {account.account_id: 0 for account in accounts}
+        entries = self.db.query(ProductionJournalEntry).join(ProductionJournal, ProductionJournal.journal_id == ProductionJournalEntry.journal_id).filter(ProductionJournal.state == "POSTED")
+        if currency:
+            entries = entries.filter(ProductionJournalEntry.currency == currency.upper())
+        for entry in entries.all():
+            account = next((item for item in accounts if item.account_id == entry.account_id), None)
+            if account is None:
+                continue
+            normal = NORMAL_BALANCE[account.account_type.lower()]
+            reconstructed[account.account_id] += int(entry.amount_minor) if entry.direction == normal else -int(entry.amount_minor)
         return {
             "currency": currency.upper() if currency else None,
-            "accounts": [serialize_account(item) for item in accounts],
-            "total_balance_minor": sum(item.balance_minor for item in accounts),
+            "accounts": [serialize_account(item, balance_minor=reconstructed[item.account_id]) for item in accounts],
+            "total_balance_minor": sum(reconstructed.values()),
             "total_reserved_minor": sum(item.reserved_minor for item in accounts),
         }
 
 
-def serialize_account(account: ProductionLedgerAccount) -> dict[str, Any]:
+def serialize_account(account: ProductionLedgerAccount, balance_minor: int | None = None) -> dict[str, Any]:
+    balance = account.balance_minor if balance_minor is None else balance_minor
     return {
         "account_id": account.account_id,
         "legal_entity": account.legal_entity,
         "book": account.book,
         "currency": account.currency,
         "account_type": account.account_type,
-        "balance_minor": account.balance_minor,
+        "balance_minor": balance,
         "reserved_minor": account.reserved_minor,
-        "available_minor": account.balance_minor - account.reserved_minor,
+        "available_minor": balance - account.reserved_minor,
         "version": account.version,
         "active": account.active,
     }
