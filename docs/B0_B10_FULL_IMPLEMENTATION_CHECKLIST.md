@@ -125,7 +125,7 @@
   - `/worker/run` 仅 sandbox/test 可用；pilot/live 不暴露人工执行 worker 的公网路由。
   - 所有写路由必须有 integrity、权限、tenant、审计；业务写还要有 idempotency。
 
-- [ ] B0.3.5 删除生产 UI/API 对 `X-User-Role`、`X-User-Subject`、任意 `X-Participant-ID` 的信任。
+- [x] B0.3.5 删除生产 UI/API 对 `X-User-Role`、`X-User-Subject`、任意 `X-Participant-ID` 的信任。
   - 修改：`frontend/src/api.ts`、`backend/production/security.py`、`backend/nextgen/ui_router.py`。
   - sandbox 显式测试身份只允许 `/sim` 或测试配置，响应必须标记 simulation。
 
