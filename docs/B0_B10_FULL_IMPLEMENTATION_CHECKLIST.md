@@ -339,7 +339,7 @@
 - [x] B2.5.4 删除当前单请求直接 `APPROVED` 的逻辑。
   - 修改：现有 `backend/production/router.py` 相应路由。
 
-- [ ] B2.5.5 新增 `test_maker_checker.py`。
+- [x] B2.5.5 新增 `test_maker_checker.py`。
   - 同一调用者伪造 Alice/Bob 必须失败。
   - maker 换 credential、同一自然人、管理员越权、重复 decision、过期 approval 均有测试。
 

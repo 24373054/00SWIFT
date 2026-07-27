@@ -51,6 +51,24 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B2.5.5 — maker/checker negative matrix
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`736bd4c`
+- 修改文件：`backend/production/approval_api.py`、`backend/production/models.py`、`backend/alembic/versions/0020_approval_credential_binding.py`、`backend/tests/production/test_maker_checker.py`
+- 新增实现：审批 projection 保存 maker/checker credential binding；checker 必须同时满足不同 subject 与不同 credential；decision 记录保存 checker credential，迁移 `0020_approval_credential_binding` 已加入。
+- 新增测试：同一 subject 自决、同一 credential 换 subject、过期 approval、重复 decision、请求体伪造 maker 字段均拒绝；创建结果只采用 authenticated principal。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_maker_checker.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check --fix backend/production/approval_api.py backend/production/models.py backend/alembic/versions/0020_approval_credential_binding.py backend/tests/production/test_maker_checker.py`; `.\\.venv\\Scripts\\python.exe -m alembic -c alembic.ini upgrade head`
+- 测试结果：`3 passed`；`ruff: All checks passed`；SQLite Alembic `0019 -> 0020` 成功。
+- 正常路径证据：只有不同 subject 且不同 credential 的 authenticated checker 能推进 PENDING approval，并产生 append-only decision。
+- 负向路径证据：maker 自决、credential swap、过期/已处理 approval、请求体伪造 maker 均返回拒绝；管理员不能通过请求字段冒充身份。
+- 并发/重复/超时/恢复证据：重复或非 PENDING approval 查询返回 404；credential binding 在 projection 与 decision 中持久化。
+- 外部证据：无。
+- 未解决风险：真实 PostgreSQL 并发争用仍由 B2.4.4 外部 Gate 阻断。
+- 执行者：Codex
+
 ### B0.G2 — pilot/live 真实 cryptographic request verification
 
 - 状态：EXT-BLOCKED
