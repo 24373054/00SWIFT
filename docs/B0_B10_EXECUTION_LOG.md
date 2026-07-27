@@ -272,6 +272,18 @@
 - 测试结果：`7 passed`；ruff 全部通过。
 - 执行者：Codex
 
+### B5.3.1 — ProductionHold lifecycle
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`1c91e49`
+- 修改文件：`backend/production/funding_service.py`、`backend/tests/production/test_hold_service.py`
+- 新增/修改实现：HoldService 使用 ProductionHold，保存 account/amount/currency/expiry/purpose/payment/external/evidence；状态覆盖 HELD/CONSUMED/RELEASED/EXPIRED/UNKNOWN，禁止 worker 直接把 connector 字符串当资金状态。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_hold_service.py -q`
+- 测试结果：`1 passed`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

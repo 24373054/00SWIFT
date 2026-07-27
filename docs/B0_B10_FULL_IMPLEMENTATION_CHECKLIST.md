@@ -608,7 +608,7 @@
 
 ## B5.3 Hold/Reservation
 
-- [ ] B5.3.1 用 `ProductionHold` 替代支付 worker 直接操作 connector reservation 字符串。
+- [x] B5.3.1 用 `ProductionHold` 替代支付 worker 直接操作 connector reservation 字符串。
   - 状态：REQUESTED/HELD/CONSUMED/RELEASED/EXPIRED/UNKNOWN。
   - account、amount、currency、expiry、purpose、payment、external reference。
 
