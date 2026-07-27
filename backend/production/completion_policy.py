@@ -7,6 +7,7 @@ from sqlalchemy import text
 from config import get_settings
 
 from .models import (
+    ProductionBeneficiaryCredit,
     ProductionCompletionProfile,
     ProductionFundingReservation,
     ProductionInvestigationCase,
@@ -39,9 +40,11 @@ class CompletionPolicyEvaluator:
         reconciliation = self.db.query(ProductionReconciliationRun).filter_by(order_id=order.order_id, state="MATCHED").first()
         final_legs = self.db.query(ProductionSettlementLeg).filter_by(order_id=order.order_id).all()
         finality_ok = bool(final_legs) and all(leg.state == "FINAL" for leg in final_legs)
+        credit = self.db.query(ProductionBeneficiaryCredit).filter_by(order_id=order.order_id, state="CREDITED").one_or_none()
+        beneficiary_evidence = bool(credit and credit.evidence_ref)
         strict_external = not get_settings().is_sandbox
         if strict_external:
             journals = self.db.execute(text("SELECT COUNT(*) FROM prod_journals WHERE order_id=:order_id"), {"order_id": order.order_id}).scalar_one()
         else:
             journals = 1
-        return {"allowed": not missing and reservations == 0 and cases == 0 and reconciliation is not None and finality_ok and journals > 0, "missing": missing, "reservations": reservations, "cases": cases, "reconciliation": reconciliation is not None, "finality": finality_ok, "journals": journals, "profile_id": profile.profile_id, "profile_version": profile.projection_rule_version}
+        return {"allowed": not missing and reservations == 0 and cases == 0 and reconciliation is not None and finality_ok and beneficiary_evidence and journals > 0, "missing": missing, "reservations": reservations, "cases": cases, "reconciliation": reconciliation is not None, "finality": finality_ok, "beneficiary_evidence": beneficiary_evidence, "journals": journals, "profile_id": profile.profile_id, "profile_version": profile.projection_rule_version}
