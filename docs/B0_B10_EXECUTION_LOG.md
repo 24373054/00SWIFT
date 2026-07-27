@@ -1078,3 +1078,19 @@
 - 外部证据：本机未执行真实 `pg_dump/pg_restore`，依赖安装与目标库属于运维环境。
 - 未解决风险：需要实际 PostgreSQL 备份文件完成一次恢复演练后才可关闭运维 Gate。
 - 执行者：Codex
+
+### B1.G4 — SQLite pilot/live negative gate
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`b0ba999`（实现 commit）；本 Gate 证据追加于本日志提交
+- 修改文件：复用 `backend/config.py` 的 B1.4.1 gate；测试 `backend/tests/production/test_config_database_gate.py`。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_config_database_gate.py backend/tests/production/test_tenant_filters.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/config.py backend/production/service.py backend/production/router.py`
+- 测试结果：`3 passed`；`ruff: All checks passed`。
+- 正常路径证据：PostgreSQL URL 继续进入后续 qualified connector/HSM/attestation Gate。
+- 负向路径证据：pilot/live SQLite 配置立即抛 `RuntimeError`，服务不会启动；admin 也不能绕过 tenant filter。
+- 并发/重复/超时/恢复证据：纯启动校验与 ORM filter，无状态副作用。
+- 外部证据：无。
+- 未解决风险：G1/G3 仍需真实 PostgreSQL clean/legacy/RLS 实测。
+- 执行者：Codex

@@ -250,7 +250,7 @@
 - [ ] B1.G1 PostgreSQL clean install、旧数据 upgrade、单 revision rollback/re-upgrade 全部通过。
 - [ ] B1.G2 production schema 无 orphan、无非法 null、无未解释弱约束。
 - [ ] B1.G3 RLS 与服务层跨租户负向测试通过。
-- [ ] B1.G4 SQLite 无法被误用于 pilot/live。
+- [x] B1.G4 SQLite 无法被误用于 pilot/live。
 - [ ] B1 COMPLETE。
 
 ---
