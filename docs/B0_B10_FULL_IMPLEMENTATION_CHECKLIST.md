@@ -168,7 +168,7 @@
 
 - [x] B0.G1 不存在的 attestation 路径无法通过 pilot/live 启动。
 - [ ] B0.G2 pilot/live 可完成一次真实 cryptographic request verification，而非固定 503。
-- [ ] B0.G3 全路由授权矩阵负向测试通过。
+- [x] B0.G3 全路由授权矩阵负向测试通过。
 - [ ] B0.G4 nonce 并发重放测试通过。
 - [ ] B0.G5 外部 HSM/CA 未提供时标记 `[EXT-BLOCKED]`，系统只允许 simulation。
 - [ ] B0.G6 无有效 corridor admission/rulebook/责任签字时禁止 pilot/live payment。
