@@ -582,7 +582,7 @@
   - LegalEntity、LedgerBook、LedgerAccount、Journal、JournalEntry、Hold、BalanceSnapshot、LedgerPeriod、Fee/Tax、FxRevaluation、GlMapping、GlBatch、GlReceipt。
   - 每个对象 tenant、legal entity、book、business date、currency、version、evidence 完整。
 
-- [ ] B5.1.3 明确账户类型和正常余额方向。
+- [x] B5.1.3 明确账户类型和正常余额方向。
   - asset/liability/equity/income/expense/contra/suspense；不能统一用 credit 加、debit 减。
 
 - [ ] B5.1.4 LiabilityProfile 真正接入。

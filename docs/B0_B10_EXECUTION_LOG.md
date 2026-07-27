@@ -185,6 +185,19 @@
 - 测试结果：`1 passed`；Alembic upgrade 成功到 `0031_ledger_accounting_boundary`。
 - 执行者：Codex
 
+### B5.1.3 — account normal balance directions
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`82c1ac0`、`aad3e13`
+- 修改文件：`backend/production/_ledger_core.py`、`backend/tests/production/test_ledger_boundaries.py`
+- 新增/修改实现：明确 asset/expense/suspense 为 DEBIT normal，liability/equity/income/contra 为 CREDIT normal；建账拒绝未知类型，过账按账户正常余额方向计算增减。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_boundaries.py -q`
+- 测试结果：`2 passed`。
+- 验收证据：asset/liability 混合 journal 按各自方向计算，未知 account type fail-closed。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
