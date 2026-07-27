@@ -180,7 +180,7 @@
 
 ## B1.1 冻结历史迁移并建立显式生产迁移
 
-- [ ] B1.1.1 将 `0001/0002/0003` 记录为 immutable baseline。
+- [x] B1.1.1 将 `0001/0002/0003` 记录为 immutable baseline。
   - 新增：`docs/database/MIGRATION_BASELINE.md`，记录 revision hash 和已知历史缺陷。
   - CI 校验迁移文件 hash，禁止后续静默修改历史 revision。
 
