@@ -365,6 +365,16 @@
 - 外部证据：真实 posted journal provider 尚未提供，保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B5.5.1 — entry-based trial balance
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`bbe571f`
+- 修改文件：`backend/production/_ledger_core.py`、`backend/tests/production/test_ledger_boundaries.py`
+- 验收证据：trial_balance 汇总 POSTED entries 并按正常余额方向重建，projection balance 不再是唯一权威；`5 passed`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

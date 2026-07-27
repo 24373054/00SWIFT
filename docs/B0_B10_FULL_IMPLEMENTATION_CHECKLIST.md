@@ -630,7 +630,7 @@
 
 ## B5.5 试算、期间与快照
 
-- [ ] B5.5.1 重写 trial balance，从 POSTED entries 汇总 debit/credit/ending balance，不是简单求 account balance 总和。
+- [x] B5.5.1 重写 trial balance，从 POSTED entries 汇总 debit/credit/ending balance，不是简单求 account balance 总和。
 - [ ] B5.5.2 LedgerPeriod 支持 OPEN/SOFT_CLOSED/CLOSED/REOPEN_PENDING。
   - closed period 禁止普通 posting；reopen 必须 maker-checker。
 
