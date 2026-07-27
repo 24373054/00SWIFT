@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.4 — 每项证据字段
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`、`docs/B0_B10_EXECUTION_LOG.md`
+- 测试命令：`rg 'commit:|files:|tests:|command:|result:' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md docs/B0_B10_EXECUTION_LOG.md`
+- 测试结果：通过；清单和日志模板都要求记录提交、文件、测试、命令和结果
+- 验收证据：执行日志模板已提供固定字段
+- 未解决风险：后续执行者可能遗漏填写，B Gate 将其作为门槛
+- 执行者：Codex
+
 ### R0.3 — Simulator/qualified 隔离
 
 - 状态：DONE
