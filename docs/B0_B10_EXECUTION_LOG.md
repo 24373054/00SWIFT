@@ -51,6 +51,19 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.1.2 — outbox integrity schema
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`b0c7951`
+- 修改文件：`backend/production/models.py`、`backend/production/runtime.py`、`backend/alembic/versions/0021_outbox_event_integrity.py`、`backend/tests/production/test_outbox_integrity.py`
+- 新增实现：outbox tenant/participant 非空、payload/content hash、published_at、broker offset/metadata、lease heartbeat 字段；迁移对历史 payload 解析并从 payment aggregate 回填，无法证明归属时显式阻断；enqueue 无 scope 直接拒绝。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_outbox_integrity.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/models.py backend/production/runtime.py backend/alembic/versions/0021_outbox_event_integrity.py backend/tests/production/test_outbox_integrity.py`; `.\\.venv\\Scripts\\python.exe -m alembic -c alembic.ini upgrade head`
+- 测试结果：`1 passed`；`ruff: All checks passed`；SQLite `0020 -> 0021` 成功，现有 outbox 行完成真实 tenant/participant/hash 回填。
+- 负向证据：缺 tenant/participant 上下文的 enqueue 抛出 `ProductionConflict`，不写入无主事件。
+- 外部证据：无。
+- 执行者：Codex
+
 ### B3.1.1 — canonical EventEnvelope
 
 - 状态：DONE
