@@ -455,19 +455,19 @@
 
 ## B4.1 Payment Aggregate 与多维状态
 
-- [ ] B4.1.1 新增 `backend/production/payment_aggregate.py`。
+- [x] B4.1.1 新增 `backend/production/payment_aggregate.py`。
   - Payment aggregate 只通过 command 方法改变 projection；禁止 worker/router 任意赋值状态。
   - command：create、authorize、screen、reserve、accept_fx、deliver_message、settle、credit、cancel、return、suspend、resume、close。
 
-- [ ] B4.1.2 拆分状态维度。
+- [x] B4.1.2 拆分状态维度。
   - orchestration、authorization、compliance、funding、FX、message delivery、value settlement、beneficiary、reconciliation 各自独立。
   - `DELIVERED/NETWORK_ACKED` 不得等价于 `FINAL`；`CUSTOMER_COMPLETED` 不得自动等价于 operational close。
 
-- [ ] B4.1.3 新增显式 state transition specification。
+- [x] B4.1.3 新增显式 state transition specification。
   - 文件：`backend/production/payment_state_machine.py`、`docs/domain/PAYMENT_STATE_MACHINE.md`。
   - 每个 transition 写明 guard、command、event、timeout、compensation、terminal semantics。
 
-- [ ] B4.1.4 删除不合法捷径。
+- [x] B4.1.4 删除不合法捷径。
   - 当前 `CONTROL_CHECKS → CUSTOMER_COMPLETED`、`RESERVATION_PENDING → CUSTOMER_COMPLETED` 等未经证明的 transition 必须删除。
 
 ## B4.2 CAS 与并发控制

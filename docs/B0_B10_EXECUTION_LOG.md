@@ -51,6 +51,31 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.1.1 — command-only payment aggregate
+
+- 状态：DONE；完成时间：2026-07-27；commit：`b0bb1e6`
+- 修改文件：`backend/production/payment_aggregate.py`、`backend/tests/production/test_payment_aggregate.py`
+- 证据：create/authorize/screen/reserve/FX/message/settle/credit/cancel/return/suspend/resume/close 均经 command facade；expected version 与 close credit guard 测试通过（1 passed）。
+
+### B4.1.2 — payment state dimensions
+
+- 状态：DONE；完成时间：2026-07-27；commit：`f20ed5d`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0025_payment_state_dimensions.py`、`backend/tests/production/test_payment_state_dimensions.py`
+- 证据：authorization/compliance/funding/FX/message/value/beneficiary/reconciliation 独立字段；DELIVERED 不等于 FINAL；SQLite migration 与测试通过（1 passed）。
+
+### B4.1.3 — explicit state transition specification
+
+- 状态：DONE；完成时间：2026-07-27；commit：`34f2253`
+- 修改文件：`backend/production/payment_state_machine.py`、`docs/domain/PAYMENT_STATE_MACHINE.md`、`backend/tests/production/test_payment_state_machine.py`
+- 证据：每个 transition 明确 guard/command/event/timeout/compensation/terminal semantics；非法 shortcut 未在 specification 中注册（1 passed）。
+
+### B4.1.4 — remove illegal completion shortcuts
+
+- 状态：DONE；完成时间：2026-07-27；commit：`57d0dfd`
+- 修改文件：`backend/production/service.py`、`backend/tests/production/test_payment_transition_guards.py`
+- 证据：CONTROL_CHECKS/RESERVATION_PENDING 不再直接 CUSTOMER_COMPLETED；负向测试通过（1 passed）。
+- 执行者：Codex
+
 ### B3.G1 — null lease deadlock gate
 
 - 状态：DONE
