@@ -206,6 +206,26 @@
 - 负向路径证据：缺少 `artifact_type` 的 attestation 在 verifier 层拒绝。
 - 未解决风险：真实签发机构和生产工件仍属于 B0.4/B7 的 `[EXT-BLOCKED]` 外部证据。
 
+### B0.2.1 — RFC 9421 HTTP 消息签名验证器
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`362f18d`
+- 修改文件：`backend/production/signatures.py`、`backend/tests/production/test_http_signatures.py`、`backend/config.py`、`backend/.env.example`
+- 新增迁移：无
+- 新增/修改测试：真实 Ed25519 sandbox verifier、qualified callback adapter、body digest、URI 篡改、过期、未来时间、缺 covered component、弱算法和身份绑定。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_http_signatures.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/signatures.py backend/tests/production/test_http_signatures.py backend/config.py`
+- 测试结果：`3 passed`; `ruff`：`All checks passed`
+- 正常路径证据：canonical covered components 包含 method、target URI、authority、content-digest、content-type、date、nonce、participant/service identity，Ed25519 实签名验证通过。
+- 负向路径证据：body/URI 被改、窗口失效、缺组件、unknown/weak algorithm、未知 key、身份不绑定均拒绝；不是固定 200/成功结果。
+- 并发/重复/超时/恢复证据：created/expires 与配置 clock skew 校验；nonce 持久化和并发原子拒绝在 B0.2.3。
+- OpenAPI/AsyncAPI 影响：签名输入字段作为生产 HTTP boundary contract，B0.2.2 接入路由依赖。
+- Metrics/alerts/runbook 影响：拒绝原因结构化为 `SignatureVerificationError`，integrity 层负责 HTTP 映射。
+- 外部证据：qualified adapter 只接受外部真实 verifier callback；未提供真实 HSM/CA，保持 `[EXT-BLOCKED]`。
+- 未解决风险：尚未将 verifier 注入 FastAPI integrity dependency。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
