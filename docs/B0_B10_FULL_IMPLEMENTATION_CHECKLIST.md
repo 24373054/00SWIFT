@@ -435,11 +435,11 @@
 
 ## B3.7 测试
 
-- [ ] B3.7.1 `test_outbox_leases.py`：null lease、过期 lease、fencing、heartbeat。
-- [ ] B3.7.2 `test_outbox_partition_order.py`：同 aggregate 顺序、不同 partition 并行。
-- [ ] B3.7.3 `test_worker_crash_recovery.py`：全部 crash points 无丢失、无重复业务效果。
-- [ ] B3.7.4 `test_broker_recovery.py`：broker unavailable/restart/publish timeout。
-- [ ] B3.7.5 `test_dlq_replay.py`：权限、双控、重复 replay、审计。
+- [x] B3.7.1 `test_outbox_leases.py`：null lease、过期 lease、fencing、heartbeat。
+- [x] B3.7.2 `test_outbox_partition_order.py`：同 aggregate 顺序、不同 partition 并行。
+- [x] B3.7.3 `test_worker_crash_recovery.py`：全部 crash points 无丢失、无重复业务效果。
+- [x] B3.7.4 `test_broker_recovery.py`：broker unavailable/restart/publish timeout。
+- [x] B3.7.5 `test_dlq_replay.py`：权限、双控、重复 replay、审计。
 
 ## B3 Gate
 

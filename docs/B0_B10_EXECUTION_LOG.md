@@ -51,6 +51,40 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.7.1 — outbox lease tests
+
+- 状态：DONE；commit：`0724ff8`
+- 测试文件：`backend/tests/production/test_outbox_leases.py`
+- 证据：null lease、过期 lease、heartbeat ownership fencing；2 passed。
+
+### B3.7.2 — partition order tests
+
+- 状态：DONE；commit：`1102eda`
+- 测试文件：`backend/tests/production/test_outbox_partition_order.py`
+- 证据：同 aggregate 最低 sequence 优先、不同 partition 并行；1 passed。
+
+### B3.7.3 — worker crash recovery tests
+
+- 状态：DONE；commit：`d8d2d5c`
+- 测试文件：`backend/tests/production/test_worker_crash_recovery.py`、`backend/tests/production/test_fault_injection.py`
+- 证据：五个 crash points 均只在 test 环境触发，10 项组合套件整体通过。
+
+### B3.7.4 — broker recovery tests
+
+- 状态：DONE；commit：`d8d2d5c`
+- 测试文件：`backend/tests/production/test_broker_recovery.py`、`backend/tests/production/test_broker.py`
+- 证据：nack 后可重新消费、重复 publish 去重、health；测试通过。
+
+### B3.7.5 — DLQ replay tests
+
+- 状态：DONE；commit：`1395367`
+- 测试文件：`backend/tests/production/test_dlq_replay.py`
+- 证据：maker/checker 双控、重复 approve、hash 漂移和 tenant 隔离；2 passed。
+
+- 综合测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_outbox_leases.py backend/tests/production/test_outbox_partition_order.py backend/tests/production/test_worker_crash_recovery.py backend/tests/production/test_broker_recovery.py backend/tests/production/test_dlq_replay.py -q`
+- 综合结果：`10 passed`；无外部依赖。
+- 执行者：Codex
+
 ### B3.6.4 — outbox recovery runbook
 
 - 状态：DONE
