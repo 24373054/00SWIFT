@@ -323,7 +323,7 @@
 
 ## B2.5 Mandate 与真正的 maker-checker
 
-- [ ] B2.5.1 新增 `backend/production/authorization_service.py`。
+- [x] B2.5.1 新增 `backend/production/authorization_service.py`。
   - Mandate 校验 participant、tenant、account、debtor、amount、currency、purpose、validity、revocation 和 payment hash。
   - Approval 校验 aggregate type/id、action、payment hash、金额、审批策略和签字人。
 

@@ -1472,6 +1472,26 @@
 - 未解决风险：需在 PostgreSQL 运行后确认 unique-create race retry 与锁等待 SLA。
 - 执行者：Codex
 
+### B2.5.1 — authorization service
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`842d55d`
+- 修改文件：`backend/production/authorization_service.py`、`backend/tests/production/test_authorization_service.py`
+- 新增实现：Mandate 校验 participant/tenant/account/debtor/amount/currency/purpose/validity/status；Approval 校验 aggregate/action/payment hash 对应、APPROVED 状态、checker 匹配和 SoD。
+- 新增/修改测试：缺失 mandate 默认拒绝；服务接口不接受未匹配审批作为成功。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_authorization_service.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/authorization_service.py backend/tests/production/test_authorization_service.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 正常路径证据：只返回匹配且有效的 mandate/approval；authorize_payment 同时执行两类校验。
+- 负向路径证据：participant/account/tenant/amount/currency/purpose/time/status/payment hash/checker 任一不匹配 fail-closed。
+- 并发/重复/超时/恢复证据：只读校验；approval decision append-only 将在 B2.5.3 提供不可变证据。
+- OpenAPI/AsyncAPI 影响：无直接接口变化。
+- Metrics/alerts/runbook 影响：mandate/approval mismatch 接授权拒绝告警。
+- 外部证据：无。
+- 未解决风险：现有 payment authorization flow 尚未调用该服务，B2.5.4 接线并删除 direct APPROVED。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE
