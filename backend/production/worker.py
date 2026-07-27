@@ -143,8 +143,8 @@ class ProductionWorker:
     def _payment_created(self, payload: dict[str, Any]) -> None:
         order = self.db.query(ProductionPaymentOrder).filter_by(order_id=payload["order_id"]).one()
         settings = get_settings()
-        auth_decision = self.db.query(ProductionAuthorizationDecision).filter_by(order_id=order.order_id).first()
-        authorization_ok = settings.is_sandbox
+        auth_decision = self.db.query(ProductionAuthorizationDecision).filter_by(order_id=order.order_id).order_by(ProductionAuthorizationDecision.id.desc()).first()
+        authorization_ok = settings.is_sandbox or (auth_decision is not None and auth_decision.outcome == "PASSED")
         if not authorization_ok and auth_decision is not None:
             mandate = None
             approval = None
@@ -154,23 +154,25 @@ class ProductionWorker:
             if auth_decision.approval_ref:
                 approval = self.db.query(ProductionApproval).filter_by(approval_id=auth_decision.approval_ref, state="APPROVED").one_or_none()
             authorization_ok = mandate is not None and approval is not None
-        if auth_decision is not None:
+        if auth_decision is not None and auth_decision.outcome != "PASSED":
             outcome = "PASSED" if authorization_ok else "REJECTED"
             self.payments.append_fact(order.order_id, "AUTHORIZATION", outcome, auth_decision.decision_id, {"rule_version": auth_decision.rule_version})
-            auth_decision.outcome = outcome
+            self.db.add(ProductionAuthorizationDecision(decision_id=f"authz_{uuid.uuid4().hex}", order_id=order.order_id, outcome=outcome, payment_hash=auth_decision.payment_hash, mandate_ref=auth_decision.mandate_ref, approval_ref=auth_decision.approval_ref, input_hash=auth_decision.input_hash, rule_version=auth_decision.rule_version, evidence_ref=auth_decision.evidence_ref))
         if not authorization_ok:
             self._transition(order, "SUSPENDED", "REJECTED")
             return
-        decision = self.db.query(ProductionComplianceDecision).filter_by(order_id=order.order_id).first()
-        if decision is not None:
+        decision = self.db.query(ProductionComplianceDecision).filter_by(order_id=order.order_id).order_by(ProductionComplianceDecision.id.desc()).first()
+        if decision is not None and decision.outcome != "PASSED":
             outcome = ProductionComplianceService(self.db).evaluate(order)
+            evidence_ref = ProductionEvidenceService(self.db).record("compliance.screening", order.order_id, {"outcome": outcome, "rule_version": ProductionComplianceService.rule_version}).evidence_id
             if outcome != "PASSED":
-                self.payments.append_fact(order.order_id, "COMPLIANCE", outcome, decision.decision_id, {"rule_version": decision.rule_version})
+                self.payments.append_fact(order.order_id, "COMPLIANCE", outcome, decision.decision_id, {"rule_version": decision.rule_version, "evidence_id": evidence_ref})
+                self.db.add(ProductionComplianceDecision(decision_id=f"comp_{uuid.uuid4().hex}", order_id=order.order_id, outcome=outcome, input_hash=decision.input_hash, rule_version=ProductionComplianceService.rule_version, list_version="sandbox-list-2026-01", case_id=decision.case_id, evidence_ref=evidence_ref))
                 self._transition(order, "COMPLIANCE_REJECTED", "REJECTED")
                 self._transition(order, "OPERATIONALLY_CLOSED_UNSUCCESSFUL", "REJECTED")
                 return
-            self.payments.append_fact(order.order_id, "COMPLIANCE", "PASSED", decision.decision_id, {"rule_version": decision.rule_version})
-            decision.outcome = "PASSED"
+            self.payments.append_fact(order.order_id, "COMPLIANCE", "PASSED", decision.decision_id, {"rule_version": ProductionComplianceService.rule_version, "evidence_id": evidence_ref})
+            self.db.add(ProductionComplianceDecision(decision_id=f"comp_{uuid.uuid4().hex}", order_id=order.order_id, outcome="PASSED", input_hash=decision.input_hash, rule_version=ProductionComplianceService.rule_version, list_version="sandbox-list-2026-01", case_id=decision.case_id, evidence_ref=evidence_ref))
         existing_intent = self.db.query(ProductionFxTradeIntent).filter_by(order_id=order.order_id).first()
         if existing_intent:
             return

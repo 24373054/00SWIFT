@@ -483,6 +483,18 @@ class ProductionComplianceDecision(Base):
     evidence_ref = Column(String(120), nullable=True)
 
 
+@event.listens_for(ProductionAuthorizationDecision, "before_update")
+@event.listens_for(ProductionAuthorizationDecision, "before_delete")
+def _authorization_decision_immutable(_mapper, _connection, _target) -> None:
+    raise ValueError("authorization decisions are append-only")
+
+
+@event.listens_for(ProductionComplianceDecision, "before_update")
+@event.listens_for(ProductionComplianceDecision, "before_delete")
+def _compliance_decision_immutable(_mapper, _connection, _target) -> None:
+    raise ValueError("compliance decisions are append-only")
+
+
 class ProductionFundingReservation(Base):
     __tablename__ = "prod_funding_reservations"
     id = Column(Integer, primary_key=True)
