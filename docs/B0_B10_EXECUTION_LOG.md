@@ -466,6 +466,26 @@
 - 未解决风险：trust-anchor 变更仍需 qualified 外部审批和 B2 流程。
 - 执行者：Codex
 
+### B0.5.1 — 走廊准入与控制签字模型
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`0f1e263`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0007_corridor_admission.py`、`backend/tests/production/test_corridor_models.py`
+- 新增迁移：`0007_corridor_admission`
+- 新增/修改测试：admission/control attestation 持久化；environment+corridor+rulebook 唯一；金额窗口和 simulation_only 字段。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_corridor_models.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/models.py backend/alembic/versions/0007_corridor_admission.py backend/tests/production/test_corridor_models.py`; `\.venv\Scripts\python.exe -m alembic upgrade head`
+- 测试结果：`2 passed`; `ruff`：`All checks passed`; migration 已升级至 `0007_corridor_admission`。
+- 正常路径证据：admission 保存主体、场景、币种、金额/时间窗口、资金流、终局、数据流、rulebook、签字角色和 evidence；control attestation 保存 signer/validity/status/evidence。
+- 负向路径证据：同环境/走廊/rulebook 重复提交触发 `IntegrityError`；DB check constraint 限制金额和状态。
+- 并发/重复/超时/恢复证据：唯一约束阻止重复版本；有效期字段供 B0.5.2 运行时判定。
+- OpenAPI/AsyncAPI 影响：无新增外部接口。
+- Metrics/alerts/runbook 影响：admission status/expiry 可作为 readiness 和 payment deny 事件维度。
+- 外部证据：真实 CN/HK 法律签字尚未提供，sandbox admission 明确 `simulation_only=true`。
+- 未解决风险：payment 创建前尚未执行 admission check，B0.5.2 完成。
+- 执行者：Codex
+
 ### B0.4.4 — 真实 HSM/CA/OCSP/CRL 与密钥仪式
 
 - 状态：EXT-BLOCKED
