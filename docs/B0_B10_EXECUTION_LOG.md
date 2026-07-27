@@ -1453,6 +1453,25 @@
 - 未解决风险：并发 100-way 争用尚未实测；下一项补并发测试并保持 Gate 严格。
 - 执行者：Codex
 
+### B2.4.4 — 100-way concurrent limit contention
+
+- 状态：`[EXT-BLOCKED]`
+- 开始时间：2026-07-27
+- 完成时间：—（等待 dedicated PostgreSQL fixture）
+- commit：`e3437be`
+- 修改文件：`backend/tests/production/test_limit_concurrency.py`
+- 新增/修改测试：100 个请求、20 worker、同一 tenant/participant/service/corridor/currency/date、每笔 2、daily limit 100；成功总额断言 `<=100`；失败 transaction rollback。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_limit_concurrency.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_limit_concurrency.py`
+- 测试结果：`1 skipped`（`[EXT-BLOCKED] PRODUCTION_TEST_POSTGRES_URL is not configured`）；`ruff: All checks passed`。
+- 正常路径证据：fixture 提供后每个线程独立 Session/engine，数据库 row lock 决定最终接受数量。
+- 负向路径证据：无 PostgreSQL 不被当作通过；测试不使用内存计数或固定成功结果。
+- 并发/重复/超时/恢复证据：20-way pool 强制真实 DB contention；单次失败 rollback。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：limit contention/deadlock/rollback 进入额度告警。
+- 外部证据：`[EXT-BLOCKED]` 无 PostgreSQL fixture，不能勾选本项。
+- 未解决风险：需在 PostgreSQL 运行后确认 unique-create race retry 与锁等待 SLA。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE
