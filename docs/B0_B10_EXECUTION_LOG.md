@@ -514,6 +514,15 @@
 - 测试结果：completion/domain tests `4 passed`；sandbox domain negative evidence 为 beneficiary UNKNOWN，证明零 journal 不再完成。
 - 执行者：Codex
 
+### B5.G2 — balances rebuild from entries
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`bbe571f`
+- 验收证据：trial_balance test verifies account balances are derived from POSTED entries rather than stored account projection.
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
