@@ -51,6 +51,19 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.3.1 — null lease recovery and fencing
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`0724ff8`
+- 修改文件：`backend/production/runtime.py`、`backend/production/worker.py`、`backend/alembic/versions/0023_outbox_null_lease_backfill.py`、`backend/tests/production/test_outbox_leases.py`
+- 新增实现：claim 将 `PROCESSING + lease_until IS NULL` 与过期 lease 一并回收；迁移 backfill 为 PENDING；heartbeat 与 complete 校验 worker ownership，旧 owner 不能完成新 owner 事件。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_outbox_leases.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/runtime.py backend/production/worker.py backend/alembic/versions/0023_outbox_null_lease_backfill.py backend/tests/production/test_outbox_leases.py`; `.\\.venv\\Scripts\\python.exe -m alembic -c alembic.ini upgrade head`
+- 测试结果：`2 passed`；`ruff: All checks passed`；SQLite `0022 -> 0023` 成功。
+- 负向证据：错误 owner heartbeat/complete 均抛 fencing conflict。
+- 外部证据：无。
+- 执行者：Codex
+
 ### B3.2.3 — business POST idempotency contract
 
 - 状态：DONE

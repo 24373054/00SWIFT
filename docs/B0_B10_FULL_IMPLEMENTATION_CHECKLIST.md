@@ -385,7 +385,7 @@
 
 ## B3.3 Outbox claim、租约与顺序
 
-- [ ] B3.3.1 修复 `PROCESSING + lease_until IS NULL` 永久卡死。
+- [x] B3.3.1 修复 `PROCESSING + lease_until IS NULL` 永久卡死。
   - 修改：`backend/production/runtime.py`。
   - migration backfill 旧 PROCESSING 事件；claim 条件包含 null/过期 lease。
 
