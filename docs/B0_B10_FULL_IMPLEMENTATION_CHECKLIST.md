@@ -104,7 +104,7 @@
   - 新增：`prod_request_nonces`，以 trust domain + key id + nonce 唯一；保存 request digest、过期时间和首次使用时间。
   - 并发：唯一约束必须阻止两个并发请求同时使用同一 nonce。
 
-- [ ] B0.2.4 新增 `backend/tests/production/test_http_signatures.py`。
+- [x] B0.2.4 新增 `backend/tests/production/test_http_signatures.py`。
   - 覆盖：正确签名、body 被改、URI 被改、过期时间、未来时间、nonce 重放、跨 participant 重放、并发重放、吊销证书。
 
 ## B0.3 路由安全矩阵
