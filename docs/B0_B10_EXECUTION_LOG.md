@@ -51,6 +51,13 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.4.2 — scoped payment reference identifiers
+
+- 状态：DONE；完成时间：2026-07-27；commit：`bbc1f4c`
+- 修改文件：`backend/production/models.py`、`backend/production/service.py`、`backend/alembic/versions/0028_payment_reference_scoping.py`、`backend/tests/production/test_payment_references.py`
+- 证据：UETR、instruction_id、end_to_end_id、transaction_id 分列持久化；tenant-scoped unique constraints；legacy rows 迁移回填并升级成功；3 tests passed。
+- 执行者：Codex
+
 ### B4.4.1 — true tenant binding in payment creation
 
 - 状态：DONE；完成时间：2026-07-27；commit：`2863a1a`（验证；实现已在 `cf09163`）
