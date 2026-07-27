@@ -19,3 +19,15 @@ def test_return_sequence_and_over_return_are_atomic(db):
         service.create_pending("ret-1", "50.00", "over")
     second, _ = service.create_pending("ret-1", "40.00", "partial-2")
     assert second.return_sequence == 2
+
+
+def test_return_state_machine_covers_unknown_rejection_and_duplicate_response(db):
+    db.add(_order())
+    db.commit()
+    service = ReturnService(db)
+    item, _ = service.create_pending("ret-1", "10.00", "unknown")
+    service.transition(item.return_payment_id, "SENT")
+    service.transition(item.return_payment_id, "UNKNOWN")
+    service.transition(item.return_payment_id, "CLOSED")
+    with pytest.raises(ProductionConflict, match="invalid"):
+        service.transition(item.return_payment_id, "FINAL")
