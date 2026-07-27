@@ -267,7 +267,7 @@
   - API：tenant、participant、service identity、certificate 创建/查询/更新/暂停/吊销。
   - 所有 ACTIVE/REVOKE 操作走 maker-checker，不允许创建接口直接 ACTIVE。
 
-- [ ] B2.1.3 新增 `backend/production/account_service.py` 和 `account_router.py`。
+- [x] B2.1.3 新增 `backend/production/account_service.py` 和 `account_router.py`。
   - Account、AccountOwnership、owner evidence、币种、法人、状态和有效期。
   - 支付账户必须由 principal participant + tenant + active ownership 三者共同授权。
 

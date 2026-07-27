@@ -1189,3 +1189,24 @@
 - 外部证据：无。
 - 未解决风险：checker 认证主体将在 B2.5 重写审批 API 时从请求字段切换为 authenticated principal。
 - 执行者：Codex
+
+### B2.1.3 — tenant-scoped account and ownership service
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`cf09163`
+- 修改文件：`backend/production/account_service.py`、`backend/production/account_api.py`、`backend/production/account_router.py`、`backend/production/security.py`、`backend/production/router.py`、`backend/tests/production/test_account_service.py`（另修复受新 PostgreSQL gate 影响的既有测试）。
+- 新增实现：Account/AccountOwnership create 固定 PENDING；ownership 有效期与 evidence；distinct maker/checker 激活；`authorize()` 同时要求 tenant、participant、ACTIVE account、ACTIVE 且在有效期 ownership；支付账户访问不再只看 participant。
+- 新增 API：`POST /production/v1/accounts`、`POST /accounts/{account_id}/ownerships`、`POST /accounts/{account_id}/activate`。
+- 新增/修改测试：无 active ownership 时拒绝授权；全 production route/security regression `63 passed`，migration roundtrip `[EXT-BLOCKED]` skip。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_account_service.py backend/tests/production/test_dependencies.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/account_service.py backend/production/account_api.py backend/production/account_router.py backend/production/security.py backend/production/router.py backend/tests/production/test_account_service.py`
+- 测试结果：目标测试 `2 passed`；`ruff: All checks passed`；相关回归 `9 passed, 1 skipped [EXT-BLOCKED]`。
+- 正常路径证据：sandbox 仍可由显式 sandbox principal 创建本地模拟 account/ownership；pilot/live 缺失账户不会自动创建。
+- 负向路径证据：tenant/participant 不匹配、账户非 ACTIVE、ownership 过期/缺失、同一 maker/checker 均拒绝。
+- 并发/重复/超时/恢复证据：account unique key 防重复；激活失败 rollback；授权查询 tenant-scoped。
+- OpenAPI/AsyncAPI 影响：新增 account/ownership lifecycle API。
+- Metrics/alerts/runbook 影响：account activation/ownership evidence 接入双控审计。
+- 外部证据：无。
+- 未解决风险：账户激活 checker 仍是请求字段，B2.5 改为 authenticated checker principal；跨数据库并发 ownership overlap 需 PostgreSQL exclusion/事务测试。
+- 执行者：Codex
