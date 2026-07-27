@@ -161,6 +161,18 @@
 - 外部证据：真实 connector response/query、ledger reversal、跨机构 recovery 和人工补偿签字尚未提供，不能声称全路径通过，保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B5.1.1 — accounting service split
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`3f9a429`
+- 修改文件：`backend/production/_ledger_core.py`、`backend/production/ledger.py`、`backend/production/ledger_models.py`、`backend/production/ledger_service.py`、`backend/production/funding_service.py`、`backend/production/gl_bridge.py`、`backend/production/ledger_router.py`、`backend/production/router.py`
+- 新增/修改实现：ledger.py 仅保留兼容导入；核心 ledger service、funding service、GL bridge、model exports 和路由边界独立存在，生产 router 改由 ledger_service 入口导入。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_boundaries.py backend/tests/test_production_domain.py -q`
+- 测试结果：`4 passed`（1 个既有 deprecation warning）；ruff 全部通过。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

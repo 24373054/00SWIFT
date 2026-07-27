@@ -574,7 +574,7 @@
 
 ## B5.1 会计领域模型
 
-- [ ] B5.1.1 拆分 `backend/production/ledger.py`。
+- [x] B5.1.1 拆分 `backend/production/ledger.py`。
   - 新增：`ledger_models.py`、`ledger_service.py`、`funding_service.py`、`gl_bridge.py`、`ledger_router.py`。
   - 旧 `ledger.py` 仅保留兼容导入或删除重复路径。
 
