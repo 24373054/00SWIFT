@@ -211,7 +211,7 @@
   - dry-run 默认；生成修复计划和 hash；执行需 operator + checker evidence。
   - 修复 `PaymentOrder.tenant_id` 当前写 participant id 而非 tenant id 的数据。
 
-- [ ] B1.2.3 为所有状态列增加数据库约束或 PostgreSQL enum/domain。
+- [x] B1.2.3 为所有状态列增加数据库约束或 PostgreSQL enum/domain。
   - 状态集合与 Python state machine 共享版本，禁止任意字符串。
 
 - [ ] B1.2.4 增加关键唯一约束。

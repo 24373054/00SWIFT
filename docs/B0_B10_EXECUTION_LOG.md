@@ -840,3 +840,23 @@
 - 外部证据：无。
 - 未解决风险：真实旧库 repair 需先运行 B1.2.1 audit 并由持证 operator/checker 批准。
 - 执行者：Codex
+
+### B1.2.3 — 全部生产状态列数据库约束
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`82bff0b`
+- 修改文件：`backend/production/state_constraints.py`、`backend/alembic/versions/0011_production_state_constraints.py`、`backend/tests/production/test_state_constraints.py`
+- 新增迁移：`0011_production_state_constraints`；覆盖全部已建模 production status/state/orchestration/contract_state 列，升级前逐表扫描非法值，SQLite/PostgreSQL 均使用真实 CHECK 约束。
+- 新增/修改测试：版本化状态词典、合法状态、非法任意字符串拒绝；ruff 静态检查。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_state_constraints.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/state_constraints.py backend/alembic/versions/0011_production_state_constraints.py backend/tests/production/test_state_constraints.py`; `\\.venv\\Scripts\\python.exe -m alembic upgrade head`
+- 测试结果：`1 passed`；`ruff: All checks passed`；Alembic `0010 -> 0011` upgrade 成功。
+- 正常路径证据：所有映射列共享 `STATE_VERSION=state-v1`，迁移在 clean/现有 SQLite schema 上成功创建 `ck_prod_*_state_v1`。
+- 负向路径证据：`assert_state(..., 'MADE_UP_SUCCESS')` 抛出 `ValueError`；迁移遇到非法现有状态会抛错并拒绝创建约束。
+- 并发/重复/超时/恢复证据：迁移按表幂等执行检查；失败前置扫描不修改数据，事务由 Alembic 管理。
+- OpenAPI/AsyncAPI 影响：无接口字段变更；状态值集合由共享模块导出供服务层复用。
+- Metrics/alerts/runbook 影响：非法状态升级失败应接入迁移告警；审计脚本可先报告违规行。
+- 外部证据：PostgreSQL clean install/rollback 仍待 B1 Gate 的外部 PostgreSQL 环境（当前无可用实例）。
+- 未解决风险：历史库若包含未纳入词典的业务状态，必须先走 B1.2.1 audit 与受控 repair，不得放宽约束。
+- 执行者：Codex
