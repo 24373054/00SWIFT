@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.11 — OpenAPI/AsyncAPI 契约
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg 'OpenAPI|AsyncAPI|compatibility' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；R0.11 已列为每个新 API/event 的统一门槛，并在 B3/B10 拆分实现项
+- 验收证据：B3.1.3、B10.7.1、B10.7.2、B10.7.6
+- 未解决风险：当前仓库尚未生成 production OpenAPI/AsyncAPI，后续保持未勾选
+- 执行者：Codex
+
 ### R0.10 — 父级 Gate 依赖
 
 - 状态：DONE
