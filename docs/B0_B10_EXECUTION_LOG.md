@@ -523,6 +523,15 @@
 - 验收证据：trial_balance test verifies account balances are derived from POSTED entries rather than stored account projection.
 - 执行者：Codex
 
+### B5.G3 — posted entry immutability gate
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`03c7b87`
+- 验收证据：posted journal and posted entry ORM listeners reject update/delete; reversal path creates a new linked journal instead.
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

@@ -656,7 +656,7 @@
 
 - [x] B5.G1 当前“零 journal 仍完成并 MATCHED”反例必须失败。
 - [x] B5.G2 所有余额可由 entries 重建。
-- [ ] B5.G3 posted entry 数据库不可变。
+- [x] B5.G3 posted entry 数据库不可变。
 - [ ] B5.G4 并发/属性/故障测试无超额扣款或不平。
 - [ ] B5.G5 GL batch 有真实 ACK/receipt 才能作为四方对账来源。
 - [ ] B5 COMPLETE。
