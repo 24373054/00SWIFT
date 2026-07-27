@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.10 — 父级 Gate 依赖
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg '父级 Gate|B0 COMPLETE|B10 COMPLETE' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；每个 B 都有 Gate 和 COMPLETE 条件
+- 验收证据：第 11 节合并门 M1–M10
+- 未解决风险：执行者必须避免批量勾选父级和子项
+- 执行者：Codex
+
 ### R0.9 — 外部依赖阻塞标记
 
 - 状态：DONE
