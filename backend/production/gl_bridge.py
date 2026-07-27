@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
 from .models import ProductionGlBatch, ProductionGlReceipt
 from .runtime import ProductionConflict, digest
