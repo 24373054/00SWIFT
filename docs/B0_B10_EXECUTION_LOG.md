@@ -206,6 +206,26 @@
 - 负向路径证据：缺少 `artifact_type` 的 attestation 在 verifier 层拒绝。
 - 未解决风险：真实签发机构和生产工件仍属于 B0.4/B7 的 `[EXT-BLOCKED]` 外部证据。
 
+### B0.1.4 — 健康与就绪依赖快照
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`d45cbd7`
+- 修改文件：`backend/production/telemetry.py`、`backend/production/router.py`、`backend/main.py`、`backend/production/connectors.py`、`backend/production/worker.py`、`backend/config.py`、`backend/.env.example`、`backend/tests/production/test_readiness_dependencies.py`、`backend/tests/test_ecny_api_flow.py`
+- 新增迁移：无
+- 新增/修改测试：生产 health 依赖矩阵；sandbox readiness 必须 `503` 且 `ready=false`；旧 operational endpoint 断言同步到 fail-closed 语义。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_readiness_dependencies.py backend/tests/test_ecny_api_flow.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/telemetry.py backend/production/connectors.py backend/production/router.py backend/production/worker.py backend/main.py backend/config.py backend/tests/production/test_readiness_dependencies.py backend/tests/test_ecny_api_flow.py`
+- 测试结果：`4 passed`; `ruff`：`All checks passed`
+- 正常路径证据：`/production/v1/health` 明确输出 database、broker、hsm、signature_verifier、connector、standards_artifact、worker_heartbeat 七项状态；worker 执行时记录 heartbeat。
+- 负向路径证据：simulation、未配置 HSM/broker、未配置签名 verifier、缺标准件或 stale heartbeat 时 `/ready` 返回 `503` 和 `ready=false`；`/health` 仍只表达存活，不声称 ready。
+- 并发/重复/超时/恢复证据：heartbeat 按配置超时窗口判定 stale；数据库探测异常被捕获为 unavailable；恢复后下一次探测重新计算状态。
+- OpenAPI/AsyncAPI 影响：现有 `/health`、`/ready`、`/production/v1/health` 响应新增依赖状态字段。
+- Metrics/alerts/runbook 影响：依赖字段可直接作为 readiness/告警输入；真实 broker/HSM/worker 部署 runbook 仍待 B0.4/B7。
+- 外部证据：真实 HSM、broker、connector、标准工件未提供，保持 `[EXT-BLOCKED]`，未将 simulation 标为 production-ready。
+- 未解决风险：真实 broker/HSM 探针适配器尚未接入，pilot/live Gate 仍应保持阻断。
+- 执行者：Codex
+
 ### B0.1.3 — pilot/live 资格启动门禁
 
 - 状态：DONE
