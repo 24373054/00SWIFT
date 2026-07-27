@@ -485,15 +485,15 @@
 
 ## B4.3 Append-only facts 与 decision
 
-- [ ] B4.3.1 将 `_replace_fact()` 更名并重构为 `append_fact()`。
+- [x] B4.3.1 将 `_replace_fact()` 更名并重构为 `append_fact()`。
   - reference 保持业务引用，另加 fact sequence/version；不通过伪造 reference suffix 绕过唯一约束。
   - supersedes 关系有 FK；每个 fact 带 input/output hash、规则版本、evidence、actor、occurred_at。
 
-- [ ] B4.3.2 AuthorizationDecision、ComplianceDecision、FinalityDecision 改为 append-only。
+- [x] B4.3.2 AuthorizationDecision、ComplianceDecision、FinalityDecision 改为 append-only。
   - 禁止 `ProductionComplianceService.evaluate()` 和 worker 原地修改旧 decision。
   - 新决定创建新记录，projection 单独维护 latest decision id。
 
-- [ ] B4.3.3 数据库限制 posted fact/decision 的 UPDATE/DELETE。
+- [x] B4.3.3 数据库限制 posted fact/decision 的 UPDATE/DELETE。
   - PostgreSQL trigger/privilege + 测试；修正操作使用 amendment/superseding record。
 
 ## B4.4 创建与授权

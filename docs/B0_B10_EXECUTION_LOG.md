@@ -51,6 +51,26 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.3.1 — append-only payment facts
+
+- 状态：DONE；完成时间：2026-07-27；commit：`d6432d7`
+- 修改文件：`backend/production/service.py`、`backend/production/models.py`、`backend/production/worker.py`、`backend/alembic/versions/0026_append_only_fact_metadata.py`、`backend/tests/production/test_append_only_facts.py`
+- 证据：`append_fact()` 保留业务 reference，递增 fact_sequence，保存 supersedes、input/output hash、rule/evidence/actor；旧 `_replace_fact` 调用已移除；3 个生产域测试通过。
+
+### B4.3.2 — append-only authorization/compliance/finality decisions
+
+- 状态：DONE；完成时间：2026-07-27；commit：`07e8223`
+- 修改文件：`backend/production/models.py`、`backend/production/worker.py`、`backend/production/compliance.py`、`backend/tests/production/test_decision_append_only.py`
+- 证据：ORM 禁止 decision UPDATE/DELETE；worker/compliance 评估创建新 decision，不修改旧记录；生产支付 worker 回归通过。
+
+### B4.3.3 — database append-only trigger
+
+- 状态：DONE；完成时间：2026-07-27；commit：`cc6d2ab`
+- 修改文件：`backend/alembic/versions/0027_append_only_triggers.py`、`backend/production/models.py`、`backend/tests/production/test_append_only_triggers.py`
+- 证据：PostgreSQL migration 创建 facts/authorization/compliance/finality BEFORE UPDATE OR DELETE trigger；SQLite migration 安全 no-op；2 tests passed，Alembic `0026 -> 0027` 成功。
+- 外部证据：真实 PostgreSQL trigger execution 需外部数据库，保留 migration Gate 实测。
+- 执行者：Codex
+
 ### B4.2.1 — real payment CAS
 
 - 状态：DONE；完成时间：2026-07-27；commit：`504719d`
