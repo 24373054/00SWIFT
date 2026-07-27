@@ -206,6 +206,26 @@
 - 负向路径证据：缺少 `artifact_type` 的 attestation 在 verifier 层拒绝。
 - 未解决风险：真实签发机构和生产工件仍属于 B0.4/B7 的 `[EXT-BLOCKED]` 外部证据。
 
+### B0.1.3 — pilot/live 资格启动门禁
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`117bbef`
+- 修改文件：`backend/config.py`、`backend/.env.example`、`backend/tests/production/test_config_qualification_gate.py`
+- 新增迁移：无
+- 新增/修改测试：有效签名准入、不存在路径、缺 trust anchor、不匹配 connector；所有 pilot 必填 host/admin token 和 qualified verifier。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_config_qualification_gate.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/config.py backend/tests/production/test_config_qualification_gate.py`
+- 测试结果：`4 passed`; `ruff`：`All checks passed`
+- 正常路径证据：`Settings.validate_for_pilot()` 调用 Ed25519 verifier，签名、环境、digest、有效期、trust anchor、connector 均通过后才返回。
+- 负向路径证据：不存在 attestation、缺 trust anchor、connector mismatch 均抛 `RuntimeError`，不再接受非空路径字符串。
+- 并发/重复/超时/恢复证据：启动门禁为同步 fail-closed；运行态 readiness 在 B0.1.4 接入依赖快照。
+- OpenAPI/AsyncAPI 影响：无新增接口。
+- Metrics/alerts/runbook 影响：pilot/live 启动失败信息明确记录 qualification 失败原因；readiness 在 B0.1.4 完善。
+- 外部证据：真实资格工件/签发机构仍为 `[EXT-BLOCKED]`，本地测试仅验证密码学和门禁逻辑。
+- 未解决风险：尚未实现健康/就绪细分依赖状态。
+- 执行者：Codex
+
 ### B0.1.2 — 资格工件与决策持久化
 
 - 状态：DONE
