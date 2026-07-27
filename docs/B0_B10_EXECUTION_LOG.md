@@ -77,6 +77,19 @@
 - 未解决风险：qualified identity 外部证书仍为 `[EXT-BLOCKED]`，不影响本地负向 Gate。
 - 执行者：Codex
 
+### B0.G4 — nonce 并发重放
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`1352cc7`
+- 修改文件：`backend/production/replay.py`、`backend/production/integrity.py`、`backend/tests/production/test_replay_store.py`、`backend/tests/production/test_integrity_injection.py`
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_replay_store.py backend/tests/production/test_integrity_injection.py -q`
+- 测试结果：`5 passed`（与 HTTP signature 合并执行为 `11 passed`）
+- 验收证据：独立 SQLite sessions 并发消费同一 trust-domain/key-id/nonce 严格一胜一败；同 nonce 第二次 HTTP 请求返回 409。
+- 外部证据：无。
+- 未解决风险：生产 DB PostgreSQL 并发演练待 B1；当前 SQLite 测试证明唯一约束语义。
+- 执行者：Codex
+
 ### R0.1 — 执行证据机制
 
 - 状态：DONE
