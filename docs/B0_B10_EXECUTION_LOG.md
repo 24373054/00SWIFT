@@ -136,6 +136,26 @@
 - 未解决风险：B1.1.2 仍需显式关系完整性迁移。
 - 执行者：Codex
 
+### B1.1.2 — 显式生产关系完整性迁移
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`2be8255`
+- 修改文件：`backend/alembic/versions/0008_production_relational_integrity.py`、`backend/tests/production/test_relational_integrity_migration.py`
+- 新增迁移：`0008_production_relational_integrity`（清单原预留 0006 已被既有 key-operation revision 占用，未改写历史）。
+- 新增/修改测试：显式 FK relation 清单、RESTRICT 删除策略、禁止 `Base.metadata.tables` 动态建表；当前 SQLite head upgrade 已通过。
+- 测试命令：`\.venv\Scripts\python.exe -m alembic upgrade head`; `\.venv\Scripts\python.exe -m pytest backend/tests/production/test_relational_integrity_migration.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/alembic/versions/0008_production_relational_integrity.py backend/tests/production/test_relational_integrity_migration.py`
+- 测试结果：migration upgrade 通过；`1 passed`; `ruff`：`All checks passed`。
+- 正常路径证据：迁移显式检查 orphan 后用 batch `create_foreign_key` 创建 20 条核心关系，`ondelete=RESTRICT`。
+- 负向路径证据：发现 orphan 时 migration 直接 RuntimeError，不会静默删除或级联抹历史。
+- 并发/重复/超时/恢复证据：升级前 orphan 检查；downgrade 按相同显式 constraint 名称移除。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：orphan 阻断 migration，需进入 repair runbook。
+- 外部证据：无。
+- 未解决风险：ORM 模型列尚未全部声明 ForeignKey、金额/时间类型尚待 B1.1.3–B1.1.5。
+- 执行者：Codex
+
 ### R0.1 — 执行证据机制
 
 - 状态：DONE
