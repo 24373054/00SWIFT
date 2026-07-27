@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.6.2 — dual-control DLQ replay
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`1395367`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0024_dlq_replay_requests.py`、`backend/production/dlq_replay.py`、`backend/production/dlq_router.py`、`backend/tests/production/test_dlq_replay.py`、`backend/tests/production/test_dlq_router.py`
+- 新增实现：replay request 聚合保存原 event hash、maker/checker/reason；maker 创建 PENDING，distinct checker 批准后才将 DEAD_LETTER 重新置 PENDING；重复 replay 与 payload hash 变化拒绝。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_dlq_replay.py backend/tests/production/test_dlq_router.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/models.py backend/production/dlq_replay.py backend/production/dlq_router.py backend/alembic/versions/0024_dlq_replay_requests.py backend/tests/production/test_dlq_replay.py backend/tests/production/test_dlq_router.py`; `.\\.venv\\Scripts\\python.exe -m alembic -c alembic.ini upgrade head`
+- 测试结果：`2 passed`；`ruff: All checks passed`；SQLite `0023 -> 0024` 成功。
+- 负向证据：maker 自决、重复 approve、跨 tenant 事件、payload hash 漂移均拒绝；不直接改回 PENDING。
+- 执行者：Codex
+
 ### B3.6.1 — DLQ query/detail API
 
 - 状态：DONE
