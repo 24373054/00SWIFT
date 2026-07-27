@@ -112,7 +112,7 @@
 - [x] B0.3.1 建立 `docs/security/PRODUCTION_API_AUTHORIZATION_MATRIX.md`。
   - 列出每个 `/production/v1/*` 路由的身份类型、scope、tenant 过滤、完整性、幂等、maker-checker 和审计要求。
 
-- [ ] B0.3.2 拆分 `backend/production/router.py`。
+- [x] B0.3.2 拆分 `backend/production/router.py`。
   - 新增：`payment_router.py`、`identity_router.py`、`operations_router.py`、`ledger_router.py`、`standards_router.py`、`reporting_router.py`。
   - 目标：避免单文件中遗漏安全依赖；所有 mutation 使用统一 dependency bundle。
 
