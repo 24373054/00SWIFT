@@ -473,6 +473,16 @@
 - 外部依赖：生产并发验收需要 PostgreSQL/锁隔离环境，当前 sandbox SQLite 不提供等价证据，保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B5.7.3 — posted entry immutability test
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`03c7b87`
+- 修改文件：`backend/production/models.py`、`backend/tests/production/test_ledger_boundaries.py`
+- 测试结果：posted journal update/delete listeners fail-closed；ledger boundary suite passed (`7 passed` at latest run).
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
