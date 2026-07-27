@@ -129,7 +129,7 @@
   - 修改：`frontend/src/api.ts`、`backend/production/security.py`、`backend/nextgen/ui_router.py`。
   - sandbox 显式测试身份只允许 `/sim` 或测试配置，响应必须标记 simulation。
 
-- [ ] B0.3.6 新增 `backend/tests/production/test_route_authorization_matrix.py`。
+- [x] B0.3.6 新增 `backend/tests/production/test_route_authorization_matrix.py`。
   - 参数化遍历全部生产路由。
   - 覆盖：无身份、错 scope、错 tenant、自报角色、管理员越过 maker-checker、sandbox header 在 pilot/live 被拒绝。
 
