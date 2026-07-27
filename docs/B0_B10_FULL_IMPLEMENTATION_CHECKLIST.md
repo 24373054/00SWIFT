@@ -380,7 +380,7 @@
 - [x] B3.2.2 定义 STARTED 超时恢复策略。
   - 超时后先查询聚合/外部结果，再 takeover；不得盲目重做。
 
-- [ ] B3.2.3 给所有业务 POST 增加 idempotency contract test。
+- [x] B3.2.3 给所有业务 POST 增加 idempotency contract test。
   - 同 key 同 body 返回同 response；同 key 异 body 409；并发同 key 仅一个业务效果。
 
 ## B3.3 Outbox claim、租约与顺序

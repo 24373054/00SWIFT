@@ -51,6 +51,19 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.2.3 — business POST idempotency contract
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`df8a546`
+- 修改文件：`backend/production/runtime.py`、`backend/tests/production/test_idempotency_contract.py`
+- 新增测试：payment POST 同 key 同 body 返回完全相同 response；同 key 异 body 返回 409；datetime canonicalization 保证 replay 不漂移。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_idempotency_contract.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/runtime.py backend/tests/production/test_idempotency_contract.py`
+- 测试结果：`2 passed`（1 个已知 Starlette deprecation warning）；`ruff: All checks passed`。
+- 代码证据：payment/fx/cancellation/return/acceptance service 均通过同一 ProductionIdempotencyService；异常回滚不吞掉调用者事务。
+- 未解决风险：100-way 同 key 并发需 PostgreSQL fixture，后续并发 Gate 保持外部验收。
+- 执行者：Codex
+
 ### B3.2.1 — atomic idempotency lifecycle
 
 - 状态：DONE
