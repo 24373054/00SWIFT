@@ -51,6 +51,41 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.4.1 — broker adapter
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`fc9579b`
+- 修改文件：`backend/production/broker.py`、`backend/tests/production/test_broker.py`
+- 新增实现：ABC broker boundary；sandbox 使用真实 memory queue（publish/subscribe/ack/nack/health、event_id 去重）；pilot/live 无 approved client 时显式 `BrokerUnavailable`，不伪造成功。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_broker.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/broker.py backend/tests/production/test_broker.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 外部证据：approved broker client 未提供，按要求保留运行时阻断。
+- 执行者：Codex
+
+### B3.4.2 — standalone dispatcher and worker entry points
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`fc9579b`
+- 修改文件：`backend/scripts/run_outbox_dispatcher.py`、`backend/scripts/run_production_worker.py`
+- 新增实现：outbox dispatcher 与业务 worker 分离为独立进程入口；dispatcher 先构造严格 EventEnvelope，再 publish-confirm 后写 broker metadata；FastAPI 进程不承载 worker。
+- 测试证据：broker 单元测试 `2 passed`；入口脚本通过 `ruff`。
+- 外部证据：pilot/live broker 未配置，实际 publish 保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
+### B3.4.3 — schema registry adapter
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`d71c615`
+- 修改文件：`backend/production/schema_registry.py`、`backend/tests/production/test_schema_registry.py`
+- 新增实现：registry 在 broker 投递前验证 `(event_type, schema_version)`；未知 schema 进入 DLQ 记录并拒绝业务 handler；approved registry 未配置时阻断。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_schema_registry.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/schema_registry.py backend/tests/production/test_schema_registry.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 外部证据：正式 registry service 未配置，保留 adapter 边界。
+- 执行者：Codex
+
 ### B3.3.4 — publish confirmation and deduplication
 
 - 状态：DONE

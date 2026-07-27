@@ -401,15 +401,15 @@
 
 ## B3.4 Broker 与 dispatcher
 
-- [ ] B3.4.1 新增 `backend/production/broker.py`。
+- [x] B3.4.1 新增 `backend/production/broker.py`。
   - Protocol：publish、subscribe、ack/nack、health。
   - sandbox memory adapter；pilot/live approved broker adapter。
 
-- [ ] B3.4.2 将 outbox dispatcher 与 payment business worker 分开。
+- [x] B3.4.2 将 outbox dispatcher 与 payment business worker 分开。
   - 新增入口：`backend/scripts/run_outbox_dispatcher.py`、`backend/scripts/run_production_worker.py`。
   - pilot/live 禁止 FastAPI 进程内 worker。
 
-- [ ] B3.4.3 增加 schema registry adapter。
+- [x] B3.4.3 增加 schema registry adapter。
   - 发布前验证 event schema；未知 schema 进入 DLQ，不投递业务 handler。
 
 ## B3.5 Inbox、外部副作用与 crash window
