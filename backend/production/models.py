@@ -483,6 +483,18 @@ class ProductionComplianceDecision(Base):
     evidence_ref = Column(String(120), nullable=True)
 
 
+class ProductionFinalityDecision(Base):
+    __tablename__ = "prod_finality_decisions"
+    id = Column(Integer, primary_key=True)
+    decision_id = Column(String(80), nullable=False, unique=True, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
+    outcome = Column(String(30), nullable=False)
+    input_hash = Column(String(64), nullable=False)
+    rule_version = Column(String(80), nullable=False)
+    evidence_ref = Column(String(120), nullable=True)
+    evaluated_at = Column(DateTime, nullable=False, default=utcnow)
+
+
 @event.listens_for(ProductionAuthorizationDecision, "before_update")
 @event.listens_for(ProductionAuthorizationDecision, "before_delete")
 def _authorization_decision_immutable(_mapper, _connection, _target) -> None:
@@ -493,6 +505,12 @@ def _authorization_decision_immutable(_mapper, _connection, _target) -> None:
 @event.listens_for(ProductionComplianceDecision, "before_delete")
 def _compliance_decision_immutable(_mapper, _connection, _target) -> None:
     raise ValueError("compliance decisions are append-only")
+
+
+@event.listens_for(ProductionFinalityDecision, "before_update")
+@event.listens_for(ProductionFinalityDecision, "before_delete")
+def _finality_decision_immutable(_mapper, _connection, _target) -> None:
+    raise ValueError("finality decisions are append-only")
 
 
 class ProductionFundingReservation(Base):
