@@ -1019,3 +1019,23 @@
 - 外部证据：PostgreSQL schema contract 仍待 B1.4.3 CI/外部服务运行。
 - 未解决风险：SQLite inspector 无法覆盖 PostgreSQL RLS policy 目录，已由 B1.3.4 专项测试和 B1 Gate 处理。
 - 执行者：Codex
+
+### B1.4.3 — PostgreSQL migration roundtrip/schema snapshot
+
+- 状态：`[EXT-BLOCKED]`（roundtrip 工具与 CI 已提交，历史 baseline 目前 fail-closed）
+- 开始时间：2026-07-27
+- 完成时间：—（需先修复/替换冻结 baseline 的 schema fixture）
+- commit：`8aa4356`
+- 修改文件：`.github/workflows/migrations.yml`、`backend/scripts/migration_roundtrip.py`、`backend/tests/production/test_migration_roundtrip.py`
+- 新增实现：CI 启动 PostgreSQL 16 service，执行 `upgrade head -> downgrade -1 -> upgrade head`，比较所有 production schema snapshot，再执行完整 contract verifier；本地工具支持同样 roundtrip。
+- 新增/修改测试：临时 SQLite roundtrip 集成测试（真实 clean upgrade 会触发 baseline guard）。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_migration_roundtrip.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/scripts/migration_roundtrip.py backend/tests/production/test_migration_roundtrip.py`
+- 测试结果：`pytest` 失败，`0002_production_domain._assert_frozen_schema()` 报 `Production ORM schema changed after 0002`；`ruff: All checks passed`。
+- 正常路径证据：roundtrip 工具不吞迁移异常，任一 upgrade/downgrade 或 snapshot 差异均非零退出。
+- 负向路径证据：当前 clean install 被历史 schema hash guard 阻断，保持 fail-closed，没有修改 immutable `0002` 或伪造成功。
+- 并发/重复/超时/恢复证据：每个阶段独立 subprocess；snapshot 在 downgrade 前后比较，异常会立即终止。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：CI migration job 失败应阻断发布并保留 schema diff。
+- 外部证据：`[EXT-BLOCKED]` 不仅缺 PostgreSQL 服务，当前仓库冻结 baseline 与已演进 ORM 不一致，需单独批准 baseline replacement plan。
+- 未解决风险：在不修改历史 baseline 的前提下，需新增可验证的 0002 fixture/替代 migration path 后才能勾选本项和 B1.G1。
+- 执行者：Codex
