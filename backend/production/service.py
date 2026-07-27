@@ -228,7 +228,7 @@ class ProductionPaymentService:
         creditor_party, creditor_account = _party_ref(payload.get("creditor"), "creditor")
         uetr = _uuid4(payload.get("uetr"))
         instruction_id = str(payload.get("instruction_id") or f"INST-{uuid.uuid4().hex}")[:200]
-        assert_entitlement(
+        entitlement = assert_entitlement(
             self.db,
             principal,
             service="payment.create",
@@ -319,6 +319,8 @@ class ProductionPaymentService:
         self._fact(order, "MESSAGE", "RECEIVED", "payment-message", {"message_type": message_type})
         self._fact(order, "AUTHORIZATION", "PENDING", auth.decision_id, {"decision_ref": auth.decision_id})
         self._fact(order, "COMPLIANCE", "PENDING", compliance.decision_id, {"decision_ref": compliance.decision_id})
+        if entitlement is not None:
+            self._fact(order, "ENTITLEMENT", "MATCHED", entitlement.entitlement_id, {"version": entitlement.version, "evidence_ref": entitlement.evidence_ref})
         self._fact(order, "FUNDING", "PENDING", "debit", {})
         self._fact(order, "FX", "NOT_APPLICABLE" if currency == settlement_currency else "PENDING", None, {})
         self._fact(order, "SETTLEMENT", "PENDING", "PAYMENT_VALUE", {})
@@ -340,9 +342,11 @@ class ProductionPaymentService:
             order.order_id,
             {"order_id": order.order_id, "uetr": order.uetr, "currency": currency},
         )
-        ProductionAuditService(self.db).append(
-            "payment.created", order.order_id, {"uetr": order.uetr, "payload_hash": order.payload_hash}, principal.subject
-        )
+        audit_payload = {"uetr": order.uetr, "payload_hash": order.payload_hash}
+        if entitlement is not None:
+            audit_payload["entitlement_id"] = entitlement.entitlement_id
+            audit_payload["entitlement_version"] = entitlement.version
+        ProductionAuditService(self.db).append("payment.created", order.order_id, audit_payload, principal.subject)
         response = self.serialize(order)
         ProductionIdempotencyService(self.db).complete(record, 202, response)
         self.db.flush()
@@ -359,7 +363,7 @@ class ProductionPaymentService:
         amount_minor_value = minor_amount(payload.get("base_amount"), base_currency)
         minor_amount("1", quote_currency)
         corridor = str(payload.get("corridor") or "CN-HK").upper()
-        assert_entitlement(
+        entitlement = assert_entitlement(
             self.db,
             principal,
             service="fx.quote",
@@ -412,6 +416,8 @@ class ProductionPaymentService:
             "mode": "simulation",
         }
         ProductionIdempotencyService(self.db).complete(record, 200, response)
+        if entitlement is not None:
+            ProductionAuditService(self.db).append("fx.quote.entitlement.matched", quote.quote_id, {"entitlement_id": entitlement.entitlement_id, "version": entitlement.version, "evidence_ref": entitlement.evidence_ref}, principal.subject)
         self.db.flush()
         return response
 

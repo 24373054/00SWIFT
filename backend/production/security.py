@@ -328,7 +328,7 @@ def assert_entitlement(
     counterparty_id: str = "*",
     direction: str = "OUTBOUND",
     amount_minor: int = 0,
-) -> None:
+) -> object | None:
     """Enforce default-deny bilateral entitlement.
 
     Sandbox participants are granted only the local simulation entitlement;
@@ -339,11 +339,11 @@ def assert_entitlement(
     if participant.status != "ACTIVE":
         raise HTTPException(403, "Participant is not active")
     if principal.source.startswith("sandbox"):
-        return
+        return None
     from .entitlement_service import EntitlementError, EntitlementService
 
     try:
-        EntitlementService(db).match(
+        return EntitlementService(db).match(
             participant_id=principal.participant_id,
             counterparty_id=counterparty_id,
             direction=direction,
