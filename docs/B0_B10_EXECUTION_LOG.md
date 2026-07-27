@@ -2415,6 +2415,138 @@
 - 未解决风险：尚未建立 scheduler/worker 事件触发器与 SLA 量化，下一项测试补齐。
 - 执行者：Codex
 
+---
+
+## 2026-07-28 — Luna B0–B10 工作验收与收尾
+
+### 验收结论
+
+- 状态：本地可验证范围通过；B0–B10 **未全部完成**。
+- 清单处理：本轮没有批量勾选、没有新增任何 `B COMPLETE`；所有未完成子项和
+  Gate 保持未勾选。
+- 外部 Gate：PostgreSQL 并发、PostgreSQL RLS、真实 0003 遗留库、
+  HSM/CA、合格 connector、正式标准工件、机构 GL/结算账单与监管回执继续
+  保持 `[EXT-BLOCKED]`。
+- 详细边界：`docs/B0_B10_EXECUTION_STATUS.md`。
+
+### 收尾提交与变更证据
+
+#### `c5a8a3b` — production schema bootstrapping
+
+- 变更文件：
+  - `backend/alembic/env.py`
+  - `backend/alembic/versions/0002_production_domain.py`
+  - `backend/alembic/versions/0003_production_hardening.py`
+  - `backend/alembic/versions/0008_production_relational_integrity.py`
+  - `backend/alembic/versions/0011_production_state_constraints.py`
+  - `backend/alembic/versions/0012_production_business_uniques.py`
+  - `backend/alembic/versions/0034_production_state_constraints_v2.py`
+  - `backend/production/__init__.py`
+  - `backend/production/baseline_0002_models.py`
+  - `backend/production/state_constraints.py`
+  - `backend/tests/production/test_migration_state_constraints.py`
+  - `backend/tests/production/test_state_constraints.py`
+- 修复：
+  - 补回 revision chain 必需但此前未提交的 `0002/0003`，保持 immutable hash
+    不变。
+  - 用冻结的 0002 ORM snapshot 完成 fresh install，避免历史 revision 导入当前
+    演进模型。
+  - state-v2 按 `(table, column)` 覆盖当前全部 47 个 production
+    `state/status/*_state` 列；修复事实、outbox、幂等、FX、取消、退回、journal
+    等词表与运行时代码不一致。
+  - SQLite 沙箱仅在原表仍存在时清理失败迁移留下的
+    `_alembic_tmp_*`；原表缺失时 fail-closed。
+  - 仅在显式 sandbox 环境为旧演示数据补 identity parent，并为重复
+    participant-scoped instruction id 生成可追溯别名；pilot/live 不自动修复。
+- 迁移证据：
+  - immutable baseline verifier 通过。
+  - fresh SQLite `upgrade head → downgrade -1 → upgrade head` schema snapshot
+    一致。
+  - 旧 runtime 状态和重复 sandbox instruction 数据升级到 head 后全部保留；
+    `MADE_UP_SUCCESS` 被真实数据库 CHECK 拒绝。
+
+#### `c47bd53` — operational reconciliation projections
+
+- 变更文件：
+  - `backend/core/middleware.py`
+  - `backend/production/operations.py`
+  - `backend/production/reporting.py`
+  - `backend/tests/production/test_operations_reconciliation.py`
+- 修复：completed-order reconciliation 检查移入逐订单循环；无 journal 时也会
+  检查每一笔完成订单，不再只检查最后一笔或完全漏检。
+- 负向证据：两笔 completed order 均无 reconciliation 时产生两条独立 break。
+- 边界：该 projection 不等于 B8 四方真实来源对账；B8 仍未完成。
+
+#### `35331aa` — production payment UI and one-click launcher
+
+- 变更文件：
+  - `.dockerignore`、`.gitignore`、`README.md`、`docs/API.md`
+  - `frontend/package.json`、`frontend/package-lock.json`
+  - `frontend/src/App.tsx`、`frontend/src/api.ts`、
+    `frontend/src/api.test.ts`、`frontend/src/styles.css`、
+    `frontend/src/types.ts`、`frontend/vite.config.ts`
+  - `start.bat`、`start.ps1`
+- 修复：
+  - payments workspace 读取真实 `/production/v1/payments` 并可提交沙箱支付
+    intent；API 不可用时显示权威失败态，不把 fixture 当生产成功结果。
+  - production 沙箱请求仅发送 `X-Participant-ID`，不发送或信任
+    `X-User-Role/X-User-Subject`。
+  - Windows 一键启动创建隔离 venv、同步依赖、构建前端、运行迁移、启动
+    Uvicorn、检查 liveness；`-HealthCheck` 自动验收并退出。
+  - 启动验收明确断言 sandbox `production ready=false`，没有把 simulation
+    弱化为生产 ready。
+
+#### `256349f` — boundary, roadmap and supply-chain inventory
+
+- 变更文件：
+  - `backend/requirements.lock`
+  - `backend/scripts/generate_sbom.py`
+  - `docs/sbom-python.json`
+  - `docs/ADR-001-production-qualification-boundary.md`
+  - `docs/PRODUCTION_CROSS_BORDER_ECNY_DEVELOPMENT_PLAN.md`
+  - `docs/B0_B10_EXECUTION_STATUS.md`
+- 证据：Python environment `pip check` 通过；npm top-level dependency tree完整。
+- 边界：当前 SBOM 为本地 inventory，B10 的正式 schema 校验、制品签名与
+  发布 Gate 仍未完成。
+
+### 集中测试与验收证据
+
+- 一键启动：
+  - 命令：`.\start.ps1 -NoBrowser -HealthCheck`
+  - 结果：frontend build、Alembic upgrade、Uvicorn startup、`GET /health`
+    和 `GET /production/v1/health` 全部通过；自动停止服务，无残留 Uvicorn。
+- 后端完整回归：
+  - 命令：
+    `$env:PYTHONPATH='backend'; .\.venv\Scripts\python.exe -m pytest backend/tests -q`
+  - 结果：`269 passed, 3 skipped, 1 warning in 57.41s`。
+  - 唯一 warning：Starlette/httpx TestClient deprecation，不影响本轮行为验收。
+- `[EXT-BLOCKED]` skips：
+  - `test_limit_concurrency.py`：缺
+    `PRODUCTION_TEST_POSTGRES_URL`。
+  - `test_postgres_rls.py`：缺
+    `PRODUCTION_TEST_POSTGRES_URL`。
+  - `test_migration_data_preservation.py`：缺
+    `PRODUCTION_LEGACY_DB_URL`。
+- 静态验收：
+  - 命令：`python -m ruff check backend`；`python -m compileall -q backend`
+  - 结果：全部通过。
+- 前端：
+  - typecheck 通过。
+  - Vitest：`2 passed` test files、`3 passed` tests。
+  - production build 连续执行三次：`3/3` 成功；每次约 2 秒。
+  - 已清理一次被中断工具调用留下的本仓库 Vite/esbuild 进程树；三次最终
+    构建后没有残留 Node/Vite/esbuild 进程。
+  - 非阻塞 warning：单个前端 chunk 约 1.1 MB，后续 B9 性能工作需 code
+    splitting。
+
+### Gate 决策
+
+- `B0 COMPLETE` 至 `B10 COMPLETE`：全部保持未勾选。
+- 总清单“所有 B0–B10 子项及 Gate 完成”：保持未勾选。
+- 本轮只确认“当前仓库可构建、可迁移、沙箱可一键启动、本地测试通过”；
+  不构成生产资格、真实资金移动能力或任一外部 Gate 的验收。
+- 执行者：Codex（GPT-5.6-sol 收尾验收）
+
 ### B2.2.4 — identity/certificate lifecycle negative matrix
 
 - 状态：DONE
