@@ -406,6 +406,26 @@
 - 未解决风险：统一 bundle 尚未替换全部 handler 参数，但每项已有可验证 principal/integrity 约束。
 - 执行者：Codex
 
+### B0.4.1 — 不可导出私钥 provider 边界
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`8780e4e`
+- 修改文件：`backend/production/key_provider.py`、`backend/tests/production/test_key_provider.py`
+- 新增迁移：无
+- 新增/修改测试：sandbox Ed25519 sign/verify/rotate/revoke；qualified callback delegation；无 HSM callback fail-closed；无 private export API。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_key_provider.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/key_provider.py backend/tests/production/test_key_provider.py`
+- 测试结果：`3 passed`; `ruff`：`All checks passed`
+- 正常路径证据：sandbox provider 对真实 Ed25519 私钥签名并只返回公钥；qualified provider 所有私钥操作都委托外部 callback。
+- 负向路径证据：篡改消息验证失败；REVOKED key 禁止签名；pilot 无 qualified provider 注册直接抛 `KeyProviderError`。
+- 并发/重复/超时/恢复证据：rotate 递增 key version；revoke 状态阻断后续签名。
+- OpenAPI/AsyncAPI 影响：无外部 API；B0.4.3 接入密钥审计和双控。
+- Metrics/alerts/runbook 影响：provider 错误和 revoke/rotate 可作为安全事件。
+- 外部证据：真实 HSM/KMS 尚未提供，qualified provider 保持 `[EXT-BLOCKED]`。
+- 未解决风险：provider 尚未由 Settings trust-domain 配置选择，B0.4.2 完成。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
