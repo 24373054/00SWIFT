@@ -51,6 +51,17 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B2.G4 — concurrent limit contention
+
+- 状态：`[EXT-BLOCKED]`
+- 完成时间：2026-07-27
+- 实现/测试 commit：`a575eb3`, `cb1493c`, `12fbf15`, `e3437be`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_limit_concurrency.py -q`
+- 测试结果：测试明确跳过：`[EXT-BLOCKED] PRODUCTION_TEST_POSTGRES_URL is not configured`；未伪造并发通过结果。
+- 已具备实现：LimitReservationService 使用数据库行锁/原子计数；payment order 保存 reservation id，终局完成结转、取消/失败释放。
+- 未解决风险：需配置专用 PostgreSQL fixture 执行 100 请求争用并证明总接受额不超限；因此本 Gate 不勾选，B2 COMPLETE 不勾选。
+- 执行者：Codex
+
 ### B2.G3 — maker/checker separation
 
 - 状态：DONE
