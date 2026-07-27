@@ -139,6 +139,17 @@
 - 验收证据：CAS stale write 被拒绝，非法重复/乱序 transition 被拒绝，lease fencing 与 duplicate publish completion 测试通过。
 - 执行者：Codex
 
+### B4.G1 — same/cross-currency happy path
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`7913bdd`
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 代码侧状态：sandbox payment graph、state dimensions、fact/evidence append 已具备；production connector 与跨币 settlement provider 尚未提供。
+- 外部证据：合作银行/数字人民币运营机构 connector、真实同币/跨币轨道和终局回执缺失，无法生成真实 happy-path 证据，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
