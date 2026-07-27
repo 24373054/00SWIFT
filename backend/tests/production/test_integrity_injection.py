@@ -6,10 +6,13 @@ import hashlib
 from types import SimpleNamespace
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi import HTTPException
 from starlette.requests import Request
+from test_http_signatures import _signed_request
 
 import production.integrity as integrity
+from production.signatures import SandboxHttpSignatureVerifier
 
 
 def _request(headers: dict[str, str], body: bytes = b"{}"): 
@@ -63,3 +66,29 @@ def test_sandbox_without_signature_remains_explicitly_compatibility_only(monkeyp
     integrity.configure_signature_verifier(None)
     monkeypatch.setattr(integrity, "get_settings", lambda: SimpleNamespace(swift_env="sandbox"))
     _run(integrity.require_request_integrity(_request({})))
+
+
+def test_integrity_consumes_nonce_and_rejects_second_request(monkeypatch):
+    private_key = Ed25519PrivateKey.generate()
+    integrity.configure_signature_verifier(
+        SandboxHttpSignatureVerifier({"key-1": private_key.public_key().public_bytes_raw()})
+    )
+    monkeypatch.setattr(
+        integrity,
+        "get_settings",
+        lambda: SimpleNamespace(swift_env="sandbox", production_signature_trust_domain="cn-hk"),
+    )
+    signed = _signed_request(private_key)
+    headers = {
+        **dict(signed.headers),
+        "host": "pay.example",
+        "signature-input": signed.signature_input,
+        "signature": signed.signature,
+    }
+    first = _request(headers, signed.body)
+    _run(integrity.require_request_integrity(first))
+    second = _request(headers, signed.body)
+    with pytest.raises(HTTPException) as exc:
+        _run(integrity.require_request_integrity(second))
+    assert exc.value.status_code == 409
+    assert exc.value.detail["code"] == "MESSAGE_REPLAY_DETECTED"

@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import base64
+import datetime as dt
 import hashlib
 import hmac
 
 from fastapi import HTTPException, Request
 
 from config import get_settings
+from database import SessionLocal
 
+from .replay import NonceReplayError, NonceReplayStore
 from .signatures import HttpSignatureVerifier, SignatureVerificationError, SignedHttpRequest
 
 _signature_verifier: HttpSignatureVerifier | None = None
@@ -74,4 +77,19 @@ async def require_request_integrity(request: Request) -> None:
         result = _signature_verifier.verify(signed_request)
     except SignatureVerificationError as exc:
         raise HTTPException(status_code=401, detail={"code": "INVALID_MESSAGE_SIGNATURE", "message": str(exc)}) from exc
+    replay_db = SessionLocal()
+    try:
+        NonceReplayStore(replay_db).consume(
+            trust_domain=getattr(settings, "production_signature_trust_domain", "default"),
+            key_id=result.key_id,
+            nonce=result.nonce,
+            request_digest=hashlib.sha256(body).hexdigest(),
+            expires_at=dt.datetime.fromtimestamp(result.expires, tz=dt.UTC),
+        )
+        replay_db.commit()
+    except NonceReplayError as exc:
+        replay_db.rollback()
+        raise HTTPException(status_code=409, detail={"code": "MESSAGE_REPLAY_DETECTED", "message": str(exc)}) from exc
+    finally:
+        replay_db.close()
     request.state.signature_verification = result

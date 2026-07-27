@@ -16,7 +16,7 @@ from production.signatures import (
 )
 
 
-def _signed_request(private_key, *, body: bytes = b'{"amount":10}', target_uri: str = "https://pay.example/production/v1/payments", expires_delta: int = 60, algorithm: str = "ed25519"):
+def _signed_request(private_key, *, body: bytes = b'{"amount":10}', target_uri: str = "https://pay.example/production/v1/payments", expires_delta: int = 60, created_delta: int = 0, algorithm: str = "ed25519"):
     now = dt.datetime.now(dt.UTC).replace(microsecond=0)
     digest = base64.b64encode(hashlib.sha256(body).digest()).decode()
     headers = {
@@ -30,7 +30,7 @@ def _signed_request(private_key, *, body: bytes = b'{"amount":10}', target_uri: 
     signature_input = (
         'sig1=("@method" "@target-uri" "@authority" "content-digest" "content-type" '
         '"date" "nonce" "participant-id" "service-identity")'
-        f";created={int(now.timestamp())};expires={int(now.timestamp()) + expires_delta}"
+        f";created={int(now.timestamp()) + created_delta};expires={int(now.timestamp()) + created_delta + expires_delta}"
         ';nonce="nonce-unique-1";keyid="key-1";alg="' + algorithm + '"'
     )
     unsigned = SignedHttpRequest(
@@ -40,7 +40,7 @@ def _signed_request(private_key, *, body: bytes = b'{"amount":10}', target_uri: 
     signature = base64.b64encode(
         private_key.sign(canonical_signature_input(unsigned, [
             "@method", "@target-uri", "@authority", "content-digest", "content-type", "date", "nonce", "participant-id", "service-identity"
-        ], {"created": str(int(now.timestamp())), "expires": str(int(now.timestamp()) + expires_delta), "nonce": "nonce-unique-1", "keyid": "key-1", "alg": algorithm}))
+        ], {"created": str(int(now.timestamp()) + created_delta), "expires": str(int(now.timestamp()) + created_delta + expires_delta), "nonce": "nonce-unique-1", "keyid": "key-1", "alg": algorithm}))
     ).decode()
     return unsigned.__class__(**{**unsigned.__dict__, "signature": f"sig1=:{signature}:"})
 
@@ -63,11 +63,22 @@ def test_signature_rejects_uri_expiry_missing_component_and_weak_algorithm():
         verifier.verify(request.__class__(**{**request.__dict__, "target_uri": "https://pay.example/other"}))
     with pytest.raises(SignatureVerificationError, match="validity"):
         verifier.verify(_signed_request(private_key, expires_delta=-1))
+    with pytest.raises(SignatureVerificationError, match="validity"):
+        verifier.verify(_signed_request(private_key, created_delta=60))
     missing = request.__class__(**{**request.__dict__, "signature_input": request.signature_input.replace(' "date"', "")})
     with pytest.raises(SignatureVerificationError, match="missing"):
         verifier.verify(missing)
     with pytest.raises(SignatureVerificationError, match="not allowed"):
         verifier.verify(_signed_request(private_key, algorithm="none"))
+
+
+def test_revoked_key_is_rejected_even_when_signature_is_valid():
+    private_key = Ed25519PrivateKey.generate()
+    verifier = SandboxHttpSignatureVerifier(
+        {"key-1": private_key.public_key().public_bytes_raw()}, revoked_key_ids={"key-1"}
+    )
+    with pytest.raises(SignatureVerificationError, match="revoked"):
+        verifier.verify(_signed_request(private_key))
 
 
 def test_qualified_adapter_delegates_canonical_bytes_and_identity():

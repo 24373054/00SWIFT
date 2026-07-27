@@ -156,8 +156,9 @@ def _verify_common(request: SignedHttpRequest, allowed_algorithms: frozenset[str
 class SandboxHttpSignatureVerifier:
     """Real Ed25519 verifier for isolated sandbox identities."""
 
-    def __init__(self, keys: Mapping[str, bytes], *, allowed_algorithms: set[str] | None = None):
+    def __init__(self, keys: Mapping[str, bytes], *, allowed_algorithms: set[str] | None = None, revoked_key_ids: set[str] | None = None):
         self.keys = dict(keys)
+        self.revoked_key_ids = revoked_key_ids or set()
         self.allowed_algorithms = frozenset(item.lower() for item in (allowed_algorithms or configured_algorithms()))
 
     def verify(self, request: SignedHttpRequest) -> SignatureVerificationResult:
@@ -165,6 +166,8 @@ class SandboxHttpSignatureVerifier:
         public_key = self.keys.get(result.key_id)
         if public_key is None:
             raise SignatureVerificationError("unknown signature key id")
+        if result.key_id in self.revoked_key_ids:
+            raise SignatureVerificationError("signature key is revoked")
         try:
             Ed25519PublicKey.from_public_bytes(public_key).verify(signature, canonical_signature_input(request, components, params))
         except (InvalidSignature, ValueError) as exc:
