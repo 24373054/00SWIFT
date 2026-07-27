@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B2.G1 — identity/account/certificate/mandate/rulebook lifecycle coverage
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit（实现）：`34adef1`, `43d9dcd`, `cf09163`, `be3fcaa`, `34ef9da`, `8e736a5`, `3539174`, `842d55d`
+- 验收范围：identity bootstrap/transition、account ownership/authorization、service identity/certificate binding、certificate lifecycle、mandate/approval authorization、rulebook acceptance 均有 service、router/API、状态约束及负向测试。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_identity_service.py backend/tests/production/test_identity_router.py backend/tests/production/test_account_service.py backend/tests/production/test_service_identity_binding.py backend/tests/production/test_certificate_auth.py backend/tests/production/test_certificate_lifecycle.py backend/tests/production/test_entitlement_service.py backend/tests/production/test_entitlement_enforcement.py backend/tests/production/test_rulebook_service.py backend/tests/production/test_authorization_service.py backend/tests/production/test_maker_checker.py -q`
+- 测试结果：覆盖套件 `24 passed`（1 个 Starlette deprecation warning，不影响 Gate）。
+- 验收证据：服务身份和账户不再只建表；PENDING→ACTIVE/REVOKED/EXPIRED 状态由服务校验；证书、双边 entitlement、rulebook、mandate 均 fail-closed。
+- 外部证据：无；本 Gate 不依赖外部 PostgreSQL/HSM。
+- 执行者：Codex
+
 ### B2.5.5 — maker/checker negative matrix
 
 - 状态：DONE
