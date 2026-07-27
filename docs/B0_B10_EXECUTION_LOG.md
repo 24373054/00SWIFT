@@ -64,6 +64,19 @@
 - 未解决风险：B0 COMPLETE 不得勾选，直到 qualified request verification 在真实 pilot/live 环境完成。
 - 执行者：Codex
 
+### B0.G3 — 全路由授权矩阵负向测试
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`4a04fda`
+- 修改文件：`backend/tests/production/test_route_authorization_matrix.py`、`backend/production/security.py`
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_route_authorization_matrix.py backend/tests/production/test_route_semantics.py backend/tests/production/test_identity_header_boundary.py -q`
+- 测试结果：`10 passed`（key-operations 新路由后矩阵遍历更新为 30 route）
+- 验收证据：无身份、错 scope、错 tenant、自报角色、maker/checker 自审批、pilot/live sandbox header 均有实际拒绝断言；所有非 health route 有 principal。
+- 外部证据：无。
+- 未解决风险：qualified identity 外部证书仍为 `[EXT-BLOCKED]`，不影响本地负向 Gate。
+- 执行者：Codex
+
 ### R0.1 — 执行证据机制
 
 - 状态：DONE
