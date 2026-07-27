@@ -120,7 +120,7 @@
   - 实现 `require_production_read`、`require_production_write`、`require_operator_action`、`require_admin_action`。
   - 将身份、scope、tenant、integrity、idempotency、审计上下文组合为统一依赖。
 
-- [ ] B0.3.4 修复不符合 HTTP 语义或缺保护的路由。
+- [x] B0.3.4 修复不符合 HTTP 语义或缺保护的路由。
   - `/ledger/trial-balance` 改为 GET 或明确生成快照的 POST。
   - `/worker/run` 仅 sandbox/test 可用；pilot/live 不暴露人工执行 worker 的公网路由。
   - 所有写路由必须有 integrity、权限、tenant、审计；业务写还要有 idempotency。
