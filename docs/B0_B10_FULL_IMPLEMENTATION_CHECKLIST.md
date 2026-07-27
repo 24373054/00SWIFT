@@ -635,7 +635,7 @@
   - closed period 禁止普通 posting；reopen 必须 maker-checker。
 
 - [x] B5.5.3 BalanceSnapshot 带 source max entry sequence/hash，可与 entries 重算验证。
-- [ ] B5.5.4 试算不平立即阻断相关 completion/GL batch 并创建 SEV-0 case。
+- [x] B5.5.4 试算不平立即阻断相关 completion/GL batch 并创建 SEV-0 case。
 
 ## B5.6 GL Bridge
 

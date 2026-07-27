@@ -399,6 +399,18 @@
 - 测试结果：`1 passed`；ruff 全部通过。
 - 执行者：Codex
 
+### B5.5.4 — imbalance SEV-0 block
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`f8772af`、`531dd17`
+- 修改文件：`backend/production/ledger_service.py`、`backend/tests/production/test_ledger_gate.py`
+- 新增/修改实现：BalanceSnapshotService.assert_balanced 汇总每个 journal debit/credit；不平衡时创建 SEV-0 investigation case 并抛出 ProductionConflict，阻断 completion/GL downstream。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_gate.py -q`
+- 测试结果：`1 passed`；ruff 全部通过。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
