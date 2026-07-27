@@ -847,6 +847,19 @@ class ProductionGlReceipt(Base):
     evidence_ref = Column(String(120), nullable=True)
 
 
+class ProductionJournalTemplate(Base):
+    __tablename__ = "prod_journal_templates"
+    id = Column(Integer, primary_key=True)
+    template_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    template_type = Column(String(30), nullable=False)
+    version = Column(String(80), nullable=False)
+    mapping_json = Column(Text, nullable=False)
+    liability_profile_id = Column(String(100), nullable=True)
+    evidence_ref = Column(String(120), nullable=True)
+    active = Column(Boolean, nullable=False, default=True)
+
+
 class ProductionJournal(Base):
     __tablename__ = "prod_journals"
     id = Column(Integer, primary_key=True)

@@ -3,6 +3,7 @@ import pytest
 from production.gl_bridge import GlBridge
 from production.ledger_service import ProductionLedgerService
 from production.models import ProductionJournalEntry
+from production.models import ProductionJournalTemplate
 from production.runtime import ProductionConflict
 
 
@@ -62,3 +63,13 @@ def test_reversal_creates_linked_opposite_journal(db):
     reversal = service.reverse_journal("rev-original", "rev-opposite", "duplicate", "approval-1", "evidence-1")
     assert reversal.reverses_journal_id == "rev-original"
     assert {entry.direction for entry in db.query(ProductionJournalEntry).filter_by(journal_id="rev-opposite").all()} == {"DEBIT", "CREDIT"}
+
+
+def test_versioned_fee_template_drives_journal(db):
+    service = ProductionLedgerService(db)
+    service.create_account("fee-expense", "LE-CN", "SUBLEDGER", "CNY", "expense", opening_balance_minor=100)
+    service.create_account("fee-liability", "LE-CN", "SUBLEDGER", "CNY", "liability", opening_balance_minor=100)
+    db.add(ProductionJournalTemplate(template_id="fee-v1", tenant_id="tenant:P1", template_type="FEE", version="1", mapping_json='[{"account_id":"fee-expense","direction":"DEBIT"},{"account_id":"fee-liability","direction":"CREDIT"}]'))
+    db.flush()
+    journal = service.post_template(template_id="fee-v1", journal_id="fee-j-1", legal_entity="LE-CN", book="SUBLEDGER", amount_minor=3, currency="CNY")
+    assert journal.reason_code == "FEE:1"

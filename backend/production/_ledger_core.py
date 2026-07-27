@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import uuid
 from typing import Any
 
@@ -13,6 +14,7 @@ from .models import (
     ProductionFundingReservation,
     ProductionJournal,
     ProductionJournalEntry,
+    ProductionJournalTemplate,
     ProductionLedgerAccount,
 )
 from .runtime import ProductionConflict, digest
@@ -193,6 +195,16 @@ class ProductionLedgerService:
         self.db.refresh(reversal)
         self.db.flush()
         return reversal
+
+    def post_template(self, *, template_id: str, journal_id: str, legal_entity: str, book: str, amount_minor: int, currency: str) -> ProductionJournal:
+        template = self.db.query(ProductionJournalTemplate).filter_by(template_id=template_id, active=True).one_or_none()
+        if template is None:
+            raise ProductionConflict("Active journal template is required")
+        mapping = json.loads(template.mapping_json)
+        if not isinstance(mapping, list) or len(mapping) < 2:
+            raise ProductionConflict("Journal template mapping is invalid")
+        entries = [{"account_id": item["account_id"], "direction": item["direction"], "currency": currency, "amount_minor": amount_minor} for item in mapping]
+        return self.post_journal(journal_id=journal_id, legal_entity=legal_entity, book=book, reason_code=f"{template.template_type}:{template.version}", entries=entries)
 
     @staticmethod
     def _validate_entries(entries: list[dict[str, Any]]) -> None:
