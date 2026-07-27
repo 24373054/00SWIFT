@@ -30,7 +30,6 @@ from .models import (
     ProductionPaymentOrder,
     ProductionServiceIdentity,
     ProductionStandardArtifact,
-    utcnow,
 )
 from .operations import operations_summary, reconciliation_report
 from .reporting import build_regulatory_report
@@ -153,7 +152,7 @@ class ApprovalRequest(BaseModel):
     maker: str
     checker: str | None = None
     reason: str
-    state: str = "APPROVED"
+    state: str = "PENDING"
 
 
 class KeyOperationRequest(BaseModel):
@@ -452,12 +451,11 @@ def create_approval(
     db: Session = Depends(get_db),
     _integrity: None = Depends(require_request_integrity),
 ):
-    if request.state == "APPROVED" and not request.checker:
-        raise HTTPException(422, "checker is required for APPROVED state")
-    if request.checker and request.checker == request.maker:
+    if request.checker and request.checker == principal.subject:
         raise HTTPException(409, "Maker and checker must be distinct")
-    approval = ProductionApproval(approval_id=f"apr_{uuid.uuid4().hex}", **request.model_dump())
-    approval.approved_at = utcnow() if approval.state == "APPROVED" else None
+    if request.state != "PENDING":
+        raise HTTPException(422, "Approval creation must start in PENDING state")
+    approval = ProductionApproval(approval_id=f"apr_{uuid.uuid4().hex}", aggregate_type=request.aggregate_type, aggregate_id=request.aggregate_id, action=request.action, maker=principal.subject, checker=None, reason=request.reason, state="PENDING")
     db.add(approval)
     db.commit()
     return {"approval_id": approval.approval_id, "state": approval.state}
