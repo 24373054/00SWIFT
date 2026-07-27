@@ -23,7 +23,7 @@ class ApprovalDecisionRequest(BaseModel):
 
 
 def create_pending_approval(request: ApprovalCreateRequest, principal: ProductionPrincipal = Depends(require_production_scope("production.admin")), db: Session = Depends(get_db)):
-    approval = ProductionApproval(approval_id=f"apr_{__import__('uuid').uuid4().hex}", aggregate_type=request.aggregate_type, aggregate_id=request.aggregate_id, action=request.action, maker=principal.subject, checker=None, state="PENDING", reason=request.reason)
+    approval = ProductionApproval(approval_id=f"apr_{__import__('uuid').uuid4().hex}", aggregate_type=request.aggregate_type, aggregate_id=request.aggregate_id, action=request.action, maker=principal.subject, maker_credential_id=principal.credential_id, checker=None, checker_credential_id=None, state="PENDING", reason=request.reason)
     db.add(approval)
     db.commit()
     return {"approval_id": approval.approval_id, "state": approval.state, "maker": approval.maker}
@@ -35,10 +35,13 @@ def decide_approval(approval_id: str, request: ApprovalDecisionRequest, principa
         raise HTTPException(404, "pending approval not found")
     if approval.maker == principal.subject:
         raise HTTPException(409, "maker and checker must be distinct")
+    if approval.maker_credential_id is not None and approval.maker_credential_id == principal.credential_id:
+        raise HTTPException(409, "maker and checker credentials must be distinct")
     approval.checker = principal.subject
+    approval.checker_credential_id = principal.credential_id
     approval.reason = request.reason
     approval.state = "APPROVED"
     approval.approved_at = utcnow()
-    db.add(ProductionApprovalDecision(decision_id=f"dec_{__import__('uuid').uuid4().hex}", approval_id=approval.approval_id, outcome=request.outcome, checker=principal.subject, reason=request.reason, policy_version="maker-checker-v1", decided_at=utcnow()))
+    db.add(ProductionApprovalDecision(decision_id=f"dec_{__import__('uuid').uuid4().hex}", approval_id=approval.approval_id, outcome=request.outcome, checker=principal.subject, checker_credential_id=principal.credential_id, reason=request.reason, policy_version="maker-checker-v1", decided_at=utcnow()))
     db.commit()
     return {"approval_id": approval.approval_id, "state": approval.state, "checker": approval.checker}
