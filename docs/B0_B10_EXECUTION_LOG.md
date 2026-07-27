@@ -940,3 +940,23 @@
 - 外部证据：`[EXT-BLOCKED]` 无 PostgreSQL 连接池，无法证明 `set_config(..., true)` 在真实 pooled transaction 中的隔离。
 - 未解决风险：需在 B1.3.4 两租户 PostgreSQL 测试中验证 rollback/连接归还后参数清空。
 - 执行者：Codex
+
+### B1.3.3 — 服务层双层 tenant filter
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`be09db4`
+- 修改文件：`backend/production/security.py`、`backend/production/service.py`、`backend/production/router.py`、`backend/tests/production/test_tenant_filters.py`
+- 新增/修改实现：`ProductionPrincipal.tenant_id` 明确租户边界；创建订单写入 tenant id；订单读取、列表、调查 case 查询始终 tenant filter；admin 不再自动跳过 tenant 条件。
+- 新增/修改测试：admin principal 仍必须带 tenant predicate；production 全套测试回归。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_tenant_filters.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/security.py backend/production/service.py backend/production/router.py backend/tests/production/test_tenant_filters.py`; `\\.venv\\Scripts\\python.exe -m pytest backend/tests/production -q`
+- 测试结果：tenant filter `1 passed`；`ruff: All checks passed`；production 全套 `60 passed`（1 个已知 Starlette/httpx deprecation warning）。
+- 正常路径证据：同租户 admin 仍可按授权执行操作，但查询范围由 `tenant_id` 限定；participant ownership 仍由服务层额外校验。
+- 负向路径证据：跨租户 order id 对 admin 也解析为 not found；列表和 investigation join 不再有全局 admin 分支。
+- 并发/重复/超时/恢复证据：查询过滤在 ORM SQL 层生成，和 PostgreSQL RLS 形成双层防护；无全局管理员 query。
+- OpenAPI/AsyncAPI 影响：无字段变化；跨租户 break-glass 尚未提供普通 admin 旁路。
+- Metrics/alerts/runbook 影响：跨租户拒绝应记 security audit；break-glass 若未来增加必须单独审计 endpoint。
+- 外部证据：无。
+- 未解决风险：真实 PostgreSQL RLS 与服务层组合仍需 B1.3.4 两租户集成验证。
+- 执行者：Codex

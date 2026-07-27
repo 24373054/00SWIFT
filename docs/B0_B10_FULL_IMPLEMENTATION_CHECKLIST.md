@@ -230,7 +230,7 @@
   - 每个事务开始时设置 `SET LOCAL` 上下文；连接池归还前不可泄漏。
   - 后台任务必须从事件 envelope 恢复 tenant，不允许使用全局管理员上下文。
 
-- [ ] B1.3.3 服务层继续保留 tenant filter，形成双层防护。
+- [x] B1.3.3 服务层继续保留 tenant filter，形成双层防护。
   - 修改所有 query；禁止 admin 仅因 scope 自动跳过 tenant，跨 tenant 操作使用单独 audited break-glass flow。
 
 - [ ] B1.3.4 新增 `backend/tests/production/test_postgres_rls.py`。
