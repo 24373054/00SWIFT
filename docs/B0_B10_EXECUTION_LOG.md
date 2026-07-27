@@ -114,6 +114,18 @@
 - 验收证据：无账本/终局/对账证据不能 operational close；正式 provider 仍由 B5/B7/B8 外部工件决定。
 - 执行者：Codex
 
+### B4.G3 — cancellation freeze gate
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`e97949d`
+- 修改文件：`backend/production/cancellation_service.py`、`backend/tests/production/test_payment_cancellation.py`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_payment_cancellation.py -q`
+- 测试结果：`2 passed`。
+- 验收证据：撤销接受释放 RESERVED reservation 并关闭 unsuccessful；撤销发生在 reserve 前安全；重复 accept 被拒绝，未出现冻结资金残留。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
