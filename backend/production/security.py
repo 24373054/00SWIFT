@@ -18,7 +18,6 @@ from .models import (
     ProductionAccount,
     ProductionAccountOwnership,
     ProductionCertificate,
-    ProductionEntitlement,
     ProductionLimitProfile,
     ProductionParticipant,
     ProductionServiceIdentity,
@@ -328,6 +327,7 @@ def assert_entitlement(
     message_type: str = "*",
     counterparty_id: str = "*",
     direction: str = "OUTBOUND",
+    amount_minor: int = 0,
 ) -> None:
     """Enforce default-deny bilateral entitlement.
 
@@ -340,33 +340,30 @@ def assert_entitlement(
         raise HTTPException(403, "Participant is not active")
     if principal.source.startswith("sandbox"):
         return
-    now = dt.datetime.now(dt.UTC)
-    query = db.query(ProductionEntitlement).filter(
-        ProductionEntitlement.participant_id == principal.participant_id,
-        ProductionEntitlement.service == service,
-        ProductionEntitlement.status == "ACTIVE",
-        ProductionEntitlement.effective_from <= now,
-    )
-    candidates = query.all()
-    if any(
-        item.corridor in {"*", corridor}
-        and item.currency in {"*", currency}
-        and item.message_type in {"*", message_type}
-        and item.counterparty_id in {"*", counterparty_id}
-        and item.direction in {"*", direction}
-        and (item.effective_to is None or item.effective_to >= now)
-        for item in candidates
-    ):
-        return
-    raise HTTPException(
-        403,
-        {
-            "code": "ENTITLEMENT_REQUIRED",
-            "participant_id": principal.participant_id,
-            "service": service,
-            "corridor": corridor,
-        },
-    )
+    from .entitlement_service import EntitlementError, EntitlementService
+
+    try:
+        EntitlementService(db).match(
+            participant_id=principal.participant_id,
+            counterparty_id=counterparty_id,
+            direction=direction,
+            service=service,
+            message_type=message_type,
+            corridor=corridor,
+            currency=currency,
+            amount_minor=amount_minor,
+            allow_approved_wildcard=True,
+        )
+    except EntitlementError as exc:
+        raise HTTPException(
+            403,
+            {
+                "code": "ENTITLEMENT_REQUIRED",
+                "participant_id": principal.participant_id,
+                "service": service,
+                "corridor": corridor,
+            },
+        ) from exc
 
 
 def scopes_json(principal: ProductionPrincipal) -> str:

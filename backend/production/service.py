@@ -236,6 +236,7 @@ class ProductionPaymentService:
             currency=currency,
             message_type=message_type,
             counterparty_id=creditor_party,
+            amount_minor=amount_minor_value,
         )
         assert_limit(
             self.db,
@@ -364,6 +365,7 @@ class ProductionPaymentService:
             service="fx.quote",
             corridor=corridor,
             currency=base_currency,
+            amount_minor=amount_minor_value,
         )
         assert_limit(
             self.db,
