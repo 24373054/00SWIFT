@@ -426,6 +426,26 @@
 - 未解决风险：provider 尚未由 Settings trust-domain 配置选择，B0.4.2 完成。
 - 执行者：Codex
 
+### B0.4.2 — HSM/KMS、trust domain 与轮换配置
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`4028f71`
+- 修改文件：`backend/config.py`、`backend/.env.example`、`backend/tests/production/test_config_qualification_gate.py`
+- 新增迁移：无
+- 新增/修改测试：qualified HSM/KMS + trust domain/key label 有效准入；file provider 在 pilot/live 拒绝；OCSP/CRL/rotation 配置存在。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_config_qualification_gate.py backend/tests/production/test_readiness_dependencies.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/config.py backend/tests/production/test_config_qualification_gate.py`
+- 测试结果：`7 passed`; `ruff`：`All checks passed`
+- 正常路径证据：pilot settings 必须 `production_key_provider=qualified`、`production_hsm_provider=qualified`、trust domain 和 key label，随后才验证 attestation。
+- 负向路径证据：file/private-key provider 或缺 trust domain/key label 立即 RuntimeError。
+- 并发/重复/超时/恢复证据：rotation interval 作为明确配置，实际双控在 B0.4.3。
+- OpenAPI/AsyncAPI 影响：无新增接口。
+- Metrics/alerts/runbook 影响：provider/OCSP/CRL 配置缺失可在 startup/readiness 告警。
+- 外部证据：真实 HSM/KMS、OCSP/CRL 仍 `[EXT-BLOCKED]`。
+- 未解决风险：密钥轮换/吊销尚未落审计和 maker-checker。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
