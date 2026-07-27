@@ -14,7 +14,6 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Column,
-    DateTime,
     ForeignKey,
     Integer,
     String,
@@ -22,9 +21,20 @@ from sqlalchemy import (
     UniqueConstraint,
     event,
 )
+from sqlalchemy import (
+    DateTime as _DateTime,
+)
 from sqlalchemy.orm import relationship
 
 from database import Base
+
+
+class DateTime(_DateTime):
+    """UTC-aware SQLAlchemy timestamp used by every production model."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs["timezone"] = True
+        super().__init__(*args, **kwargs)
 
 
 def utcnow() -> dt.datetime:
