@@ -32,10 +32,10 @@ from .models import (
     ProductionLimitCounter,
     ProductionPaymentFact,
     ProductionPaymentOrder,
-    ProductionReturnPayment,
     ProductionSettlementLeg,
     utcnow,
 )
+from .return_service import ReturnService
 from .rulebook_service import RulebookError, RulebookService
 from .runtime import (
     ProductionAuditService,
@@ -566,48 +566,12 @@ class ProductionPaymentService:
         order = self.get_order(order_id, principal)
         if order.initiator_participant != principal.participant_id and not principal.can("production.admin"):
             raise ProductionConflict("Payment does not belong to the participant")
-        amount_minor_value = minor_amount(amount, order.currency)
-        if order.customer_outcome != "COMPLETED":
-            raise ProductionConflict("Only a completed payment can be returned")
-        already_returned = sum(
-            item.amount_minor
-            for item in self.db.query(ProductionReturnPayment)
-            .filter(
-                ProductionReturnPayment.original_order_id == order.order_id,
-                ProductionReturnPayment.state.in_(["REQUESTED", "ACCEPTED", "FINAL"]),
-            )
-            .all()
-        )
-        if already_returned + amount_minor_value > order.amount_minor:
-            raise ProductionConflict("Return amount exceeds original payment")
         scope = f"{principal.participant_id}:POST:/production/v1/payments/{order_id}/return"
         request_body = {"amount": str(amount), "reason": reason}
         record, replay = ProductionIdempotencyService(self.db).begin(scope, idempotency_key, request_body)
         if replay and record.status == "COMPLETED":
             return _json_load(record.response_body, {})
-        return_payment = ProductionReturnPayment(
-            return_payment_id=f"ret_{uuid.uuid4().hex}",
-            original_order_id=order.order_id,
-            original_uetr=order.uetr,
-            return_uetr=_uuid4(),
-            amount_minor=amount_minor_value,
-            currency=order.currency,
-            reason=reason[:120],
-            idempotency_context=f"return-{uuid.uuid4().hex}",
-        )
-        self.db.add(return_payment)
-        self.db.flush()
-        return_leg = ProductionSettlementLeg(
-            leg_id=f"leg_{uuid.uuid4().hex}",
-            order_id=order.order_id,
-            leg_role=f"RETURN:{return_payment.return_payment_id}",
-            connector="sandbox-value-settlement",
-            currency=order.currency,
-            amount_minor=amount_minor_value,
-            finality_profile_id="sandbox-finality-v1",
-        )
-        self.db.add(return_leg)
-        return_payment.return_leg_id = return_leg.leg_id
+        return_payment, return_leg = ReturnService(self.db).create_pending(order.order_id, amount, reason)
         self._fact(order, "RETURN", "REQUESTED", return_payment.return_payment_id, {"reason": reason, "return_uetr": return_payment.return_uetr})
         ProductionOutboxService(self.db).enqueue(
             "payment.return.requested",

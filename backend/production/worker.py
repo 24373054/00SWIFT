@@ -40,6 +40,7 @@ from .models import (
     ProductionSettlementLeg,
     utcnow,
 )
+from .return_service import ReturnService
 from .runtime import (
     ProductionAuditService,
     ProductionEvidenceService,
@@ -420,7 +421,7 @@ class ProductionWorker:
             return_payment.return_payment_id,
             return_payment.idempotency_context,
         )
-        return_payment.state = result.state
+        ReturnService(self.db).transition(return_payment.return_payment_id, result.state)
         return_payment.external_reference = result.external_reference
         return_payment.evidence_ref = ProductionEvidenceService(self.db).record("payment.return", return_payment.return_payment_id, result.evidence).evidence_id
         leg = self.db.query(ProductionSettlementLeg).filter_by(leg_id=return_payment.return_leg_id).one()
