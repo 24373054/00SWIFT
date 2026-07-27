@@ -1094,3 +1094,21 @@
 - 外部证据：无。
 - 未解决风险：G1/G3 仍需真实 PostgreSQL clean/legacy/RLS 实测。
 - 执行者：Codex
+
+### B1.G2 — production schema/data audit
+
+- 状态：DONE（SQLite current schema；PostgreSQL clean/legacy 由 G1 阻断）
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`6ae2eea`（本 Gate 证据追加于本日志提交）
+- 修改文件：无新增代码；使用 `backend/scripts/audit_production_data.py` 与 `backend/scripts/verify_production_schema.py`。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe backend/scripts/audit_production_data.py`; `\\.venv\\Scripts\\python.exe backend/scripts/verify_production_schema.py`
+- 测试结果：audit `finding_count=0`，扫描 49 个 production 表；schema verifier `tables_scanned=49, missing_tables/columns/constraints=[], valid=true`。
+- 正常路径证据：当前数据库无 orphan、非法 null/hash 缺失、tenant mismatch 或非法状态；全部 metadata 对象在 schema 中存在。
+- 负向路径证据：审计脚本对违规项是只读报告；schema verifier 对缺对象直接失败，不降级为 warning。
+- 并发/重复/超时/恢复证据：两项均只读，可重复运行；repair 仍必须走 B1.2.2 双控流程。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：finding_count 接入数据质量告警；缺约束阻断 CI。
+- 外部证据：PostgreSQL clean install/legacy upgrade 尚未完成，保留 G1/G3 `[EXT-BLOCKED]`。
+- 未解决风险：当前 audit 结果不能替代真实 PostgreSQL RLS/rollback 证据。
+- 执行者：Codex
