@@ -999,3 +999,23 @@
 - 外部证据：无。
 - 未解决风险：真实 PostgreSQL driver/connectivity 由 B1 Gate clean install 验证。
 - 执行者：Codex
+
+### B1.4.2 — CI production schema contract
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`528b8db`
+- 修改文件：`.github/workflows/migrations.yml`、`backend/scripts/verify_production_schema.py`、`backend/tests/production/test_verify_production_schema.py`
+- 新增实现：CI migration workflow 在 upgrade 后执行 verifier；verifier 从完整 SQLAlchemy metadata 逐表检查全部 `prod_*` 表、列、命名 unique/check/FK constraint，不再只看 `ng_*`。
+- 新增/修改测试：临时 SQLite clean schema 创建 49 个 production 表并验证 contract 全通过。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_verify_production_schema.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/scripts/verify_production_schema.py backend/tests/production/test_verify_production_schema.py`; `\\.venv\\Scripts\\python.exe backend/scripts/verify_production_schema.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`；本地 verifier 输出 `tables_scanned=49, valid=true`。
+- 正常路径证据：迁移 workflow `upgrade head -> verify_production_schema` 串行执行，任一表/列/约束缺失直接非零退出。
+- 负向路径证据：verifier 对缺对象构造 JSON diagnostics 并抛 RuntimeError，未将缺失视为警告。
+- 并发/重复/超时/恢复证据：只读 inspector；可在 clean/upgrade 后重复运行，不修改 schema。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：CI artifact 可保存缺失对象 JSON；迁移失败需阻断发布。
+- 外部证据：PostgreSQL schema contract 仍待 B1.4.3 CI/外部服务运行。
+- 未解决风险：SQLite inspector 无法覆盖 PostgreSQL RLS policy 目录，已由 B1.3.4 专项测试和 B1 Gate 处理。
+- 执行者：Codex
