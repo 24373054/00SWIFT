@@ -820,3 +820,23 @@
 - 外部证据：无。
 - 未解决风险：脚本目前以 SQLite/通用 SQL 为主，PostgreSQL 运行需 B1 migration pipeline 验证。
 - 执行者：Codex
+
+### B1.2.2 — tenant 数据修复计划与双控执行
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`d8c7b8e`
+- 修改文件：`backend/scripts/repair_production_0006.py`、`backend/tests/production/test_repair_production_data.py`
+- 新增迁移：无
+- 新增/修改测试：dry-run 默认不写；plan hash；operator/checker/evidence 必填且 distinct；执行后修复 order tenant_id。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_repair_production_data.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/scripts/repair_production_0006.py backend/tests/production/test_repair_production_data.py`
+- 测试结果：`1 passed`; `ruff`：`All checks passed`
+- 正常路径证据：dry-run 输出可审计 plan/plan_hash；显式 `--execute --operator --checker --evidence-id` 后才更新 tenant_id。
+- 负向路径证据：默认 dry-run 不改变行；缺双控参数或 operator=checker 直接 ValueError。
+- 并发/重复/超时/恢复证据：transaction 包裹全量修复；plan hash 可用于重复执行前比对。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：修复计划和 evidence id 可纳入 operator audit。
+- 外部证据：无。
+- 未解决风险：真实旧库 repair 需先运行 B1.2.1 audit 并由持证 operator/checker 批准。
+- 执行者：Codex
