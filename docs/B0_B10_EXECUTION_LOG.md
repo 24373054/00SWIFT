@@ -979,3 +979,23 @@
 - 外部证据：`[EXT-BLOCKED]` 当前机器未提供 PostgreSQL 服务/fixture，无法勾选本项及 B1 Gate RLS 条目。
 - 未解决风险：必须在 PostgreSQL clean schema 和真实两租户数据上运行后才能验收。
 - 执行者：Codex
+
+### B1.4.1 — pilot/live PostgreSQL-only gate
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`2304c94`
+- 修改文件：`backend/config.py`、`backend/tests/production/test_config_database_gate.py`
+- 新增实现：`_validate_production_gate()` 在 HSM/attestation 等 Gate 前拒绝 pilot/live 的 SQLite 或非 PostgreSQL URL；sandbox/test 继续允许 SQLite。
+- 新增/修改测试：pilot SQLite 直接拒绝；live PostgreSQL scheme 通过数据库门槛后继续进入后续 trust-domain 门槛。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_config_database_gate.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/config.py backend/tests/production/test_config_database_gate.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 正常路径证据：`postgresql://` 与 `postgresql+driver://` 被识别为生产数据库；后续 qualified key/attestation Gate 仍不可绕过。
+- 负向路径证据：pilot/live `sqlite:///...` 抛 `RuntimeError`，不会启动生产服务。
+- 并发/重复/超时/恢复证据：纯配置校验无副作用；每次 startup/reload 都执行同一门槛。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：数据库方言误配应在 startup log/alert 明确提示。
+- 外部证据：无。
+- 未解决风险：真实 PostgreSQL driver/connectivity 由 B1 Gate clean install 验证。
+- 执行者：Codex
