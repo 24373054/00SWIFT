@@ -24,6 +24,7 @@ _AUDITED_PREFIXES = (
     "/swift-apitracker/",
     "/alliancecloud/",
     "/ecny/v1/",
+    "/production/v1/",
 )
 
 
@@ -47,6 +48,7 @@ def _api_name(path: str) -> str:
         "/alliancecloud/": "Messaging",
         "/oauth2/": "OAuth2",
         "/ecny/v1/": "e-CNY",
+        "/production/v1/": "Production Payment Domain",
     }
     return next((name for prefix, name in prefixes.items() if path.startswith(prefix)), "Unknown")
 
