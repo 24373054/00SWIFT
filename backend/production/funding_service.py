@@ -59,6 +59,14 @@ class HoldService:
         self.db.flush()
         return hold
 
+    def expire_due(self, now):
+        due = self.db.query(ProductionHold).filter(ProductionHold.state == "HELD", ProductionHold.expires_at.is_not(None), ProductionHold.expires_at <= now).with_for_update().all()
+        results = []
+        for hold in due:
+            state = "EXPIRED" if hold.external_reference else "UNKNOWN"
+            results.append(self.transition(hold.hold_id, state, hold.version))
+        return results
+
     def release(self, reservation_id):
         return self._ledger.release(reservation_id)
 
