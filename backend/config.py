@@ -83,6 +83,9 @@ class Settings(BaseSettings):
     production_signature_verifier: Literal["unconfigured", "qualified"] = "unconfigured"
     production_qualification_trust_anchor: str | None = None
     production_qualification_expected_connector: str | None = None
+    production_broker_url: str | None = None
+    production_hsm_provider: Literal["unconfigured", "qualified"] = "unconfigured"
+    production_worker_heartbeat_timeout_seconds: float = 30.0
 
     # ---- derived helpers ----
 

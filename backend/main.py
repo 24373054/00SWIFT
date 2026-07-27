@@ -35,6 +35,9 @@ from database import SessionLocal, init_db, seed_ecny_data, seed_reference_data
 from nextgen.cbdc_router import router as cbdc_router
 from nextgen.router import router as nextgen_router
 from nextgen.ui_router import router as institutional_ui_router
+from production.router import router as production_router
+from production.service import ProductionPaymentService
+from production.worker import ProductionWorker
 from version import __version__
 
 logger = logging.getLogger(__name__)
@@ -51,9 +54,16 @@ async def lifespan(app: FastAPI):
         settings.validate_for_pilot()
         logger.info("SWIFT_ENV=pilot — real SWIFT sandbox hosts")
 
-    init_db()
-    seed_reference_data()
-    seed_ecny_data()
+    if settings.is_sandbox:
+        init_db()
+        seed_reference_data()
+        seed_ecny_data()
+        production_db = SessionLocal()
+        try:
+            ProductionPaymentService(production_db).ensure_reference_data()
+            production_db.commit()
+        finally:
+            production_db.close()
     logger.info("00SWIFT platform started", extra={"swift_env": settings.swift_env})
 
     stop_event = threading.Event()
@@ -70,6 +80,19 @@ async def lifespan(app: FastAPI):
 
     thread = threading.Thread(target=_cleanup_loop, daemon=True)
     thread.start()
+
+    def _production_worker_loop():
+        while not stop_event.wait(settings.production_worker_interval_seconds):
+            db = SessionLocal()
+            try:
+                ProductionWorker(db).run_once()
+            except Exception:
+                logger.exception("production outbox worker failed")
+            finally:
+                db.close()
+
+    if settings.production_worker_enabled and settings.is_sandbox:
+        threading.Thread(target=_production_worker_loop, daemon=True).start()
     yield
     stop_event.set()
 
@@ -102,7 +125,11 @@ app.add_middleware(
         "X-Admin-Token",
         "X-User-Role",
         "X-User-Subject",
+        "X-Participant-ID",
         "Idempotency-Key",
+        "Content-Digest",
+        "Signature-Input",
+        "Signature",
     ],
 )
 app.add_middleware(RequestContextMiddleware)
@@ -118,6 +145,7 @@ for business_router in (
     ecny_router,
     ecny_admin_router,
     nextgen_router,
+    production_router,
     cbdc_router,
     institutional_ui_router,
 ):
@@ -227,20 +255,27 @@ def serve_legacy_style_css():
 @app.get("/health")
 def health():
     """Unauthenticated liveness probe."""
-    return {"status": "ok", "env": get_settings().swift_env, "version": __version__}
+    from production.telemetry import dependency_snapshot
+
+    return {"status": "ok", "env": get_settings().swift_env, "version": __version__, "dependencies": dependency_snapshot()["checks"]}
 
 
 @app.get("/ready")
 def readiness():
-    """Readiness probe that verifies database connectivity."""
-    from sqlalchemy import text
+    """Readiness probe that reports every production dependency explicitly."""
+    from fastapi.responses import JSONResponse
+
+    from production.telemetry import dependency_snapshot
 
     db = SessionLocal()
     try:
-        db.execute(text("SELECT 1"))
+        dependencies = dependency_snapshot(db)
     finally:
         db.close()
-    return {"status": "ready", "version": __version__}
+    payload = {"status": "ready" if dependencies["ready"] else "not_ready", "ready": dependencies["ready"], "version": __version__, "dependencies": dependencies["checks"]}
+    if not dependencies["ready"]:
+        return JSONResponse(status_code=503, content=payload)
+    return payload
 
 
 @app.get("/{path:path}", include_in_schema=False)
