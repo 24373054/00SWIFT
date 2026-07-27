@@ -780,3 +780,23 @@
 - 外部证据：无。
 - 未解决风险：生产时间列仍需 timezone-aware 统一。
 - 执行者：Codex
+
+### B1.1.5 — UTC timezone-aware 时间列
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`9323cfb`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0010_production_utc_timestamps.py`、`backend/tests/production/test_utc_timestamps.py`
+- 新增迁移：`0010_production_utc_timestamps`
+- 新增/修改测试：全部 production DateTime 列 timezone-aware；迁移显式 UTC 时间列转换。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_utc_timestamps.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/models.py backend/alembic/versions/0010_production_utc_timestamps.py backend/tests/production/test_utc_timestamps.py`; `\.venv\Scripts\python.exe -m alembic upgrade head`
+- 测试结果：`1 passed`; `ruff`：`All checks passed`; migration `0009 -> 0010` 通过。
+- 正常路径证据：模型统一使用 UTC-aware DateTime subclass，migration 将明确列改为 `DateTime(timezone=True)`。
+- 负向路径证据：测试遍历全部 `prod_*` DateTime，任何 naive 列立即失败；服务层 `utcnow()` 保持 UTC。
+- 并发/重复/超时/恢复证据：migration 可重复升级；旧值保留并按 UTC 解释，DST/timezone 由领域时间测试覆盖。
+- OpenAPI/AsyncAPI 影响：时间字段继续 ISO-8601，统一 UTC 语义。
+- Metrics/alerts/runbook 影响：naive timestamp schema mismatch 阻断迁移/CI。
+- 外部证据：无。
+- 未解决风险：旧历史数据库中的本地时区来源需 B1.2 数据修复脚本确认。
+- 执行者：Codex
