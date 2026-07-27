@@ -526,6 +526,25 @@
 - 未解决风险：真实 CN/HK 法域签字和 P0 owner/date 尚未取得，B0.5.4 保持阻断。
 - 执行者：Codex
 
+### B0.5.4 — 持牌合作方与法务/合规/安全签字
+
+- 状态：EXT-BLOCKED
+- 完成时间：2026-07-27
+- commit：无（外部签字未提供）
+- 修改文件：无；B0.5.3 治理文档已列明所需角色、owner 和 non-commitments。
+- 新增迁移：无
+- 新增/修改测试：`test_corridor_models.py`、readiness tests 验证无真实签字时只能使用 simulation admission。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_corridor_models.py backend/tests/production/test_readiness_dependencies.py -q`
+- 测试结果：通过；外部签字不可由本地测试代替。
+- 正常路径证据：无；不得把 sandbox-authority 当作法定签字。
+- 负向路径证据：pilot/live 无 ACTIVE 非 simulation admission/control attestation 时 payment 和 readiness default-deny。
+- 并发/重复/超时/恢复证据：待外部机构完成 shadow/小额实盘演练并提供证据。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：P0 `[EXT-BLOCKED]` 必须告警，禁止进入 pilot/live。
+- 外部证据：待持牌合作方、内地/香港法律、合规、结算、数据保护、安全负责人签字及 owner/date。
+- 未解决风险：B0 Gate G6 不得通过，不能进入影子/小额实盘。
+- 执行者：Codex
+
 ### B0.4.4 — 真实 HSM/CA/OCSP/CRL 与密钥仪式
 
 - 状态：EXT-BLOCKED
