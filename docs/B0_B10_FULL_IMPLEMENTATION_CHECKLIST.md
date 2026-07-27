@@ -259,7 +259,7 @@
 
 ## B2.1 领域服务与 API
 
-- [ ] B2.1.1 新增 `backend/production/identity_service.py`。
+- [x] B2.1.1 新增 `backend/production/identity_service.py`。
   - 实现 Tenant/Participant/ServiceIdentity/Certificate 生命周期：PENDING → ACTIVE → SUSPENDED/REVOKED。
   - 删除业务请求中自动创建 participant/tenant 的行为；bootstrap 只能走受控管理流程。
 

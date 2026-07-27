@@ -1148,3 +1148,24 @@
 - 外部证据：`[EXT-BLOCKED]` 无 PostgreSQL 实例和两租户 fixture。
 - 未解决风险：真实 PostgreSQL 上的 RLS policy、write denial、report/evidence isolation 未完成。
 - 执行者：Codex
+
+### B2.1.1 — explicit identity lifecycle service
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`34ef9da`
+- 修改文件：`backend/production/identity_service.py`、`backend/production/security.py`、`backend/tests/production/test_identity_service.py`
+- 新增实现：Tenant/Participant/ServiceIdentity/Certificate 显式 bootstrap/create 均从 `PENDING` 开始；生命周期仅允许 `PENDING→ACTIVE/SUSPENDED/REVOKED` 合法转换；ACTIVE/REVOKED 强制 distinct maker/checker；certificate revoke 写入 revoked_at。
+- 业务边界：pilot/live 缺少 participant/tenant 时不再由请求自动创建，抛出受控 bootstrap 错误；sandbox 保留本地显式模拟身份自举以支持测试环境。
+- 新增/修改测试：tenant/participant pending、active tenant prerequisite、同一 maker/checker 拒绝。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_identity_service.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/identity_service.py backend/production/security.py backend/tests/production/test_identity_service.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 正常路径证据：只有 identity service bootstrap/transition 可创建和激活身份；普通支付请求不会生成 pilot/live participant/tenant。
+- 负向路径证据：无 active tenant/participant、非法时间窗、重复身份、同一 maker/checker 均 fail-closed。
+- 并发/重复/超时/恢复证据：唯一键由数据库保证重复创建冲突；transition 在同一 session flush。
+- OpenAPI/AsyncAPI 影响：后续 B2.1.2 将把 lifecycle 暴露为受控 API；当前已有路由仍待重接。
+- Metrics/alerts/runbook 影响：bootstrap/activation/revoke 应接审计与双控告警。
+- 外部证据：无。
+- 未解决风险：现有 identity_router 仍是旧路由注册，需 B2.1.2 完成完整 CRUD/状态 API 和审计证据。
+- 执行者：Codex
