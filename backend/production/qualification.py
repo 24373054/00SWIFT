@@ -35,6 +35,7 @@ class QualificationStatus(StrEnum):
 @dataclass(frozen=True)
 class QualificationArtifact:
     artifact_id: str
+    artifact_type: str
     environment: str
     subject: str
     issuer: str
@@ -98,7 +99,7 @@ class QualificationVerifier:
             raise QualificationError("qualification artifact root must be an object")
 
         required = {
-            "artifact_id", "environment", "subject", "issuer", "connector",
+            "artifact_id", "artifact_type", "environment", "subject", "issuer", "connector",
             "connector_version", "artifact_path", "artifact_digest",
             "signature_algorithm", "valid_from", "valid_to", "public_key", "signature",
         }
@@ -141,6 +142,7 @@ class QualificationVerifier:
         document_digest = hashlib.sha256(_signed_payload(document)).hexdigest()
         return QualificationArtifact(
             artifact_id=str(document["artifact_id"]),
+            artifact_type=str(document["artifact_type"]),
             environment=str(document["environment"]),
             subject=str(document["subject"]),
             issuer=str(document["issuer"]),

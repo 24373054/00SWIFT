@@ -21,6 +21,7 @@ def _document(tmp_path, *, expired: bool = False):
     valid_to = now - dt.timedelta(minutes=1) if expired else now + dt.timedelta(hours=1)
     document = {
         "artifact_id": "attestation-1",
+        "artifact_type": "connector-binary",
         "environment": "pilot",
         "subject": "participant-a",
         "issuer": "qualification-authority",
