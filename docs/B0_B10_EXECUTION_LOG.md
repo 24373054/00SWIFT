@@ -1512,6 +1512,27 @@
 - 未解决风险：append-only `prod_approval_decisions` 尚待 B2.5.3；当前 projection update 仍需不可变 decision 证据。
 - 执行者：Codex
 
+### B2.5.3 — append-only approval decisions
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`8159dfc`
+- 修改文件：`backend/alembic/versions/0019_approval_decisions.py`、`backend/production/models.py`、`backend/production/approval_api.py`、`backend/tests/production/test_approval_decisions.py`
+- 新增迁移：`0019_approval_decisions` 创建 `prod_approval_decisions`，approval FK RESTRICT、decision unique、checker/signature/policy/evidence/time 字段。
+- 新增实现：SQLAlchemy before_update/before_delete 事件强制 append-only；approval decision API 每次写不可变 decision row。
+- 新增/修改测试：真实 SQLite Session 修改或删除 decision 均抛 append-only；迁移 upgrade。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_approval_decisions.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/alembic/versions/0019_approval_decisions.py backend/production/models.py backend/production/approval_api.py backend/tests/production/test_approval_decisions.py`; `\\.venv\\Scripts\\python.exe -m alembic upgrade head`
+- 测试结果：`1 passed`；`ruff: All checks passed`；Alembic `0018 -> 0019` 成功。
+- 正常路径证据：decision 记录 outcome/checker/reason/policy/evidence/decided_at 并与 projection update 同事务。
+- 负向路径证据：任何 update/delete 被 ORM event 拦截；approval FK 删除历史被 RESTRICT。
+- 并发/重复/超时/恢复证据：decision_id unique；重复 decision API 在 projection state filter 下拒绝。
+- OpenAPI/AsyncAPI 影响：decision endpoint 现在写 append-only evidence。
+- Metrics/alerts/runbook 影响：decision mismatch/tamper 告警。
+- 外部证据：无。
+- 未解决风险：B2.5.4 仍需删除旧 router 内 direct APPROVED 逻辑并让业务 authorization 调用服务。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE

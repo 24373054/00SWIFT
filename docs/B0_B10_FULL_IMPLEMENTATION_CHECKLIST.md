@@ -332,7 +332,7 @@
   - 新增 `POST /approvals/{id}/decisions`，checker 身份来自 authenticated principal，不能来自请求 body。
   - 同一 subject、credential、人员组或不满足 SoD policy 时拒绝。
 
-- [ ] B2.5.3 增加 `prod_approval_decisions` append-only 表。
+- [x] B2.5.3 增加 `prod_approval_decisions` append-only 表。
   - Approval projection 可更新，decision 记录不可更新/删除。
   - checker 的签名、时间、reason、policy version、evidence 必须保留。
 
