@@ -14,12 +14,14 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     DateTime,
+    ForeignKey,
     Integer,
     String,
     Text,
     UniqueConstraint,
     event,
 )
+from sqlalchemy.orm import relationship
 
 from database import Base
 
@@ -316,8 +318,8 @@ class ProductionPaymentOrder(Base):
     order_id = Column(String(80), nullable=False, unique=True, index=True)
     uetr = Column(String(36), nullable=False, unique=True, index=True)
     instruction_id = Column(String(200), nullable=False, index=True)
-    tenant_id = Column(String(80), nullable=False, index=True)
-    initiator_participant = Column(String(80), nullable=False, index=True)
+    tenant_id = Column(String(80), ForeignKey("prod_tenants.tenant_id", ondelete="RESTRICT"), nullable=False, index=True)
+    initiator_participant = Column(String(80), ForeignKey("prod_participants.participant_id", ondelete="RESTRICT"), nullable=False, index=True)
     corridor = Column(String(40), nullable=False)
     debtor_party_ref = Column(String(160), nullable=False)
     debtor_account_ref = Column(String(160), nullable=False)
@@ -337,13 +339,14 @@ class ProductionPaymentOrder(Base):
     created_at = Column(DateTime, nullable=False, default=utcnow)
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
     __table_args__ = (CheckConstraint("amount_minor > 0", name="ck_prod_payment_amount"),)
+    facts = relationship("ProductionPaymentFact", primaryjoin="ProductionPaymentOrder.order_id == foreign(ProductionPaymentFact.order_id)", viewonly=True)
 
 
 class ProductionPaymentFact(Base):
     __tablename__ = "prod_payment_facts"
     id = Column(Integer, primary_key=True)
     fact_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     fact_type = Column(String(60), nullable=False, index=True)
     state = Column(String(60), nullable=False)
     reference = Column(String(160), nullable=True, index=True)
@@ -359,7 +362,7 @@ class ProductionAuthorizationDecision(Base):
     __tablename__ = "prod_authorization_decisions"
     id = Column(Integer, primary_key=True)
     decision_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     outcome = Column(String(30), nullable=False)
     payment_hash = Column(String(64), nullable=False)
     mandate_ref = Column(String(160), nullable=True)
@@ -376,7 +379,7 @@ class ProductionComplianceDecision(Base):
     __tablename__ = "prod_compliance_decisions"
     id = Column(Integer, primary_key=True)
     decision_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     outcome = Column(String(30), nullable=False)
     input_hash = Column(String(64), nullable=False)
     rule_version = Column(String(80), nullable=False)
@@ -392,7 +395,7 @@ class ProductionFundingReservation(Base):
     id = Column(Integer, primary_key=True)
     reservation_id = Column(String(80), nullable=False, unique=True, index=True)
     reservation_intent_id = Column(String(80), nullable=False, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     funding_reference = Column(String(160), nullable=False)
     currency = Column(String(3), nullable=False)
     amount_minor = Column(Integer, nullable=False)
@@ -427,7 +430,7 @@ class ProductionFxTradeIntent(Base):
     __tablename__ = "prod_fx_trade_intents"
     id = Column(Integer, primary_key=True)
     trade_intent_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     quote_id = Column(String(80), nullable=False, index=True)
     state = Column(String(30), nullable=False, default="PREPARING")
     idempotency_context = Column(String(160), nullable=False, unique=True)
@@ -444,8 +447,8 @@ class ProductionFxTrade(Base):
     __tablename__ = "prod_fx_trades"
     id = Column(Integer, primary_key=True)
     trade_id = Column(String(80), nullable=False, unique=True, index=True)
-    trade_intent_id = Column(String(80), nullable=False, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    trade_intent_id = Column(String(80), ForeignKey("prod_fx_trade_intents.trade_intent_id", ondelete="RESTRICT"), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     contract_state = Column(String(30), nullable=False)
     trade_reference = Column(String(160), nullable=True)
     payload = Column(Text, nullable=False, default="{}")
@@ -457,7 +460,7 @@ class ProductionSettlementLeg(Base):
     __tablename__ = "prod_settlement_legs"
     id = Column(Integer, primary_key=True)
     leg_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     leg_role = Column(String(40), nullable=False)
     connector = Column(String(100), nullable=False)
     currency = Column(String(3), nullable=False)
@@ -475,7 +478,7 @@ class ProductionBeneficiaryCredit(Base):
     __tablename__ = "prod_beneficiary_credits"
     id = Column(Integer, primary_key=True)
     credit_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     state = Column(String(30), nullable=False, default="UNKNOWN")
     external_reference = Column(String(160), nullable=True)
     evidence_ref = Column(String(120), nullable=True)
@@ -487,7 +490,7 @@ class ProductionReconciliationRun(Base):
     __tablename__ = "prod_reconciliation_runs"
     id = Column(Integer, primary_key=True)
     run_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     state = Column(String(30), nullable=False, default="UNMATCHED")
     payment_hash = Column(String(64), nullable=False)
     subledger_hash = Column(String(64), nullable=True)
@@ -502,7 +505,7 @@ class ProductionCancellationRequest(Base):
     __tablename__ = "prod_cancellation_requests"
     id = Column(Integer, primary_key=True)
     cancellation_request_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     state = Column(String(30), nullable=False, default="REQUESTED")
     reason = Column(String(120), nullable=False)
     idempotency_context = Column(String(160), nullable=False, unique=True)
@@ -515,7 +518,7 @@ class ProductionInvestigationCase(Base):
     __tablename__ = "prod_investigation_cases"
     id = Column(Integer, primary_key=True)
     case_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     case_type = Column(String(60), nullable=False)
     state = Column(String(30), nullable=False, default="OPEN")
     priority = Column(String(20), nullable=False, default="P2")
@@ -530,7 +533,7 @@ class ProductionReturnPayment(Base):
     __tablename__ = "prod_return_payments"
     id = Column(Integer, primary_key=True)
     return_payment_id = Column(String(80), nullable=False, unique=True, index=True)
-    original_order_id = Column(String(80), nullable=False, index=True)
+    original_order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     original_uetr = Column(String(36), nullable=False, index=True)
     return_uetr = Column(String(36), nullable=False, unique=True, index=True)
     amount_minor = Column(Integer, nullable=False)
@@ -563,7 +566,7 @@ class ProductionJournal(Base):
     __tablename__ = "prod_journals"
     id = Column(Integer, primary_key=True)
     journal_id = Column(String(80), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=True, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=True, index=True)
     legal_entity = Column(String(100), nullable=False)
     book = Column(String(100), nullable=False)
     business_date = Column(String(10), nullable=False)
@@ -577,7 +580,7 @@ class ProductionJournalEntry(Base):
     __tablename__ = "prod_journal_entries"
     id = Column(Integer, primary_key=True)
     entry_id = Column(String(80), nullable=False, unique=True, index=True)
-    journal_id = Column(String(80), nullable=False, index=True)
+    journal_id = Column(String(80), ForeignKey("prod_journals.journal_id", ondelete="RESTRICT"), nullable=False, index=True)
     account_id = Column(String(100), nullable=False, index=True)
     direction = Column(String(10), nullable=False)
     currency = Column(String(3), nullable=False)
@@ -702,7 +705,7 @@ class ProductionInboxMessage(Base):
     __tablename__ = "prod_inbox_messages"
     id = Column(Integer, primary_key=True)
     consumer = Column(String(100), nullable=False)
-    event_id = Column(String(80), nullable=False)
+    event_id = Column(String(80), ForeignKey("prod_outbox_events.event_id", ondelete="RESTRICT"), nullable=False)
     payload_hash = Column(String(64), nullable=False)
     created_at = Column(DateTime, nullable=False, default=utcnow)
     __table_args__ = (UniqueConstraint("consumer", "event_id", name="uq_prod_inbox_consumer_event"),)
@@ -782,7 +785,7 @@ class ProductionReconciliationBreak(Base):
     __tablename__ = "prod_reconciliation_breaks"
     id = Column(Integer, primary_key=True)
     break_id = Column(String(100), nullable=False, unique=True, index=True)
-    order_id = Column(String(80), nullable=False, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
     break_type = Column(String(80), nullable=False)
     severity = Column(String(20), nullable=False, default="P2")
     state = Column(String(20), nullable=False, default="OPEN")
@@ -807,7 +810,7 @@ class ProductionReportReceipt(Base):
     __tablename__ = "prod_report_receipts"
     id = Column(Integer, primary_key=True)
     receipt_id = Column(String(100), nullable=False, unique=True, index=True)
-    batch_id = Column(String(100), nullable=False, index=True)
+    batch_id = Column(String(100), ForeignKey("prod_report_batches.batch_id", ondelete="RESTRICT"), nullable=False, index=True)
     receiver = Column(String(120), nullable=False)
     state = Column(String(20), nullable=False, default="PENDING")
     external_reference = Column(String(160), nullable=True)
