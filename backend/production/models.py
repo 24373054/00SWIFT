@@ -455,6 +455,19 @@ class ProductionPaymentFact(Base):
     __table_args__ = (UniqueConstraint("order_id", "fact_type", "reference", "fact_sequence", name="uq_prod_fact_sequence"),)
 
 
+class ProductionPaymentTimer(Base):
+    __tablename__ = "prod_payment_timers"
+    id = Column(Integer, primary_key=True)
+    timer_id = Column(String(100), nullable=False, unique=True, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=False, index=True)
+    timer_type = Column(String(40), nullable=False)
+    due_at = Column(DateTime, nullable=False, index=True)
+    state = Column(String(20), nullable=False, default="SCHEDULED")
+    attempts = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    __table_args__ = (UniqueConstraint("order_id", "timer_type", name="uq_prod_timer_type"),)
+
+
 class ProductionAuthorizationDecision(Base):
     __tablename__ = "prod_authorization_decisions"
     id = Column(Integer, primary_key=True)
