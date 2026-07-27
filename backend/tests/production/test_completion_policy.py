@@ -4,9 +4,9 @@ from production.completion_policy import CompletionPolicyEvaluator
 from production.models import (
     ProductionBeneficiaryCredit,
     ProductionCompletionProfile,
+    ProductionJournal,
     ProductionPaymentFact,
     ProductionPaymentOrder,
-    ProductionJournal,
     ProductionReconciliationRun,
     ProductionSettlementLeg,
 )
