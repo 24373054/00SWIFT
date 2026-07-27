@@ -346,6 +346,26 @@
 - 未解决风险：现有 handler 仍有旧式逐参数依赖，B0.3.4 将按矩阵替换。
 - 执行者：Codex
 
+### B0.3.4 — 路由语义与公网暴露修复
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`3a4c85e`
+- 修改文件：`backend/production/router.py`、`backend/production/ledger_router.py`、`docs/security/PRODUCTION_API_AUTHORIZATION_MATRIX.md`、`backend/tests/production/test_route_semantics.py`
+- 新增迁移：无
+- 新增/修改测试：trial-balance GET 语义；pilot/live worker 404；所有 mutation handler integrity 依赖；maker/checker 自审批拒绝。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_route_semantics.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/router.py backend/production/ledger_router.py backend/tests/production/test_route_semantics.py`
+- 测试结果：`3 passed`; `ruff`：`All checks passed`
+- 正常路径证据：trial-balance 改为 GET；sandbox worker 仍可运行；业务 mutation 保留 integrity dependency。
+- 负向路径证据：pilot/live worker 公网执行直接 404；maker=checker 直接 409；缺 integrity 参数的 mutation 检查失败。
+- 并发/重复/超时/恢复证据：支付/取消/退回既有幂等；worker 不提供人工公网重试入口。
+- OpenAPI/AsyncAPI 影响：trial-balance OpenAPI 仅保留 GET；矩阵同步。
+- Metrics/alerts/runbook 影响：公网 worker 探测记为 404；自审批记为 409 审计事件。
+- 外部证据：无；pilot/live 仍由真实身份和 HSM Gate 阻断。
+- 未解决风险：sandbox header 隔离和统一 bundle 全量替换在 B0.3.5/B0.3.6。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
