@@ -89,7 +89,7 @@
 
 ## B0.2 HTTP 消息完整性与重放保护
 
-- [ ] B0.2.1 新增 `backend/production/signatures.py`。
+- [x] B0.2.1 新增 `backend/production/signatures.py`。
   - 实现：`HttpSignatureVerifier` Protocol、sandbox test verifier、qualified verifier adapter。
   - 覆盖组件：method、target URI、authority、content-digest、content-type、date、nonce、participant/service identity。
   - 算法策略：配置允许列表；拒绝未知算法、弱算法、缺失 covered component。
