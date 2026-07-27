@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.5 — 历史迁移不可变
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg '0001/0002/0003|0004_\*' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；清单规定后续只能追加 0004+ revision
+- 验收证据：B1.1 明确要求 baseline hash、显式新迁移和 CI 校验
+- 未解决风险：当前工作区旧迁移已有未提交修改，执行 B1 前必须冻结并记录其 hash
+- 执行者：Codex
+
 ### R0.4 — 每项证据字段
 
 - 状态：DONE
