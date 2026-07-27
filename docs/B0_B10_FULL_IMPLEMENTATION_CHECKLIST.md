@@ -194,7 +194,7 @@
   - 指定删除策略：金融/审计记录 `RESTRICT`；不可使用级联删除抹掉历史。
   - 增加 relationship 仅用于导航，不得依赖 ORM cascade 删除。
 
-- [ ] B1.1.4 将金额、计数器和序列列升级为 `BigInteger`。
+- [x] B1.1.4 将金额、计数器和序列列升级为 `BigInteger`。
   - 覆盖：payment、quote、reservation、settlement、return、ledger balance、journal entry、limit、report totals。
   - 迁移必须先检查溢出和负数数据。
 
