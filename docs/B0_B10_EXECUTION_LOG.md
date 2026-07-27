@@ -446,6 +446,26 @@
 - 未解决风险：密钥轮换/吊销尚未落审计和 maker-checker。
 - 执行者：Codex
 
+### B0.4.3 — 密钥操作审计与双控接口
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`a069a1e`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0006_key_operation_audit.py`、`backend/production/key_operations.py`、`backend/production/router.py`、`backend/production/operations_router.py`、`backend/tests/production/test_key_operations.py`、`docs/security/PRODUCTION_API_AUTHORIZATION_MATRIX.md`、`backend/tests/production/test_route_authorization_matrix.py`
+- 新增迁移：`0006_key_operation_audit`
+- 新增/修改测试：ROTATE/REVOKE 必须有已批准 ProductionApproval、maker/checker distinct；provider 操作结果写入审计；路由矩阵新增 key-operations。
+- 测试命令：`\.venv\Scripts\python.exe -m alembic upgrade head`; `\.venv\Scripts\python.exe -m pytest backend/tests/production/test_key_operations.py backend/tests/production/test_route_authorization_matrix.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/models.py backend/production/key_operations.py backend/production/router.py backend/production/operations_router.py backend/tests/production/test_key_operations.py`
+- 测试结果：`6 passed`; `ruff`：`All checks passed`; migration 已升级到 `0006_key_operation_audit`。
+- 正常路径证据：独立 checker 的 APPROVED approval 后，sandbox provider 实际 rotate/revoke，`prod_key_operation_audits` 记录 COMPLETED、result_digest、completed_at。
+- 负向路径证据：缺 approval、maker=checker、unsupported operation、qualified provider 未配置均拒绝；失败状态写入 audit。
+- 并发/重复/超时/恢复证据：operation_id 唯一；approval 和审计事实在同一 DB transaction 中。
+- OpenAPI/AsyncAPI 影响：新增 `/production/v1/key-operations` mutation，已纳入授权矩阵和 integrity dependency。
+- Metrics/alerts/runbook 影响：key rotate/revoke/audit failure 可作为高优先级安全告警。
+- 外部证据：真实 HSM/KMS/CA 尚未提供，pilot/live endpoint 保持 503 `[EXT-BLOCKED]`。
+- 未解决风险：trust-anchor 变更仍需 qualified 外部审批和 B2 流程。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
