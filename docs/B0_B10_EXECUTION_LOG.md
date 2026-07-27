@@ -493,6 +493,16 @@
 - 外部证据：真实 account mapping、ledger posting 和 connector hold contract 缺失，无法验收每种 outcome 的准确 journal/hold，保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B5.7.5 — GL bridge tests
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`0bb468a`、`38c998b`
+- 修改文件：`backend/tests/production/test_gl_bridge.py`
+- 测试结果：mapping、batch totals/hash、ACK receipt 和缺失 receipt 负向测试 `1 passed`；REJECT/replay transport 需真实 GL provider，清单项保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
