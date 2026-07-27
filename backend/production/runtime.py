@@ -31,7 +31,12 @@ def _aware(value: dt.datetime) -> dt.datetime:
 
 
 def canonical_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    def _default(item: Any) -> str:
+        if isinstance(item, dt.datetime):
+            return item.isoformat()
+        return str(item)
+
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=_default)
 
 
 def digest(value: Any) -> str:
