@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run --coverage=false",
+    "test": "vitest run --coverage=false --pool=threads --maxWorkers=1 --minWorkers=1",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

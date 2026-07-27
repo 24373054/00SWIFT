@@ -13,6 +13,7 @@ export default defineConfig({
     proxy: {
       "/api": "http://127.0.0.1:8765",
       "/nextgen": "http://127.0.0.1:8765",
+      "/production": "http://127.0.0.1:8765",
       "/health": "http://127.0.0.1:8765",
       "/ready": "http://127.0.0.1:8765",
     },

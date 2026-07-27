@@ -47,6 +47,28 @@ research, training and controlled long-term sandbox use.
 
 The previous developer console remains available at `/legacy` during migration.
 
+## Production-domain implementation boundary
+
+The `/production/v1` API is the implementation track for a usable cross-border
+e-CNY payment domain. It keeps payment intent, message delivery, funding
+reservation, FX acceptance, settlement finality, beneficiary credit,
+cancellation/return, evidence, outbox/inbox delivery and reconciliation as
+separate persistent aggregates. The default one-click launcher uses explicit
+`simulation` connectors only; pilot/live startup refuses that mode and requires
+qualified connector implementations and message-signature verification.
+
+Useful sandbox endpoints include:
+
+- `POST /production/v1/payments` — idempotent payment intent (requires `Idempotency-Key`).
+- `GET /production/v1/payments` and `/payments/{order_id}/facts` — projection plus immutable fact view.
+- `GET /production/v1/standards/profiles`, `POST /production/v1/standards/validate` — versioned message checks with evidence.
+- `POST /production/v1/worker/run` — deterministic local outbox drain for demonstrations.
+- `GET /production/v1/operations/summary`, `/reconciliation/runs` — operational and four-way reconciliation views.
+
+For the full production roadmap, state machine, connector qualification gates,
+ledger controls and acceptance criteria, see
+[`docs/PRODUCTION_CROSS_BORDER_ECNY_DEVELOPMENT_PLAN.md`](docs/PRODUCTION_CROSS_BORDER_ECNY_DEVELOPMENT_PLAN.md).
+
 ## Platform capabilities
 
 | Area | Included | Key invariant |
@@ -92,11 +114,25 @@ participants, policies and finality rules.
 ### Prerequisites
 
 - Python 3.11 or 3.12
-- Node.js 22
+- Node.js 22.12 or newer
 - Docker 24+ for container workflows
 - PostgreSQL 16+ for the durable deployment profile
 
 ### Native development
+
+On Windows, double-click `start.bat` from the repository root. The launcher
+creates an isolated Python 3.11/3.12 environment, synchronizes dependencies,
+builds the institutional frontend, applies database migrations to the same
+database used by the application, starts the API, and opens the browser.
+
+```powershell
+.\start.bat
+
+# Optional: start without opening the browser automatically.
+.\start.bat -NoBrowser
+```
+
+For manual or non-Windows setup:
 
 ```bash
 git clone https://github.com/24373054/00SWIFT.git
@@ -113,9 +149,19 @@ npm run test --prefix frontend
 npm run build --prefix frontend
 
 cp backend/.env.example backend/.env
+export DB_URL="sqlite:///$(pwd)/backend/swift_dev.db"
 alembic upgrade head
 cd backend
 python -m uvicorn main:app --host 127.0.0.1 --port 8765 --reload
+```
+
+When using PowerShell for the manual flow, set the migration URL before running
+Alembic:
+
+```powershell
+$backendPath = (Resolve-Path .\backend).Path.Replace("\", "/")
+$env:DB_URL = "sqlite:///$backendPath/swift_dev.db"
+.\.venv\Scripts\python.exe -m alembic upgrade head
 ```
 
 Open:

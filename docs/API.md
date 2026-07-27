@@ -51,6 +51,25 @@ Clients should branch on `code` and HTTP status, retain `X-Request-ID`, and avoi
 
 ## Route families
 
+### Production cross-border payment domain — `/production/v1`
+
+This route family exposes the durable payment-order boundary described in the
+[production development plan](PRODUCTION_CROSS_BORDER_ECNY_DEVELOPMENT_PLAN.md).
+Sandbox calls may use `X-Participant-ID` and are visibly marked simulation;
+pilot/live require a bearer-mapped participant identity, active entitlement,
+`Idempotency-Key`, `Content-Digest`, `Signature-Input` and `Signature`.
+
+- `POST /payments`: create an idempotent payment intent; returns `202` and a UETR.
+- `GET /payments`, `GET /payments/{order_id}`, `GET /payments/{order_id}/facts`: projection and immutable fact views.
+- `POST /fx-quotes`, `POST /payments/{order_id}/fx-acceptance-intents`: explicit FX quote/acceptance barrier.
+- `POST /payments/{order_id}/cancellation-requests`, `/return-requests`: independent cancellation and return workflows.
+- `GET /standards/profiles`, `POST /standards/validate`: versioned ISO 20022/CIPS validation with evidence manifests.
+- `GET /operations/summary`, `POST /reconciliation/runs`: operational projections and four-way reconciliation.
+- `POST /worker/run`: deterministic local outbox drain; production deployment uses a durable worker process.
+
+The default launcher is intentionally simulation-only. It never claims SWIFT,
+CIPS or central-bank connectivity and cannot move real funds.
+
 ### OAuth2 — `/oauth2`
 
 - `POST /token`: exchange a certificate-bound client assertion for a scoped bearer token.

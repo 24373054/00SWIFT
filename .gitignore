@@ -37,6 +37,7 @@ htmlcov/
 build/
 dist/
 *.whl
+frontend/node_modules/
 
 # OS/editor noise
 .DS_Store

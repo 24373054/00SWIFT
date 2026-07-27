@@ -206,3 +206,25 @@ export interface CommandCenterPayload {
   message_diff: DiffEntry[];
   scenarios: ReplayScenario[];
 }
+
+export interface ProductionPaymentItem {
+  payment_id: string;
+  uetr: string;
+  instruction_id: string;
+  orchestration_state: string;
+  customer_outcome: string | null;
+  amount_minor: number;
+  currency: string;
+  settlement_currency: string;
+  corridor: string;
+  fact_summary: {
+    projection_rule_version: string;
+    orchestration_state: string;
+    facts: Record<string, { state_counts: Record<string, number>; latest: { state: string; reference: string | null } | null }>;
+  };
+  created_at: string;
+}
+
+export interface ProductionPaymentsPayload {
+  items: ProductionPaymentItem[];
+}

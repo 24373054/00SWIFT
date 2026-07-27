@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { loadBootstrap, loadCommandCenter } from "./api";
+import type { FormEvent } from "react";
+import { loadBootstrap, loadCommandCenter, loadProductionPayments, submitProductionPayment } from "./api";
 import { fallbackBootstrap, fallbackCommandCenter, replayStateAt, roles } from "./fixtures";
 import { t } from "./i18n";
 import { NetworkScene } from "./NetworkScene";
 import { DnsNetting, ExecutiveMetrics, IsoExplorer, MessageDiff, PolicyMatrix, PvpSequence, RtgsLiquidity, UetrLifecycle } from "./Visualizations";
-import type { BootstrapPayload, CommandCenterPayload, Locale, ReplayScenario, ThemeName, ViewMode, WorkspaceId } from "./types";
+import type { BootstrapPayload, CommandCenterPayload, Locale, ProductionPaymentItem, ProductionPaymentsPayload, ReplayScenario, ThemeName, ViewMode, WorkspaceId } from "./types";
 
 const workspaceMessageKey: Record<WorkspaceId, Parameters<typeof t>[1]> = {
   command: "command", payments: "payments", investigations: "investigations", settlement: "settlement", standards: "standards",
@@ -45,13 +46,48 @@ function ReplayControls({ locale, scenarios, scenario, onScenario, progress, onP
   return <div className="replay-control" aria-label="Scenario replay controls"><button type="button" className="primary-control" onClick={() => onPlaying(!playing)}>{playing ? t(locale, "pause") : t(locale, "play")}</button><label><span className="sr-only">Scenario</span><select value={scenario.id} onChange={(event) => { const selected = scenarios.find((item) => item.id === event.target.value); if (selected) onScenario(selected); }}>{scenarios.map((item) => <option key={item.id} value={item.id}>{locale === "zh" ? item.name_zh : item.name}</option>)}</select></label><input type="range" min="0" max="1000" value={Math.round(progress * 1000)} onChange={(event) => onProgress(Number(event.target.value) / 1000)} aria-label="Replay position" /><code>T+{current.toFixed(1)}s / {scenario.duration}s</code></div>;
 }
 
+function ProductionPaymentComposer({ locale, onSubmitted }: { locale: Locale; onSubmitted: () => void }) {
+  const [amount, setAmount] = useState("100.00");
+  const [instructionId, setInstructionId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBusy(true); setMessage(null);
+    try {
+      await submitProductionPayment("payments_operator", {
+        instruction_id: instructionId || `UI-${Date.now()}`,
+        message_type: "pacs.008",
+        corridor: "CN-HK",
+        debtor: { party_id: "SANDBOX-DEBTOR", account_id: "SANDBOX-CNY" },
+        creditor: { party_id: "SANDBOX-CREDITOR", account_id: "SANDBOX-HKD" },
+        instructed_amount: { amount, currency: "CNY" },
+        settlement_currency: "CNY",
+        purpose: { code: "TRADE" },
+      }, `ui-${crypto.randomUUID()}`);
+      setMessage(locale === "zh" ? "已受理，等待异步编排" : "Accepted; awaiting asynchronous orchestration");
+      setInstructionId(""); onSubmitted();
+    } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
+    finally { setBusy(false); }
+  };
+  return <form className="payment-composer" onSubmit={submit}><div><p className="eyebrow">SANDBOX PAYMENT INTENT</p><h3>{locale === "zh" ? "提交支付意图" : "Submit payment intent"}</h3></div><label><span>{locale === "zh" ? "金额（CNY）" : "Amount (CNY)"}</span><input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" required /></label><label><span>{locale === "zh" ? "指令编号" : "Instruction ID"}</span><input value={instructionId} onChange={(event) => setInstructionId(event.target.value)} placeholder="Optional" /></label><button className="primary-control" type="submit" disabled={busy}>{busy ? "…" : locale === "zh" ? "提交" : "Submit"}</button>{message && <small className="composer-message">{message}</small>}</form>;
+}
+
+function ProductionPaymentsView({ payments, locale, onSubmitted }: { payments: ProductionPaymentsPayload; locale: Locale; onSubmitted: () => void }) {
+  const stateLabel = (item: ProductionPaymentItem) => item.customer_outcome ?? item.orchestration_state;
+  return <section className="production-payments" aria-labelledby="production-payments-title"><ProductionPaymentComposer locale={locale} onSubmitted={onSubmitted} />
+    <header className="section-header"><div><p className="eyebrow">PRODUCTION DOMAIN / FACT PROJECTION</p><h2 id="production-payments-title">{locale === "zh" ? "真实支付订单" : "Production payment orders"}</h2></div><code>{payments.items.length} {locale === "zh" ? "笔" : "orders"}</code></header>
+    {payments.items.length === 0 ? <div className="empty-state"><strong>{locale === "zh" ? "暂无支付订单" : "No payment orders"}</strong><p>{locale === "zh" ? "生产域 API 已连接；等待获准参与方提交支付意图。" : "The production API is connected; awaiting an entitled participant payment intent."}</p></div> : <div className="payment-table-wrap"><table className="payment-table"><thead><tr><th>{locale === "zh" ? "订单" : "Order"}</th><th>UETR</th><th>{locale === "zh" ? "走廊" : "Corridor"}</th><th>{locale === "zh" ? "金额" : "Amount"}</th><th>{locale === "zh" ? "编排状态" : "Orchestration"}</th><th>{locale === "zh" ? "事实摘要" : "Fact summary"}</th></tr></thead><tbody>{payments.items.map((item) => <tr key={item.payment_id}><td><strong>{item.payment_id}</strong><small>{item.instruction_id}</small></td><td><code>{item.uetr}</code></td><td>{item.corridor}</td><td>{(item.amount_minor / 100).toLocaleString()} {item.currency}</td><td><span className="status-pill">{stateLabel(item)}</span></td><td><code>{Object.entries(item.fact_summary.facts).map(([key, value]) => `${key}:${value.latest?.state ?? "—"}`).join(" · ")}</code></td></tr>)}</tbody></table></div>}
+  </section>;
+}
+
 function CommandCenter({ data, locale, theme, viewMode, setViewMode, spatial, setSpatial, scenario, progress, playing, setPlaying, setProgress, setScenario }: { data: CommandCenterPayload; locale: Locale; theme: ThemeName; viewMode: ViewMode; setViewMode: (mode: ViewMode) => void; spatial: boolean; setSpatial: (value: boolean) => void; scenario: ReplayScenario; progress: number; playing: boolean; setPlaying: (value: boolean) => void; setProgress: (value: number) => void; setScenario: (scenario: ReplayScenario) => void }) {
   return <div className="workspace command-workspace"><ExecutiveMetrics data={data} locale={locale} /><div className="command-grid"><InterventionRail data={data} locale={locale} /><section className="situation-stage" aria-labelledby="situation-title"><header className="stage-header"><div><p className="eyebrow">LIVE NETWORK / SCENARIO REPLAY</p><h1 id="situation-title">{t(locale, "command")}</h1></div><div className="segmented-controls" aria-label="Scene view mode">{(["geographic", "infrastructure", "hybrid"] as const).map((mode) => <button key={mode} type="button" className={viewMode === mode ? "active" : ""} onClick={() => setViewMode(mode)}>{t(locale, mode)}</button>)}<button type="button" className={spatial ? "active" : ""} onClick={() => setSpatial(!spatial)}>{spatial ? t(locale, "spatialMode") : t(locale, "reducedMotion")}</button></div></header><NetworkScene corridors={data.corridors} theme={theme} mode={viewMode} replayProgress={progress} spatial={spatial} locale={locale} /><div className="scene-legend"><span><i className="state-mark settled" />{locale === "zh" ? "最终结算" : "Final settlement"}</span><span><i className="state-mark moving" />{locale === "zh" ? "价值锁定" : "Value locked"}</span><span><i className="state-mark queued" />{locale === "zh" ? "排队" : "Queued"}</span><span><i className="state-mark blocked" />{locale === "zh" ? "策略阻断" : "Policy blocked"}</span></div><ReplayControls locale={locale} scenarios={data.scenarios} scenario={scenario} onScenario={setScenario} progress={progress} onProgress={setProgress} playing={playing} onPlaying={setPlaying} /></section><LiquidityRail data={data} locale={locale} /></div><EventStream data={data} locale={locale} scenario={scenario} progress={progress} /></div>;
 }
 
-function WorkspaceView({ workspace, data, locale, replayProgress }: { workspace: WorkspaceId; data: CommandCenterPayload; locale: Locale; replayProgress: number }) {
+function WorkspaceView({ workspace, data, locale, replayProgress, productionPayments, onPaymentSubmitted }: { workspace: WorkspaceId; data: CommandCenterPayload; locale: Locale; replayProgress: number; productionPayments: ProductionPaymentsPayload; onPaymentSubmitted: () => void }) {
   switch (workspace) {
-    case "payments":
+    case "payments": return <div className="workspace stacked-workspace"><ProductionPaymentsView payments={productionPayments} locale={locale} onSubmitted={onPaymentSubmitted} /><UetrLifecycle stages={data.lifecycle} locale={locale} /><MessageDiff entries={data.message_diff} locale={locale} /></div>;
     case "investigations": return <div className="workspace stacked-workspace"><UetrLifecycle stages={data.lifecycle} locale={locale} /><MessageDiff entries={data.message_diff} locale={locale} /></div>;
     case "settlement": return <div className="workspace stacked-workspace"><RtgsLiquidity accounts={data.liquidity} locale={locale} /><DnsNetting dns={data.dns} locale={locale} /><PvpSequence stages={data.pvp} locale={locale} replayProgress={replayProgress} /></div>;
     case "standards": return <div className="workspace stacked-workspace"><IsoExplorer nodes={data.iso_tree} locale={locale} /><MessageDiff entries={data.message_diff} locale={locale} /></div>;
@@ -70,6 +106,7 @@ export function App() {
   const [role, setRole] = useState("executive_viewer");
   const [bootstrap, setBootstrap] = useState<BootstrapPayload>(fallbackBootstrap);
   const [data, setData] = useState<CommandCenterPayload>(fallbackCommandCenter);
+  const [productionPayments, setProductionPayments] = useState<ProductionPaymentsPayload>({ items: [] });
   const [workspace, setWorkspace] = useState<WorkspaceId>("command");
   const [viewMode, setViewMode] = useState<ViewMode>("hybrid");
   const [spatial, setSpatial] = useState(!prefersReducedMotion);
@@ -77,20 +114,27 @@ export function App() {
   const [scenario, setScenario] = useState<ReplayScenario>(fallbackCommandCenter.scenarios[0]!);
   const [progress, setProgress] = useState(0.22);
   const [playing, setPlaying] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => setSpatial(!prefersReducedMotion), [prefersReducedMotion]);
   useEffect(() => { document.documentElement.dataset.theme = theme; document.documentElement.lang = locale === "zh" ? "zh-CN" : "en"; }, [theme, locale]);
   useEffect(() => {
     let active = true;
     setLoading(true);
-    Promise.all([loadBootstrap(role), loadCommandCenter(role)]).then(([nextBootstrap, nextData]) => {
+    setLoadError(null);
+    Promise.all([loadBootstrap(role), loadCommandCenter(role), loadProductionPayments(role)]).then(([nextBootstrap, nextData, nextPayments]) => {
       if (!active) return;
-      setBootstrap(nextBootstrap); setData(nextData); setScenario(nextData.scenarios[0] ?? fallbackCommandCenter.scenarios[0]!); setLoading(false);
+      setBootstrap(nextBootstrap); setData(nextData); setProductionPayments(nextPayments); setScenario(nextData.scenarios[0] ?? fallbackCommandCenter.scenarios[0]!); setLoading(false);
       const currentAllowed = nextBootstrap.workspaces.find((item) => item.id === workspace)?.enabled;
       if (!currentAllowed) setWorkspace("command");
+    }).catch((error: unknown) => {
+      if (!active) return;
+      setLoading(false);
+      setLoadError(error instanceof Error ? error.message : "Backend API unavailable");
     });
     return () => { active = false; };
-  }, [role]);
+  }, [role, reloadToken]);
   useEffect(() => {
     if (!playing) return;
     const timer = window.setInterval(() => setProgress((current) => current >= 1 ? 0 : Math.min(current + 0.004, 1)), 160);
@@ -99,5 +143,5 @@ export function App() {
 
   const visibleWorkspaces = useMemo(() => bootstrap.workspaces, [bootstrap.workspaces]);
   const title = t(locale, workspaceMessageKey[workspace]);
-  return <div className="app-shell"><aside className="primary-nav"><div className="brand-block"><span className="brand-mark">CB</span><div><strong>{t(locale, "product")}</strong><small>00SWIFT · v{bootstrap.product.version}</small></div></div><nav aria-label="Primary workflow navigation">{visibleWorkspaces.map((item, index) => <button key={item.id} type="button" disabled={!item.enabled} className={workspace === item.id ? "active" : ""} onClick={() => item.enabled && setWorkspace(item.id)} title={item.enabled ? "" : item.reason ?? t(locale, "denied")}><span>{String(index + 1).padStart(2, "0")}</span><strong>{locale === "zh" ? item.label_zh : item.label}</strong>{!item.enabled && <i>—</i>}</button>)}</nav><div className="policy-proof"><small>POLICY DECISION</small><code>{bootstrap.decision.decision_id.slice(0, 18)}</code><span className={bootstrap.decision.result}>{bootstrap.decision.result.toUpperCase()}</span></div></aside><main className="application-main"><header className="top-command-bar"><div className="breadcrumb"><span>00SWIFT</span><b>/</b><strong>{title}</strong></div><div className="system-status"><span className="status-square healthy" />{bootstrap.product.environment.toUpperCase()}<code>{data.generated_at.slice(11, 19)} UTC</code></div><div className="control-cluster"><label><span>{t(locale, "role")}</span><select value={role} onChange={(event) => setRole(event.target.value)}>{roles.map(([value, en, zh]) => <option key={value} value={value}>{locale === "zh" ? zh : en}</option>)}</select></label><label><span>{t(locale, "theme")}</span><select value={theme} onChange={(event) => setTheme(event.target.value as ThemeName)}><option value="daylight">{t(locale, "daylight")}</option><option value="operations">{t(locale, "operations")}</option></select></label><label><span>{t(locale, "language")}</span><select value={locale} onChange={(event) => setLocale(event.target.value as Locale)}><option value="en">English</option><option value="zh">中文</option></select></label></div></header>{loading && <div className="loading-rule" aria-live="polite"><span /></div>}{workspace === "command" ? <CommandCenter data={data} locale={locale} theme={theme} viewMode={viewMode} setViewMode={setViewMode} spatial={spatial} setSpatial={setSpatial} scenario={scenario} progress={progress} playing={playing} setPlaying={setPlaying} setProgress={setProgress} setScenario={(next) => { setScenario(next); setProgress(0); setPlaying(true); }} /> : <WorkspaceView workspace={workspace} data={data} locale={locale} replayProgress={progress} />}<footer className="institutional-boundary"><span>{bootstrap.product.data_mode.toUpperCase()}</span><p>{t(locale, "sandboxBoundary")}</p></footer></main></div>;
+  return <div className="app-shell"><aside className="primary-nav"><div className="brand-block"><span className="brand-mark">CB</span><div><strong>{t(locale, "product")}</strong><small>00SWIFT · v{bootstrap.product.version}</small></div></div><nav aria-label="Primary workflow navigation">{visibleWorkspaces.map((item, index) => <button key={item.id} type="button" disabled={!item.enabled} className={workspace === item.id ? "active" : ""} onClick={() => item.enabled && setWorkspace(item.id)} title={item.enabled ? "" : item.reason ?? t(locale, "denied")}><span>{String(index + 1).padStart(2, "0")}</span><strong>{locale === "zh" ? item.label_zh : item.label}</strong>{!item.enabled && <i>—</i>}</button>)}</nav><div className="policy-proof"><small>POLICY DECISION</small><code>{bootstrap.decision.decision_id.slice(0, 18)}</code><span className={bootstrap.decision.result}>{bootstrap.decision.result.toUpperCase()}</span></div></aside><main className="application-main"><header className="top-command-bar"><div className="breadcrumb"><span>00SWIFT</span><b>/</b><strong>{title}</strong></div><div className="system-status"><span className="status-square healthy" />{bootstrap.product.environment.toUpperCase()}<code>{data.generated_at.slice(11, 19)} UTC</code></div><div className="control-cluster"><label><span>{t(locale, "role")}</span><select value={role} onChange={(event) => setRole(event.target.value)}>{roles.map(([value, en, zh]) => <option key={value} value={value}>{locale === "zh" ? zh : en}</option>)}</select></label><label><span>{t(locale, "theme")}</span><select value={theme} onChange={(event) => setTheme(event.target.value as ThemeName)}><option value="daylight">{t(locale, "daylight")}</option><option value="operations">{t(locale, "operations")}</option></select></label><label><span>{t(locale, "language")}</span><select value={locale} onChange={(event) => setLocale(event.target.value as Locale)}><option value="en">English</option><option value="zh">中文</option></select></label></div></header>{loading && <div className="loading-rule" aria-live="polite"><span /></div>}{loadError ? <section className="backend-error" role="alert"><p className="eyebrow">BACKEND AUTHORITATIVE</p><h1>{locale === "zh" ? "生产 API 不可用" : "Production API unavailable"}</h1><p>{loadError}</p><button type="button" className="primary-control" onClick={() => setReloadToken((value) => value + 1)}>{locale === "zh" ? "重试" : "Retry"}</button></section> : workspace === "command" ? <CommandCenter data={data} locale={locale} theme={theme} viewMode={viewMode} setViewMode={setViewMode} spatial={spatial} setSpatial={setSpatial} scenario={scenario} progress={progress} playing={playing} setPlaying={setPlaying} setProgress={setProgress} setScenario={(next) => { setScenario(next); setProgress(0); setPlaying(true); }} /> : <WorkspaceView workspace={workspace} data={data} locale={locale} replayProgress={progress} productionPayments={productionPayments} onPaymentSubmitted={() => setReloadToken((value) => value + 1)} />}<footer className="institutional-boundary"><span>{bootstrap.product.data_mode.toUpperCase()}</span><p>{t(locale, "sandboxBoundary")}</p></footer></main></div>;
 }
