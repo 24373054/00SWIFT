@@ -705,6 +705,148 @@ class ProductionLedgerAccount(Base):
     __table_args__ = (CheckConstraint("balance_minor >= 0", name="ck_prod_ledger_balance"),)
 
 
+class ProductionLegalEntity(Base):
+    __tablename__ = "prod_legal_entities"
+    id = Column(Integer, primary_key=True)
+    entity_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    legal_name = Column(String(200), nullable=False)
+    jurisdiction = Column(String(12), nullable=False)
+    evidence_ref = Column(String(120), nullable=True)
+    version = Column(Integer, nullable=False, default=1)
+    active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+
+
+class ProductionLedgerBook(Base):
+    __tablename__ = "prod_ledger_books"
+    id = Column(Integer, primary_key=True)
+    book_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    legal_entity_id = Column(String(100), nullable=False, index=True)
+    book_type = Column(String(40), nullable=False, default="SUBLEDGER")
+    business_date = Column(String(10), nullable=False)
+    currency = Column(String(3), nullable=False)
+    version = Column(Integer, nullable=False, default=1)
+    evidence_ref = Column(String(120), nullable=True)
+    active = Column(Boolean, nullable=False, default=True)
+
+
+class ProductionHold(Base):
+    __tablename__ = "prod_holds"
+    id = Column(Integer, primary_key=True)
+    hold_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    legal_entity_id = Column(String(100), nullable=False)
+    book_id = Column(String(100), nullable=False)
+    account_id = Column(String(100), nullable=False, index=True)
+    payment_id = Column(String(80), nullable=True, index=True)
+    purpose = Column(String(80), nullable=False)
+    amount_minor = Column(BigInteger, nullable=False)
+    currency = Column(String(3), nullable=False)
+    state = Column(String(20), nullable=False, default="REQUESTED")
+    expires_at = Column(DateTime, nullable=True)
+    external_reference = Column(String(160), nullable=True)
+    evidence_ref = Column(String(120), nullable=True)
+    version = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    __table_args__ = (CheckConstraint("amount_minor > 0", name="ck_prod_hold_amount"),)
+
+
+class ProductionLedgerPeriod(Base):
+    __tablename__ = "prod_ledger_periods"
+    id = Column(Integer, primary_key=True)
+    period_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    book_id = Column(String(100), nullable=False)
+    period_start = Column(String(10), nullable=False)
+    period_end = Column(String(10), nullable=False)
+    state = Column(String(20), nullable=False, default="OPEN")
+    version = Column(Integer, nullable=False, default=1)
+    evidence_ref = Column(String(120), nullable=True)
+
+
+class ProductionBalanceSnapshot(Base):
+    __tablename__ = "prod_balance_snapshots"
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    book_id = Column(String(100), nullable=False)
+    account_id = Column(String(100), nullable=False)
+    business_date = Column(String(10), nullable=False)
+    balance_minor = Column(BigInteger, nullable=False)
+    source_max_entry_sequence = Column(Integer, nullable=False, default=0)
+    source_hash = Column(String(64), nullable=False)
+    evidence_ref = Column(String(120), nullable=True)
+
+
+class ProductionFeeTax(Base):
+    __tablename__ = "prod_fee_tax"
+    id = Column(Integer, primary_key=True)
+    charge_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    payment_id = Column(String(80), nullable=False, index=True)
+    charge_type = Column(String(20), nullable=False)
+    amount_minor = Column(BigInteger, nullable=False)
+    currency = Column(String(3), nullable=False)
+    rule_version = Column(String(80), nullable=False)
+    evidence_ref = Column(String(120), nullable=True)
+
+
+class ProductionFxRevaluation(Base):
+    __tablename__ = "prod_fx_revaluations"
+    id = Column(Integer, primary_key=True)
+    revaluation_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    payment_id = Column(String(80), nullable=True)
+    currency = Column(String(3), nullable=False)
+    amount_minor = Column(BigInteger, nullable=False)
+    rate = Column(String(80), nullable=False)
+    rule_version = Column(String(80), nullable=False)
+    evidence_ref = Column(String(120), nullable=True)
+
+
+class ProductionGlMapping(Base):
+    __tablename__ = "prod_gl_mappings"
+    id = Column(Integer, primary_key=True)
+    mapping_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    version = Column(String(80), nullable=False)
+    source_account_type = Column(String(50), nullable=False)
+    target_account = Column(String(100), nullable=False)
+    effective_from = Column(DateTime, nullable=False, default=utcnow)
+    effective_to = Column(DateTime, nullable=True)
+    evidence_ref = Column(String(120), nullable=True)
+
+
+class ProductionGlBatch(Base):
+    __tablename__ = "prod_gl_batches"
+    id = Column(Integer, primary_key=True)
+    batch_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    mapping_version = Column(String(80), nullable=False)
+    journal_scope = Column(Text, nullable=False, default="[]")
+    debit_total_minor = Column(BigInteger, nullable=False, default=0)
+    credit_total_minor = Column(BigInteger, nullable=False, default=0)
+    payload_hash = Column(String(64), nullable=False)
+    state = Column(String(20), nullable=False, default="DRAFT")
+    receipt_hash = Column(String(64), nullable=True)
+    evidence_ref = Column(String(120), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+
+
+class ProductionGlReceipt(Base):
+    __tablename__ = "prod_gl_receipts"
+    id = Column(Integer, primary_key=True)
+    receipt_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    batch_id = Column(String(100), nullable=False, index=True)
+    state = Column(String(20), nullable=False)
+    receipt_hash = Column(String(64), nullable=False)
+    received_at = Column(DateTime, nullable=False, default=utcnow)
+    evidence_ref = Column(String(120), nullable=True)
+
+
 class ProductionJournal(Base):
     __tablename__ = "prod_journals"
     id = Column(Integer, primary_key=True)
