@@ -7,6 +7,7 @@ import json
 import uuid
 from typing import Any
 
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from config import get_settings
@@ -737,20 +738,23 @@ def set_order_state(
     *,
     expected_version: int | None = None,
 ) -> None:
-    order = db.query(ProductionPaymentOrder).filter_by(order_id=order_id).with_for_update().one()
+    order = db.query(ProductionPaymentOrder).filter_by(order_id=order_id).one()
     if order.orchestration_state in ORCHESTRATION_TERMINAL:
         if order.orchestration_state == state:
             return
         raise ProductionConflict("Terminal payment state cannot transition")
     if state != order.orchestration_state and state not in ALLOWED_ORDER_TRANSITIONS.get(order.orchestration_state, set()):
         raise ProductionConflict(f"Invalid payment transition {order.orchestration_state} -> {state}")
-    if expected_version is not None and order.version != expected_version:
+    expected = order.version if expected_version is None else expected_version
+    if order.version != expected:
         raise ProductionConflict("Payment version conflict")
-    order.orchestration_state = state
+    values = {"orchestration_state": state, "version": expected + 1, "updated_at": utcnow()}
     if outcome is not None:
-        order.customer_outcome = outcome
-    order.version += 1
-    order.updated_at = utcnow()
+        values["customer_outcome"] = outcome
+    result = db.execute(update(ProductionPaymentOrder).where(ProductionPaymentOrder.order_id == order_id, ProductionPaymentOrder.version == expected).values(**values))
+    if result.rowcount != 1:
+        raise ProductionConflict("Payment version conflict")
+    db.flush()
     if order.limit_reservation_id and state in ORCHESTRATION_TERMINAL:
         counter = db.query(ProductionLimitCounter).filter_by(counter_id=order.limit_reservation_id).with_for_update().one_or_none()
         if counter is not None:
