@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from .router import (
+    key_operation,
     list_investigation_cases,
     list_outbox,
     operations_summary_route,
@@ -18,3 +19,4 @@ operations_router.add_api_route("/outbox", list_outbox, methods=["GET"])
 operations_router.add_api_route("/worker/run", run_worker, methods=["POST"])
 operations_router.add_api_route("/operations/summary", operations_summary_route, methods=["GET"])
 operations_router.add_api_route("/reconciliation/runs", reconciliation_run, methods=["POST"])
+operations_router.add_api_route("/key-operations", key_operation, methods=["POST"])

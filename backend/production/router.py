@@ -16,6 +16,8 @@ from nextgen.standards import list_profiles, parse_iso20022_xml
 
 from .connectors import connector_capabilities
 from .integrity import require_request_integrity
+from .key_operations import KeyOperationError, KeyOperationService
+from .key_provider import SandboxKeyProvider
 from .ledger import ProductionLedgerService, serialize_account
 from .models import (
     ProductionApproval,
@@ -152,6 +154,15 @@ class ApprovalRequest(BaseModel):
     checker: str | None = None
     reason: str
     state: str = "APPROVED"
+
+
+class KeyOperationRequest(BaseModel):
+    operation: str = Field(pattern="^(ROTATE|REVOKE)$")
+    key_id: str = Field(min_length=1, max_length=160)
+    trust_domain: str = Field(min_length=1, max_length=80)
+    maker: str = Field(min_length=1, max_length=160)
+    checker: str | None = Field(default=None, max_length=160)
+    approval_id: str = Field(min_length=1, max_length=100)
 
 
 def _handle_conflict(exc: ProductionConflict) -> HTTPException:
@@ -452,6 +463,28 @@ def create_approval(
     db.add(approval)
     db.commit()
     return {"approval_id": approval.approval_id, "state": approval.state}
+
+
+_sandbox_key_provider = SandboxKeyProvider()
+
+
+@router.post("/key-operations")
+def key_operation(
+    request: KeyOperationRequest,
+    principal: ProductionPrincipal = Depends(require_production_scope("production.admin")),
+    db: Session = Depends(get_db),
+    _integrity: None = Depends(require_request_integrity),
+):
+    del principal
+    if not get_settings().is_sandbox:
+        raise HTTPException(status_code=503, detail="Qualified HSM key operation adapter is not configured")
+    try:
+        audit, result = KeyOperationService(db, _sandbox_key_provider).execute(**request.model_dump())
+        db.commit()
+        return {"operation_id": audit.operation_id, "status": audit.status, "result": result}
+    except KeyOperationError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail={"code": "KEY_OPERATION_REJECTED", "message": str(exc)}) from exc
 
 
 @router.get("/outbox")

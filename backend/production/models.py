@@ -619,6 +619,23 @@ class ProductionRequestNonce(Base):
     )
 
 
+class ProductionKeyOperationAudit(Base):
+    __tablename__ = "prod_key_operation_audits"
+    id = Column(Integer, primary_key=True)
+    operation_id = Column(String(100), nullable=False, unique=True, index=True)
+    operation = Column(String(30), nullable=False)
+    key_id = Column(String(160), nullable=False, index=True)
+    trust_domain = Column(String(80), nullable=False)
+    maker = Column(String(160), nullable=False)
+    checker = Column(String(160), nullable=False)
+    approval_id = Column(String(100), nullable=False, index=True)
+    status = Column(String(20), nullable=False)
+    result_digest = Column(String(64), nullable=True)
+    evidence_ref = Column(String(120), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+
 class ProductionOutboxEvent(Base):
     __tablename__ = "prod_outbox_events"
     id = Column(Integer, primary_key=True)

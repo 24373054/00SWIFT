@@ -23,6 +23,7 @@ integrity verification, idempotency where state can change, and an audit fact.
 | `/service-identities` | POST | admin/operator identity | `production.admin` | target tenant | RFC9421 + digest | required | dual control | credential audit |
 | `/participants/{participant_id}/limit-profiles` | POST | admin/operator identity | `production.admin` | target tenant | RFC9421 + digest | required | dual control | limit audit |
 | `/approvals` | POST | maker/checker identity | `production.admin` | aggregate tenant | RFC9421 + digest | required | maker != checker; independent checker | approval audit |
+| `/key-operations` | POST | admin maker/checker identity | `production.admin` | trust domain | RFC9421 + digest | required | independent approved dual control | key operation audit |
 | `/outbox` | GET | operator identity | `production.read` | tenant/admin | signed response context | n/a | n/a | operational access |
 | `/ledger/trial-balance` | GET | operator identity | `production.ledger.read` | legal entity/book | signed response context | n/a | dual control for export | ledger audit |
 | `/worker/run` | POST | internal worker identity | `production.worker` | service tenant | internal mTLS/signature | worker lease | n/a | worker audit |
