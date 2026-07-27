@@ -51,6 +51,17 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.6.4 — outbox recovery runbook
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`593ed9b`
+- 修改文件：`docs/runbooks/OUTBOX_RECOVERY.md`、`backend/tests/production/test_outbox_runbook.py`
+- 新增文档：覆盖 metrics triage、null/expired lease、connector query-before-retry、双控 DLQ replay、hash/审计证据和外部依赖阻断操作。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_outbox_runbook.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_outbox_runbook.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 执行者：Codex
+
 ### B3.6.3 — worker/outbox operational metrics
 
 - 状态：DONE
