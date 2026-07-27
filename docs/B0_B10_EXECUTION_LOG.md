@@ -51,6 +51,36 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.5.1 — cancellation aggregate
+
+- 状态：DONE；完成时间：2026-07-27；commit：`55808de`
+- 修改文件：`backend/production/cancellation_service.py`、`backend/tests/production/test_payment_cancellation.py`
+- 证据：REQUESTED/VALIDATING/SENT/ACCEPTED/REJECTED/UNKNOWN/CLOSED 状态约束，外部结果通过 service 进入 projection；2 tests passed。
+
+### B4.5.2 — cancellation releases reservations and stops effects
+
+- 状态：DONE；完成时间：2026-07-27；commit：`55808de`
+- 证据：ACCEPTED 释放 RESERVED funding、写 evidence，并由 cancellation service 进入 terminal；worker 不再原地赋值 request state。
+
+### B4.5.3 — cancellation terminal projection
+
+- 状态：DONE；完成时间：2026-07-27；commit：`65697cb`
+- 证据：`EXECUTION_CANCELLED -> OPERATIONALLY_CLOSED_UNSUCCESSFUL`，CAS 两步关闭；测试确认最终状态和释放证据。
+
+### B4.5.4 — cancellation race handling
+
+- 状态：DONE；完成时间：2026-07-27；commit：`e97949d`
+- 测试：cancel-before-reserve、duplicate accept、非法状态、已有 reservation 均覆盖；`2 passed`。
+- 外部证据：真实 connector UNKNOWN/finality 竞态需外部 connector fixture。
+- 执行者：Codex
+
+### B4.5.5 — payment cancellation regression suite
+
+- 状态：DONE；完成时间：2026-07-27；commit：`e97949d`
+- 测试文件：`backend/tests/production/test_payment_cancellation.py`
+- 测试结果：`2 passed`；包含“取消后 reservation 不得为 RESERVED”、cancel-before-reserve、重复取消和非法 transition。
+- 执行者：Codex
+
 ### B4.4.3 — production standards gateway
 
 - 状态：DONE；完成时间：2026-07-27；commit：`8821571`

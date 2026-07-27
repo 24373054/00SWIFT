@@ -507,21 +507,21 @@
 
 ## B4.5 撤销聚合
 
-- [ ] B4.5.1 新增 `backend/production/cancellation_service.py`。
+- [x] B4.5.1 新增 `backend/production/cancellation_service.py`。
   - CancellationRequest 有自己的状态机：REQUESTED/VALIDATING/SENT/ACCEPTED/REJECTED/UNKNOWN/CLOSED。
 
-- [ ] B4.5.2 修复“撤销后仍预留资金”的 P0 缺陷。
+- [x] B4.5.2 修复“撤销后仍预留资金”的 P0 缺陷。
   - 撤销接受后停止后续 message/value 事件。
   - 释放全部 RESERVED funding/limit/FX exposure。
   - 已发生外部调用时先 query，按 finality 决定取消、退回或人工案件。
 
-- [ ] B4.5.3 撤销成功后进入合法 terminal projection。
+- [x] B4.5.3 撤销成功后进入合法 terminal projection。
   - `EXECUTION_CANCELLED → OPERATIONALLY_CLOSED_UNSUCCESSFUL`，关闭前必须通过资金/消息/外部状态对账。
 
-- [ ] B4.5.4 处理竞态。
+- [x] B4.5.4 处理竞态。
   - cancel-before-reserve、cancel-during-reserve、cancel-vs-message、cancel-vs-finality、重复 cancel。
 
-- [ ] B4.5.5 新增 `test_payment_cancellation.py`。
+- [x] B4.5.5 新增 `test_payment_cancellation.py`。
   - 必须包含当前反例：取消后 reservation 不得为 RESERVED，后续 message 不得停在无限重试。
 
 ## B4.6 退回聚合
