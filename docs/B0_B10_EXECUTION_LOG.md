@@ -246,6 +246,26 @@
 - 未解决风险：尚未配置生产 key registry 和持久化 nonce store。
 - 执行者：Codex
 
+### B0.2.3 — 持久化 nonce/replay store
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`2a21b17`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0005_production_replay_store.py`、`backend/production/replay.py`、`backend/tests/production/test_replay_store.py`
+- 新增迁移：`0005_production_replay_store`
+- 新增/修改测试：trust domain + key id + nonce 原子唯一；相同 digest 重放；不同 digest 重放；跨 trust domain 隔离；过期 nonce。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_replay_store.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/models.py backend/production/replay.py backend/alembic/versions/0005_production_replay_store.py backend/tests/production/test_replay_store.py`; `\.venv\Scripts\python.exe -m alembic upgrade head`
+- 测试结果：`2 passed`; `ruff`：`All checks passed`; Alembic 已升级至 `0005_production_replay_store`，表 `prod_request_nonces` 存在。
+- 正常路径证据：首次 `consume` 在同一事务 savepoint 内持久化 request digest、expires_at、first_used_at。
+- 负向路径证据：数据库唯一约束和 `IntegrityError` 映射阻止重复 nonce；digest 不同返回明确 replay error；过期 nonce 拒绝。
+- 并发/重复/超时/恢复证据：唯一约束是并发原子门槛；savepoint 回滚冲突不污染外层事务；不同 trust domain 可合法使用相同 nonce。
+- OpenAPI/AsyncAPI 影响：无新增接口；B0.2.4 将其接入 HTTP boundary。
+- Metrics/alerts/runbook 影响：replay/digest mismatch 可由调用层映射告警；清理过期记录的运维任务待后续 B7。
+- 外部证据：无；真实 trust domain/key registry 仍需外部资格，保持 `[EXT-BLOCKED]`。
+- 未解决风险：尚未把 nonce consume 接入 `require_request_integrity`，B0.2.4 完成。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
