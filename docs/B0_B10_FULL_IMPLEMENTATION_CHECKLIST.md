@@ -82,7 +82,7 @@
   - 行为：pilot/live 启动必须调用资格验证器；路径不存在、签名无效、connector 版本不匹配立即启动失败。
   - 测试：禁止当前“传入不存在路径仍通过”的行为。
 
-- [ ] B0.1.4 调整 `/production/v1/health` 和 `/ready`。
+- [x] B0.1.4 调整 `/production/v1/health` 和 `/ready`。
   - 修改：`backend/production/router.py`、`backend/main.py`。
   - 行为：分别报告应用存活、DB、broker、HSM、signature verifier、connector、standards artifact、worker heartbeat；不得把 simulation 返回为 production-ready。
   - 测试：任何关键依赖不可用时 readiness 非 200 或明确 `ready=false`。
