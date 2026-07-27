@@ -226,6 +226,26 @@
 - 未解决风险：尚未将 verifier 注入 FastAPI integrity dependency。
 - 执行者：Codex
 
+### B0.2.2 — 请求完整性依赖注入
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`7181575`
+- 修改文件：`backend/production/integrity.py`、`backend/tests/production/test_integrity_injection.py`
+- 新增迁移：无
+- 新增/修改测试：body digest 先验失败、pilot/live 无 verifier 的 503 fail-closed、sandbox 无签名兼容路径。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_integrity_injection.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/integrity.py backend/tests/production/test_integrity_injection.py`
+- 测试结果：`3 passed`; `ruff`：`All checks passed`
+- 正常路径证据：注入 `HttpSignatureVerifier` 后由依赖构造完整 `SignedHttpRequest`，先校验 Content-Digest 再执行签名验证并写入 request state。
+- 负向路径证据：digest 错误统一 400；pilot 缺签名/verifier 明确 400/503；不再以固定 503 冒充已实现功能。
+- 并发/重复/超时/恢复证据：created/expires 窗口由 verifier 校验；nonce 原子持久化在 B0.2.3。
+- OpenAPI/AsyncAPI 影响：生产 mutation 路由继续使用 `require_request_integrity`，错误码明确化。
+- Metrics/alerts/runbook 影响：invalid digest/signature 可按结构化错误码告警。
+- 外部证据：qualified verifier/HSM 尚未提供，pilot/live 仍保持阻断 `[EXT-BLOCKED]`。
+- 未解决风险：尚未配置生产 key registry 和持久化 nonce store。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
