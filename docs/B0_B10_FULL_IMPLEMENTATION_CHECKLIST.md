@@ -109,7 +109,7 @@
 
 ## B0.3 路由安全矩阵
 
-- [ ] B0.3.1 建立 `docs/security/PRODUCTION_API_AUTHORIZATION_MATRIX.md`。
+- [x] B0.3.1 建立 `docs/security/PRODUCTION_API_AUTHORIZATION_MATRIX.md`。
   - 列出每个 `/production/v1/*` 路由的身份类型、scope、tenant 过滤、完整性、幂等、maker-checker 和审计要求。
 
 - [ ] B0.3.2 拆分 `backend/production/router.py`。
