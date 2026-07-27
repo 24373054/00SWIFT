@@ -150,7 +150,7 @@
 
 ## B0.5 产品、法律与走廊准入
 
-- [ ] B0.5.1 新增 `ProductionCorridorAdmission` 与 `ProductionControlAttestation`。
+- [x] B0.5.1 新增 `ProductionCorridorAdmission` 与 `ProductionControlAttestation`。
   - 修改模型并新增显式迁移。
   - 字段：CN/HK 适用主体、场景、币种、金额/时间窗口、资金流版本、finality definition、数据流版本、rulebook version、签字角色、validity、status、evidence。
 
