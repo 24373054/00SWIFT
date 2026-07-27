@@ -24,7 +24,7 @@ integrity verification, idempotency where state can change, and an audit fact.
 | `/participants/{participant_id}/limit-profiles` | POST | admin/operator identity | `production.admin` | target tenant | RFC9421 + digest | required | dual control | limit audit |
 | `/approvals` | POST | maker/checker identity | `production.admin` | aggregate tenant | RFC9421 + digest | required | maker != checker; independent checker | approval audit |
 | `/outbox` | GET | operator identity | `production.read` | tenant/admin | signed response context | n/a | n/a | operational access |
-| `/ledger/trial-balance` | POST snapshot | operator identity | `production.ledger.read` | legal entity/book | RFC9421 + digest | snapshot key | dual control for export | ledger audit |
+| `/ledger/trial-balance` | GET | operator identity | `production.ledger.read` | legal entity/book | signed response context | n/a | dual control for export | ledger audit |
 | `/worker/run` | POST | internal worker identity | `production.worker` | service tenant | internal mTLS/signature | worker lease | n/a | worker audit |
 | `/operations/summary` | GET | operator identity | `production.read` | tenant/admin | signed response context | n/a | n/a | operational access |
 | `/reconciliation/runs` | POST | operator identity | `production.ledger.write` | tenant/legal entity | RFC9421 + digest | required | dual control | reconciliation audit |

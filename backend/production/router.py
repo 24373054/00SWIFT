@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from config import get_settings
 from database import get_db
 from nextgen.standards import list_profiles, parse_iso20022_xml
 
@@ -442,11 +443,11 @@ def create_approval(
     db: Session = Depends(get_db),
     _integrity: None = Depends(require_request_integrity),
 ):
-    if request.maker == (principal.subject or "") and request.checker == request.maker:
+    if request.state == "APPROVED" and not request.checker:
+        raise HTTPException(422, "checker is required for APPROVED state")
+    if request.checker and request.checker == request.maker:
         raise HTTPException(409, "Maker and checker must be distinct")
     approval = ProductionApproval(approval_id=f"apr_{uuid.uuid4().hex}", **request.model_dump())
-    if approval.state == "APPROVED" and not approval.checker:
-        raise HTTPException(422, "checker is required for APPROVED state")
     approval.approved_at = utcnow() if approval.state == "APPROVED" else None
     db.add(approval)
     db.commit()
@@ -466,7 +467,7 @@ def list_outbox(
     return {"items": [{"event_id": e.event_id, "topic": e.topic, "status": e.status, "attempts": e.attempts, "lease_until": e.lease_until, "last_error": e.last_error} for e in query.order_by(ProductionOutboxEvent.id.desc()).limit(500).all()]}
 
 
-@router.post("/ledger/trial-balance")
+@router.get("/ledger/trial-balance")
 def ledger_trial_balance(
     currency: str | None = None,
     principal: ProductionPrincipal = Depends(require_production_scope("production.operator")),
@@ -482,6 +483,8 @@ def run_worker(
     db: Session = Depends(get_db),
 ):
     del principal
+    if not get_settings().is_sandbox:
+        raise HTTPException(status_code=404, detail="Worker execution is internal-only outside sandbox")
     return ProductionWorker(db).run_once()
 
 
