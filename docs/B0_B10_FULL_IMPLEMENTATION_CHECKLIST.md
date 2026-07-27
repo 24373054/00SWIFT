@@ -621,12 +621,12 @@
 ## B5.4 支付集成
 
 - [ ] B5.4.1 `[EXT-BLOCKED]` 修改 `backend/production/worker.py`，注入 `FundingService` 和 `LedgerService`，禁止直接只用 `SandboxFundingConnector` 完成内部资金状态。
-- [ ] B5.4.2 支付完成前生成并 POST payment journal。
+- [ ] B5.4.2 `[EXT-BLOCKED]` 支付完成前生成并 POST payment journal。
   - debit payer/subledger source、credit settlement/beneficiary clearing；科目由 versioned template 决定。
 
-- [ ] B5.4.3 FX payment 为 sell/buy/value 三类 leg 分别记账并按币种平衡。
-- [ ] B5.4.4 return/cancellation/fee/adjustment 生成对应 journal/reversal。
-- [ ] B5.4.5 CompletionPolicy 必须查询 posted journal ids；`journals=0` 时不得 `MATCHED/OPERATIONALLY_CLOSED`。
+- [ ] B5.4.3 `[EXT-BLOCKED]` FX payment 为 sell/buy/value 三类 leg 分别记账并按币种平衡。
+- [ ] B5.4.4 `[EXT-BLOCKED]` return/cancellation/fee/adjustment 生成对应 journal/reversal。
+- [ ] B5.4.5 `[EXT-BLOCKED]` CompletionPolicy 必须查询 posted journal ids；`journals=0` 时不得 `MATCHED/OPERATIONALLY_CLOSED`。
 
 ## B5.5 试算、期间与快照
 

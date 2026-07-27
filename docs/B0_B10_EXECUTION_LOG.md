@@ -331,6 +331,40 @@
 - 外部证据：正式资金 ledger/connector contract 未提供，保持 `[EXT-BLOCKED]`，未伪造内部资金状态已完成切换。
 - 执行者：Codex
 
+### B5.4.2 — payment journal before completion
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`24dc5bf`
+- 代码侧状态：LedgerService 已支持 balanced POSTED journal；worker 尚未把真实 payer/settlement account mapping 接入 completion，因为当前 sandbox connector 没有权威 subledger account contract。
+- 外部证据：正式账户映射、资金账本主体和合作方 posting contract 缺失，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
+### B5.4.3 — FX sell/buy/value journal legs
+
+- 状态：EXT-BLOCKED
+- commit：`24dc5bf`
+- 代码侧状态：LedgerService 支持每币种 group 与 FX clearing leg；真实 FX sell/buy/value amount/account mapping 需 provider 规则。
+- 外部证据：正式 FX ledger contract 未提供，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
+### B5.4.4 — outcome journals/reversals
+
+- 状态：EXT-BLOCKED
+- commit：`24dc5bf`
+- 代码侧状态：通用 reversal 与 versioned fee/tax templates 已实现；payment return/cancellation 的真实科目模板和 liability mapping 尚未签署。
+- 外部证据：合作机构会计科目/模板未提供，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
+### B5.4.5 — completion requires posted journals
+
+- 状态：EXT-BLOCKED
+- commit：`24dc5bf`
+- 代码侧状态：非 sandbox evaluator 查询 `prod_journals`；sandbox 仍保留显式 simulation journal shortcut，待 B5.4.2 真实 posting 后移除。
+- 外部证据：真实 posted journal provider 尚未提供，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
