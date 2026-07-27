@@ -207,7 +207,7 @@
 - [x] B1.2.1 新增 `backend/scripts/audit_production_data.py`。
   - 只读输出 orphan、重复、null、非法状态、金额溢出、tenant 不一致、hash 缺失。
 
-- [ ] B1.2.2 新增 `backend/scripts/repair_production_0006.py`。
+- [x] B1.2.2 新增 `backend/scripts/repair_production_0006.py`。
   - dry-run 默认；生成修复计划和 hash；执行需 operator + checker evidence。
   - 修复 `PaymentOrder.tenant_id` 当前写 participant id 而非 tenant id 的数据。
 
