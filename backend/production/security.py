@@ -17,6 +17,7 @@ from database import AppCredential, get_db
 from .models import (
     ProductionAccount,
     ProductionAccountOwnership,
+    ProductionCertificate,
     ProductionEntitlement,
     ProductionLimitProfile,
     ProductionParticipant,
@@ -90,6 +91,7 @@ def _principal_from_credential(
             source="sandbox-credential",
             credential_id=credential.id,
         )
+    _validate_identity_binding(db, identity, settings, utcnow())
     try:
         identity_scopes = set(json.loads(identity.scopes or "[]"))
     except (TypeError, json.JSONDecodeError) as exc:
@@ -104,6 +106,25 @@ def _principal_from_credential(
         source="oauth-service-identity",
         credential_id=credential.id,
     )
+
+
+def _validate_identity_binding(db: Session, identity: ProductionServiceIdentity, settings, now: dt.datetime) -> None:
+    if identity.environment != settings.swift_env:
+        raise HTTPException(403, "Service identity environment mismatch")
+    participant = db.query(ProductionParticipant).filter_by(participant_id=identity.participant_id, status="ACTIVE").one_or_none()
+    if participant is None or not participant.tenant_id:
+        raise HTTPException(403, "Service identity participant is inactive or unbound")
+    if not identity.certificate_fingerprint:
+        if not settings.is_sandbox:
+            raise HTTPException(403, "Production identity requires a bound certificate")
+        return
+    certificate = db.query(ProductionCertificate).filter_by(fingerprint=identity.certificate_fingerprint, status="ACTIVE").one_or_none()
+    if certificate is None or certificate.participant_id != identity.participant_id:
+        raise HTTPException(403, "Service identity certificate binding is invalid")
+    not_before = certificate.not_before if certificate.not_before.tzinfo else certificate.not_before.replace(tzinfo=dt.UTC)
+    not_after = certificate.not_after if certificate.not_after.tzinfo else certificate.not_after.replace(tzinfo=dt.UTC)
+    if not_before > now or not_after <= now:
+        raise HTTPException(403, "Service identity certificate is outside its validity window")
 
 
 def _optional_credential(
