@@ -393,7 +393,7 @@
   - `SELECT ... FOR UPDATE SKIP LOCKED` 与状态更新同一事务。
   - 对相同 partition/aggregate 只允许处理最低 sequence。
 
-- [ ] B3.3.3 增加 lease heartbeat 与 worker ownership fencing。
+- [x] B3.3.3 增加 lease heartbeat 与 worker ownership fencing。
   - 老 worker lease 失效后不得完成新 owner 已接管的事件。
 
 - [ ] B3.3.4 增加 published/outcome 去重。

@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.3.3 — lease heartbeat and ownership fencing
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit（实现）：`0724ff8`
+- 验收文件：`backend/production/runtime.py`、`backend/production/worker.py`、`backend/tests/production/test_outbox_leases.py`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_outbox_leases.py -q`
+- 测试结果：`2 passed`。
+- 证据：heartbeat 只能由当前 lease owner 延长；完成动作带 owner fencing，lease 接管后老 worker 无法提交 PUBLISHED。
+- 外部证据：无。
+- 执行者：Codex
+
 ### B3.3.2 — atomic partition-ordered claim
 
 - 状态：DONE
