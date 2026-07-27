@@ -1,6 +1,7 @@
 """B5 journal reversal linkage and evidence fields."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0032_journal_reversal_fields"

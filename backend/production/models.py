@@ -885,7 +885,8 @@ class ProductionJournalEntry(Base):
 
 @event.listens_for(ProductionJournal, "before_update")
 def _posted_journal_immutable(_mapper, _connection, target) -> None:
-    if target.state == "POSTED":
+    existing = _connection.exec_driver_sql("SELECT state FROM prod_journals WHERE journal_id = ?", (target.journal_id,)).scalar()
+    if existing == "POSTED":
         raise ValueError("posted journals are immutable; create a reversal")
 
 
