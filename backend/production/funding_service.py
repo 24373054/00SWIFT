@@ -1,6 +1,6 @@
 """Funding boundary around ledger-backed holds."""
 
-from .ledger import ProductionLedgerService
+from ._ledger_core import ProductionLedgerService
 
 
 class FundingService:
