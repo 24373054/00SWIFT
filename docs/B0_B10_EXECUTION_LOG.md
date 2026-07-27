@@ -1039,3 +1039,22 @@
 - 外部证据：`[EXT-BLOCKED]` 不仅缺 PostgreSQL 服务，当前仓库冻结 baseline 与已演进 ORM 不一致，需单独批准 baseline replacement plan。
 - 未解决风险：在不修改历史 baseline 的前提下，需新增可验证的 0002 fixture/替代 migration path 后才能勾选本项和 B1.G1。
 - 执行者：Codex
+
+### B1.4.4 — 0003 legacy data preservation
+
+- 状态：`[EXT-BLOCKED]`（测试已提交，未提供旧 0003 fixture）
+- 开始时间：2026-07-27
+- 完成时间：—（等待 `PRODUCTION_LEGACY_DB_URL`）
+- commit：`fdd24a4`
+- 修改文件：`backend/tests/production/test_migration_data_preservation.py`
+- 新增/修改测试：对显式 provisioned 0003 数据库在 upgrade head 前后比较 payment `order_id/tenant_id/amount_minor/payload_hash`，并确认 production table 仍存在；缺 URL 明确 skip `[EXT-BLOCKED]`。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_migration_data_preservation.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_migration_data_preservation.py`
+- 测试结果：`1 skipped`（`[EXT-BLOCKED] PRODUCTION_LEGACY_DB_URL is not configured`）；`ruff: All checks passed`。
+- 正常路径证据：fixture 提供后，测试会先读取真实数据，再执行 Alembic upgrade，不使用 hard-coded success。
+- 负向路径证据：缺 fixture 或 upgrade 失败不会勾选；数据差异直接断言失败。
+- 并发/重复/超时/恢复证据：只读 pre-snapshot；upgrade 由 Alembic 事务控制，失败保留 DB 供调查。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：数据差异进入 migration incident；需附 pre/post snapshot。
+- 外部证据：`[EXT-BLOCKED]` 当前无 0003 PostgreSQL/SQLite fixture，且 clean install 被 0002 frozen schema guard 阻断。
+- 未解决风险：需批准 baseline replacement/fixture 方案后再验收本项。
+- 执行者：Codex
