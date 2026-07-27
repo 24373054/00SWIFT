@@ -569,6 +569,17 @@
 - 测试结果：相关 3 tests `3 passed`；production suite 其余失败已消除。
 - 执行者：Codex
 
+### B4/B5 集中回归验收
+
+- 状态：PARTIAL / EXT-BLOCKED
+- 时间：2026-07-27
+- commit：`41e6299`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production -q`
+- 测试结果：`165 passed, 4 skipped, 1 warning`。
+- 跳过证据：PostgreSQL concurrency/RLS、legacy migration baseline 等因环境变量/外部数据库缺失按测试自身标记 `[EXT-BLOCKED]`；migration roundtrip clean fixture 也保持 blocked，未伪造通过。
+- 当前验收边界：B4 COMPLETE、B5 COMPLETE 均未勾选；所有未完成子项和 Gate 保持 `[EXT-BLOCKED]` 或未勾选。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
