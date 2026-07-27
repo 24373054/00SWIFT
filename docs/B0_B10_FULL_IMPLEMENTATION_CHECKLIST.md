@@ -198,7 +198,7 @@
   - 覆盖：payment、quote、reservation、settlement、return、ledger balance、journal entry、limit、report totals。
   - 迁移必须先检查溢出和负数数据。
 
-- [ ] B1.1.5 将生产时间列改为 `DateTime(timezone=True)`。
+- [x] B1.1.5 将生产时间列改为 `DateTime(timezone=True)`。
   - 清理 naive/aware 比较补丁；数据库统一保存 UTC。
   - 测试 DST、不同 client timezone 和旧数据 backfill。
 
