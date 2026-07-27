@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.1.4 — event compatibility tests
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`4ab0ff4`
+- 修改文件：`backend/tests/production/test_event_compatibility.py`
+- 新增测试：旧 v1 consumer 对 additive minor payload 保持兼容；major version 破坏变更及未知事件族在 dispatch 前拒绝。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_event_compatibility.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_event_compatibility.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 外部证据：无。
+- 执行者：Codex
+
 ### B3.1.3 — AsyncAPI production events
 
 - 状态：DONE

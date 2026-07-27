@@ -367,7 +367,7 @@
 - [x] B3.1.3 新增 `asyncapi/production-events.yaml`。
   - 覆盖 payment、funding、FX、message、settlement、compliance、reconciliation、case、report 事件。
 
-- [ ] B3.1.4 新增事件兼容性测试。
+- [x] B3.1.4 新增事件兼容性测试。
   - 旧 consumer 能读取兼容版本；破坏性 schema 变更 CI 拒绝。
 
 ## B3.2 幂等记录
