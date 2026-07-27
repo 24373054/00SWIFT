@@ -224,6 +224,41 @@ class ProductionLimitProfile(Base):
     approved_by = Column(String(200), nullable=True)
 
 
+class ProductionLimitCounter(Base):
+    __tablename__ = "prod_limit_counters"
+    id = Column(Integer, primary_key=True)
+    counter_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    participant_id = Column(String(80), nullable=False, index=True)
+    service = Column(String(80), nullable=False)
+    corridor = Column(String(40), nullable=False)
+    currency = Column(String(3), nullable=False)
+    business_date = Column(String(10), nullable=False)
+    reserved_amount_minor = Column(BigInteger, nullable=False, default=0)
+    consumed_amount_minor = Column(BigInteger, nullable=False, default=0)
+    version = Column(Integer, nullable=False, default=1)
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "participant_id", "service", "corridor", "currency", "business_date", name="uq_prod_limit_counter_scope"),
+        CheckConstraint("reserved_amount_minor >= 0 AND consumed_amount_minor >= 0", name="ck_prod_limit_counter_nonnegative"),
+    )
+
+
+class ProductionExposurePosition(Base):
+    __tablename__ = "prod_exposure_positions"
+    id = Column(Integer, primary_key=True)
+    position_id = Column(String(100), nullable=False, unique=True)
+    tenant_id = Column(String(80), nullable=False, index=True)
+    participant_id = Column(String(80), nullable=False, index=True)
+    corridor = Column(String(40), nullable=False)
+    currency = Column(String(3), nullable=False)
+    exposure_minor = Column(BigInteger, nullable=False, default=0)
+    version = Column(Integer, nullable=False, default=1)
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "participant_id", "corridor", "currency", name="uq_prod_exposure_scope"),
+        CheckConstraint("exposure_minor >= 0", name="ck_prod_exposure_nonnegative"),
+    )
+
+
 class ProductionRulebookAcceptance(Base):
     __tablename__ = "prod_rulebook_acceptances"
     id = Column(Integer, primary_key=True)
