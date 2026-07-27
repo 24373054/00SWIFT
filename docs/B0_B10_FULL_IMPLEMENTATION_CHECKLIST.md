@@ -184,7 +184,7 @@
   - 新增：`docs/database/MIGRATION_BASELINE.md`，记录 revision hash 和已知历史缺陷。
   - CI 校验迁移文件 hash，禁止后续静默修改历史 revision。
 
-- [ ] B1.1.2 新增 `0006_production_relational_integrity.py`。
+- [x] B1.1.2 新增显式生产关系完整性迁移（实际 revision 为 `0008_production_relational_integrity.py`，因 `0006` 已被占用）。
   - 不允许通过 `Base.metadata.tables` 动态建表。
   - 使用显式 `op.create_table/op.create_foreign_key/op.create_index/op.create_check_constraint`。
   - 为 tenant、participant、account、order、fact、decision、reservation、leg、journal、entry、case、report、outbox/inbox 建立 Foreign Key。
