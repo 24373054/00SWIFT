@@ -620,7 +620,7 @@
 
 ## B5.4 支付集成
 
-- [ ] B5.4.1 修改 `backend/production/worker.py`，注入 `FundingService` 和 `LedgerService`，禁止直接只用 `SandboxFundingConnector` 完成内部资金状态。
+- [ ] B5.4.1 `[EXT-BLOCKED]` 修改 `backend/production/worker.py`，注入 `FundingService` 和 `LedgerService`，禁止直接只用 `SandboxFundingConnector` 完成内部资金状态。
 - [ ] B5.4.2 支付完成前生成并 POST payment journal。
   - debit payer/subledger source、credit settlement/beneficiary clearing；科目由 versioned template 决定。
 

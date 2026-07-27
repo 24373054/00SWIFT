@@ -318,6 +318,19 @@
 - 测试结果：`1 passed`。
 - 执行者：Codex
 
+### B5.4.1 — worker funding/ledger injection
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`38e6006`、`df18379`
+- 修改文件：`backend/production/worker.py`
+- 新增/修改实现：ProductionWorker 注入 FundingService 和 ProductionLedgerService；现有 connector adapter 仍保留用于 sandbox/外部调用，后续 payment hold/journal 全量切换受真实资金轨道 contract 约束。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/test_production_domain.py -q`
+- 测试结果：`2 passed`（1 个既有 deprecation warning）；ruff 全部通过。
+- 外部证据：正式资金 ledger/connector contract 未提供，保持 `[EXT-BLOCKED]`，未伪造内部资金状态已完成切换。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
