@@ -799,6 +799,22 @@ class ProductionOutboxEvent(Base):
     __table_args__ = (UniqueConstraint("topic", "aggregate_id", "aggregate_sequence", name="uq_prod_event_aggregate_sequence"),)
 
 
+class ProductionReplayRequest(Base):
+    __tablename__ = "prod_replay_requests"
+    id = Column(Integer, primary_key=True)
+    replay_id = Column(String(100), nullable=False, unique=True, index=True)
+    event_id = Column(String(80), ForeignKey("prod_outbox_events.event_id", ondelete="RESTRICT"), nullable=False, index=True)
+    tenant_id = Column(String(120), nullable=False, index=True)
+    original_hash = Column(String(64), nullable=False)
+    maker = Column(String(200), nullable=False)
+    checker = Column(String(200), nullable=True)
+    state = Column(String(20), nullable=False, default="PENDING")
+    reason = Column(String(500), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    approved_at = Column(DateTime, nullable=True)
+    __table_args__ = (UniqueConstraint("event_id", name="uq_prod_replay_event"),)
+
+
 class ProductionInboxMessage(Base):
     __tablename__ = "prod_inbox_messages"
     id = Column(Integer, primary_key=True)

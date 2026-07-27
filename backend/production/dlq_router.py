@@ -3,10 +3,23 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 
+from .dlq_replay import approve_replay, create_replay
 from .models import ProductionOutboxEvent
 from .security import ProductionPrincipal, require_production_scope
 
 dlq_router = APIRouter(prefix="/production/v1")
+
+
+@dlq_router.post("/dlq/{event_id}/replay")
+def request_replay(event_id: str, reason: str, principal: ProductionPrincipal = Depends(require_production_scope("production.operator")), db: Session = Depends(get_db)):
+    request = create_replay(db, principal, event_id, reason)
+    return {"replay_id": request.replay_id, "state": request.state, "event_id": request.event_id}
+
+
+@dlq_router.post("/dlq/replays/{replay_id}/approve")
+def approve_replay_request(replay_id: str, principal: ProductionPrincipal = Depends(require_production_scope("production.operator")), db: Session = Depends(get_db)):
+    request = approve_replay(db, principal, replay_id)
+    return {"replay_id": request.replay_id, "state": request.state, "checker": request.checker}
 
 
 @dlq_router.get("/dlq")
