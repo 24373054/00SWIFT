@@ -1,7 +1,7 @@
 """Canonical ledger service entrypoint."""
 
 from ._ledger_core import ProductionLedgerService, serialize_account
-from .models import ProductionBalanceSnapshot, ProductionJournalEntry, ProductionLedgerPeriod
+from .models import ProductionBalanceSnapshot, ProductionInvestigationCase, ProductionJournalEntry, ProductionLedgerPeriod
 from .runtime import ProductionConflict, digest
 
 __all__ = ["ProductionLedgerService", "serialize_account"]
@@ -32,6 +32,17 @@ class BalanceSnapshotService:
         self.db.add(snapshot)
         self.db.flush()
         return snapshot
+
+    def assert_balanced(self, journal_id: str):
+        entries = self.db.query(ProductionJournalEntry).filter_by(journal_id=journal_id).all()
+        debit = sum(item.amount_minor for item in entries if item.direction == "DEBIT")
+        credit = sum(item.amount_minor for item in entries if item.direction == "CREDIT")
+        if debit != credit:
+            case = ProductionInvestigationCase(case_id=f"ledger-break-{journal_id}", order_id="ledger", case_type="SEV-0_LEDGER_IMBALANCE", state="OPEN", reason=f"journal {journal_id} debit={debit} credit={credit}")
+            self.db.add(case)
+            self.db.flush()
+            raise ProductionConflict("Ledger imbalance blocks completion")
+        return True
 
     def close(self, period_id, expected_version, maker, checker):
         if maker == checker:
