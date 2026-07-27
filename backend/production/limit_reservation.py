@@ -56,3 +56,17 @@ class LimitReservationService:
             position.exposure_minor -= amount_minor
             position.version += 1
         self.db.flush()
+
+    def finalize(self, counter: ProductionLimitCounter, position: ProductionExposurePosition | None, amount_minor: int, *, consumed: bool) -> None:
+        if amount_minor <= 0 or counter.reserved_amount_minor < amount_minor:
+            raise LimitReservationError("invalid finalization amount")
+        counter.reserved_amount_minor -= amount_minor
+        if consumed:
+            counter.consumed_amount_minor += amount_minor
+        counter.version += 1
+        if position is not None:
+            if position.exposure_minor < amount_minor:
+                raise LimitReservationError("invalid exposure finalization amount")
+            position.exposure_minor -= amount_minor
+            position.version += 1
+        self.db.flush()

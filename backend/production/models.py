@@ -388,6 +388,7 @@ class ProductionPaymentOrder(Base):
     customer_outcome = Column(String(40), nullable=True)
     completion_profile_id = Column(String(100), nullable=False)
     projection_rule_version = Column(String(80), nullable=False)
+    limit_reservation_id = Column(String(100), nullable=True, index=True)
     version = Column(Integer, nullable=False, default=1)
     created_at = Column(DateTime, nullable=False, default=utcnow)
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)

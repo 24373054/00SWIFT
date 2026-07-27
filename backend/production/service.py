@@ -14,6 +14,7 @@ from nextgen.standards import finding_dicts, validate_message
 
 from .connectors import SandboxFxQuoteProvider
 from .corridors import assert_corridor_admitted
+from .limit_reservation import LimitReservationError, LimitReservationService
 from .models import (
     ProductionAuthorizationDecision,
     ProductionCancellationRequest,
@@ -22,11 +23,13 @@ from .models import (
     ProductionControlAttestation,
     ProductionCorridorAdmission,
     ProductionDeliveryProfile,
+    ProductionExposurePosition,
     ProductionFinalityProfile,
     ProductionFundingReservation,
     ProductionFxQuote,
     ProductionFxTradeIntent,
     ProductionLedgerAccount,
+    ProductionLimitCounter,
     ProductionPaymentFact,
     ProductionPaymentOrder,
     ProductionReturnPayment,
@@ -207,6 +210,8 @@ class ProductionPaymentService:
         payload: dict[str, Any],
         idempotency_key: str,
     ) -> dict[str, Any]:
+        if get_settings().is_sandbox:
+            self.ensure_reference_data()
         amount_minor_value, currency, settlement_currency = _amount_fields(payload)
         if not get_settings().is_sandbox:
             try:
@@ -238,7 +243,7 @@ class ProductionPaymentService:
             counterparty_id=creditor_party,
             amount_minor=amount_minor_value,
         )
-        assert_limit(
+        limit_profile = assert_limit(
             self.db,
             principal,
             service="payment.create",
@@ -294,6 +299,23 @@ class ProductionPaymentService:
         )
         self.db.add(order)
         self.db.flush()
+        if limit_profile is not None:
+            try:
+                counter, _position = LimitReservationService(self.db).reserve(
+                    tenant_id=principal.tenant_id,
+                    participant_id=principal.participant_id,
+                    service="payment.create",
+                    corridor=corridor,
+                    currency=currency,
+                    business_date=utcnow().date(),
+                    amount_minor=amount_minor_value,
+                    daily_limit_minor=limit_profile.daily_amount_minor,
+                    exposure_limit_minor=limit_profile.max_exposure_minor,
+                )
+            except LimitReservationError as exc:
+                raise ProductionConflict(str(exc)) from exc
+            order.limit_reservation_id = counter.counter_id
+            self.db.flush()
         standards_result = validate_and_record(self.db, profile="iso20022-base:2026", message_type=message_type, payload=standards_payload, order_id=order.order_id)
         if not standards_result["valid"]:
             raise ProductionConflict(f"Standards validation failed: {canonical_json(standards_result['findings'])}")
@@ -729,3 +751,8 @@ def set_order_state(
         order.customer_outcome = outcome
     order.version += 1
     order.updated_at = utcnow()
+    if order.limit_reservation_id and state in ORCHESTRATION_TERMINAL:
+        counter = db.query(ProductionLimitCounter).filter_by(counter_id=order.limit_reservation_id).with_for_update().one_or_none()
+        if counter is not None:
+            position = db.query(ProductionExposurePosition).filter_by(tenant_id=order.tenant_id, participant_id=order.initiator_participant, corridor=order.corridor, currency=order.currency).with_for_update().one_or_none()
+            LimitReservationService(db).finalize(counter, position, order.amount_minor, consumed=state == "OPERATIONALLY_CLOSED" and outcome == "COMPLETED")

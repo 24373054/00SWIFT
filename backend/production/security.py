@@ -18,7 +18,6 @@ from .models import (
     ProductionAccount,
     ProductionAccountOwnership,
     ProductionCertificate,
-    ProductionLimitProfile,
     ProductionParticipant,
     ProductionServiceIdentity,
     ProductionTenant,
@@ -277,44 +276,21 @@ def assert_limit(
     corridor: str,
     currency: str,
     amount_minor: int,
-) -> None:
-    now = utcnow()
-    profile = (
-        db.query(ProductionLimitProfile)
-        .filter(
-            ProductionLimitProfile.participant_id == principal.participant_id,
-            ProductionLimitProfile.service == service,
-            ProductionLimitProfile.status == "ACTIVE",
-            ProductionLimitProfile.effective_from <= now,
-            (ProductionLimitProfile.effective_to.is_(None) | (ProductionLimitProfile.effective_to >= now)),
-            ProductionLimitProfile.corridor.in_(["*", corridor]),
-            ProductionLimitProfile.currency.in_(["*", currency]),
-        )
-        .order_by(ProductionLimitProfile.id.desc())
-        .first()
-    )
-    if profile is None:
-        if principal.source.startswith("sandbox"):
-            return
-        raise HTTPException(403, {"code": "LIMIT_PROFILE_REQUIRED", "service": service})
-    if profile.max_amount_minor is not None and amount_minor > profile.max_amount_minor:
-        raise HTTPException(403, {"code": "AMOUNT_LIMIT_EXCEEDED", "limit_minor": profile.max_amount_minor})
-    if profile.daily_amount_minor is not None:
-        from .models import ProductionPaymentOrder
+) -> object | None:
+    from .limit_service import LimitError, LimitService
 
-        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        total = sum(
-            row.amount_minor
-            for row in db.query(ProductionPaymentOrder)
-            .filter(
-                ProductionPaymentOrder.initiator_participant == principal.participant_id,
-                ProductionPaymentOrder.currency == currency,
-                ProductionPaymentOrder.created_at >= start,
-            )
-            .all()
-        )
-        if total + amount_minor > profile.daily_amount_minor:
-            raise HTTPException(403, {"code": "DAILY_LIMIT_EXCEEDED", "limit_minor": profile.daily_amount_minor})
+    now = utcnow()
+    try:
+        profile = LimitService(db).profile(participant_id=principal.participant_id, service=service, corridor=corridor, currency=currency, now=now)
+    except LimitError:
+        if principal.source.startswith("sandbox"):
+            return None
+        raise HTTPException(403, {"code": "LIMIT_PROFILE_REQUIRED", "service": service}) from None
+    try:
+        LimitService(db).assert_amount(profile, amount_minor)
+    except LimitError as exc:
+        raise HTTPException(403, {"code": "AMOUNT_LIMIT_EXCEEDED", "service": service, "message": str(exc)}) from exc
+    return profile
 
 
 def assert_entitlement(
