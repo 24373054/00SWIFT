@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.7 — 全类别测试要求
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg '正常、负向、并发、重复、超时、崩溃恢复' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；R0.7 和各 B 的测试清单明确覆盖六类行为
+- 验收证据：第 12 节 X01–X20 反例回归表
+- 未解决风险：当前测试覆盖仍不足，必须逐项补齐
+- 执行者：Codex
+
 ### R0.6 — 金额与时间类型规则
 
 - 状态：DONE
