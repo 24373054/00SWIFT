@@ -204,7 +204,7 @@
 
 ## B1.2 数据修复与约束
 
-- [ ] B1.2.1 新增 `backend/scripts/audit_production_data.py`。
+- [x] B1.2.1 新增 `backend/scripts/audit_production_data.py`。
   - 只读输出 orphan、重复、null、非法状态、金额溢出、tenant 不一致、hash 缺失。
 
 - [ ] B1.2.2 新增 `backend/scripts/repair_production_0006.py`。
