@@ -139,7 +139,7 @@
   - Protocol：sign、verify、get_public_key、rotate、revoke status；私钥 API 不允许 export。
   - sandbox provider 与 qualified HSM provider 分开注册。
 
-- [ ] B0.4.2 在 `backend/config.py` 增加 HSM/KMS provider、trust domain、key label、OCSP/CRL、rotation 配置。
+- [x] B0.4.2 在 `backend/config.py` 增加 HSM/KMS provider、trust domain、key label、OCSP/CRL、rotation 配置。
   - pilot/live 禁止 file/private-key provider。
 
 - [ ] B0.4.3 新增密钥操作审计和双控接口。
