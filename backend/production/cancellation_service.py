@@ -45,6 +45,8 @@ class CancellationService:
             reservation.updated_at = utcnow()
             reservation.evidence_ref = ProductionEvidenceService(self.db).record("funding.release", reservation.reservation_id, evidence).evidence_id
         set_order_state(self.db, order.order_id, "EXECUTION_CANCELLED", "CANCELLED", expected_version=order.version)
+        self.db.refresh(order)
+        set_order_state(self.db, order.order_id, "OPERATIONALLY_CLOSED_UNSUCCESSFUL", "CANCELLED", expected_version=order.version)
         request.external_reference = evidence.get("external_reference")
         request.evidence_ref = ProductionEvidenceService(self.db).record("payment.cancellation.accepted", request.cancellation_request_id, evidence).evidence_id
         self.db.flush()

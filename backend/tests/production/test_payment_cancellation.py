@@ -23,6 +23,6 @@ def test_cancel_accept_releases_reservation_and_closes_unsuccessfully(db):
     request = CancellationService(db).accept("can-1", evidence={"external_reference": "ext-1"})
     assert request.state == "ACCEPTED"
     assert db.query(ProductionFundingReservation).filter_by(reservation_id="res-1").one().state == "RELEASED"
-    assert db.query(ProductionPaymentOrder).filter_by(order_id="cancel-1").one().orchestration_state == "EXECUTION_CANCELLED"
+    assert db.query(ProductionPaymentOrder).filter_by(order_id="cancel-1").one().orchestration_state == "OPERATIONALLY_CLOSED_UNSUCCESSFUL"
     with pytest.raises(ProductionConflict, match="invalid"):
         CancellationService(db).transition("can-1", "SENT")
