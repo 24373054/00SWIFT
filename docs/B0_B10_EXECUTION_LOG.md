@@ -192,3 +192,16 @@
 - 验收证据：每个 B Gate 均要求真实代码、错误路径和测试
 - 未解决风险：无；后续实现若出现占位必须保持未勾选
 - 执行者：Codex
+
+### B0.1.1 修正记录
+
+- 状态：DONE（补充修正）
+- 完成时间：2026-07-27
+- commit：`a6088ac`
+- 修改文件：`backend/production/qualification.py`、`backend/tests/production/test_qualification.py`
+- 新增/修改测试：补充 `artifact_type` schema 字段与 `QualificationStatus.VERIFIED` 断言。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_qualification.py -q`
+- 测试结果：`3 passed`
+- 正常路径证据：有效 attestation 返回 `QualificationStatus.VERIFIED`。
+- 负向路径证据：缺少 `artifact_type` 的 attestation 在 verifier 层拒绝。
+- 未解决风险：真实签发机构和生产工件仍属于 B0.4/B7 的 `[EXT-BLOCKED]` 外部证据。
