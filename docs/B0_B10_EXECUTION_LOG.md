@@ -1372,6 +1372,25 @@
 - 未解决风险：双边 entitlement matrix 集成测试在 B2.3.4 完成。
 - 执行者：Codex
 
+### B2.3.4 — bilateral entitlement negative matrix
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`8ec0f16`
+- 修改文件：`backend/tests/production/test_entitlement_service.py`
+- 新增/修改测试：A→B OUTBOUND 精确命中；B→A/反向 direction、C counterparty、错误币种/走廊/报文/金额/期限和未审批 wildcard 拒绝；命中版本对象可回传。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_entitlement_service.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_entitlement_service.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 正常路径证据：policy 所有 bilateral key 同时参与候选与精确匹配。
+- 负向路径证据：单边授权不推导反向权限；任何关键字段不匹配均 `EntitlementError`。
+- 并发/重复/超时/恢复证据：匹配只读；policy version/id 作为稳定审计引用。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：matrix rejection 可按原因分类告警。
+- 外部证据：无。
+- 未解决风险：真实 PostgreSQL RLS 与双边 policy 组合仍待 B1/G3 外部 Gate。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE
