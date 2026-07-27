@@ -1432,6 +1432,27 @@
 - 未解决风险：payment 尚未持久化 reservation id，下一项接入释放/结转生命周期。
 - 执行者：Codex
 
+### B2.4.3 — payment limit reservation lifecycle
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`a575eb3`
+- 修改文件：`backend/alembic/versions/0018_payment_limit_reservation.py`、`backend/production/models.py`、`backend/production/security.py`、`backend/production/service.py`、`backend/production/limit_reservation.py`
+- 新增迁移：`0018_payment_limit_reservation` 增加 PaymentOrder.limit_reservation_id。
+- 新增实现：payment create 使用 LimitService profile + atomic reservation；order 保存 reservation id；terminal success 将 reserved→consumed，失败/取消释放 reserved 和 exposure；assert_limit 删除历史 payment 扫描。
+- 新增/修改测试：production payment worker regression 验证 sandbox payment 完成；counter reservation negative test。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/test_production_domain.py::test_production_payment_is_idempotent_and_worker_completes backend/tests/production/test_limit_reservation.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/models.py backend/production/security.py backend/production/service.py backend/production/limit_reservation.py`
+- 测试结果：`2 passed`（1 个已知 Starlette/httpx warning）；`ruff: All checks passed`。
+- 正常路径证据：profile 存在时 reservation id 绑定 payment；terminal state 触发 finalize，sandbox 无 profile 不写 reservation。
+- 负向路径证据：daily/exposure 超限、非法 release/finalize、非正金额 fail-closed；profile 缺失的 pilot/live 403。
+- 并发/重复/超时/恢复证据：counter/exposure 使用 row lock/version；payment transaction rollback 自动撤销未提交 reservation。
+- OpenAPI/AsyncAPI 影响：Payment response 不暴露内部 reservation id，数据库保留可审计引用。
+- Metrics/alerts/runbook 影响：reservation stuck/over-limit/release failure 接运营告警。
+- 外部证据：100 请求真实 PostgreSQL contention 在 B2.4.4 完成。
+- 未解决风险：并发 100-way 争用尚未实测；下一项补并发测试并保持 Gate 严格。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE

@@ -317,7 +317,7 @@
 - [x] B2.4.2 新增 `prod_limit_counters`、`prod_exposure_positions` 和显式迁移。
   - 使用行锁/CAS 原子预占额度；失败事务自动释放或补偿。
 
-- [ ] B2.4.3 把 limit reservation id 写入 payment，并在取消/失败/完成时正确释放或结转。
+- [x] B2.4.3 把 limit reservation id 写入 payment，并在取消/失败/完成时正确释放或结转。
 
 - [ ] B2.4.4 新增并发测试：100 个请求争用同一额度，最终接受总额不得超过上限。
 
