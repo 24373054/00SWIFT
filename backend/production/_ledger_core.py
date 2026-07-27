@@ -6,6 +6,7 @@ import datetime as dt
 import uuid
 from typing import Any
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .models import (
@@ -188,10 +189,8 @@ class ProductionLedgerService:
         entries = self.db.query(ProductionJournalEntry).filter_by(journal_id=journal_id).all()
         reversed_entries = [{"account_id": item.account_id, "direction": "CREDIT" if item.direction == "DEBIT" else "DEBIT", "currency": item.currency, "amount_minor": item.amount_minor} for item in entries]
         reversal = self.post_journal(journal_id=reversal_journal_id, legal_entity=original.legal_entity, book=original.book, reason_code="REVERSAL", entries=reversed_entries, order_id=original.order_id)
-        reversal.reverses_journal_id = original.journal_id
-        reversal.reversal_reason = reason
-        reversal.approval_ref = approval_ref
-        reversal.evidence_ref = evidence_ref
+        self.db.execute(text("UPDATE prod_journals SET reverses_journal_id=:original, reversal_reason=:reason, approval_ref=:approval, evidence_ref=:evidence WHERE journal_id=:reversal"), {"original": original.journal_id, "reason": reason, "approval": approval_ref, "evidence": evidence_ref, "reversal": reversal_journal_id})
+        self.db.refresh(reversal)
         self.db.flush()
         return reversal
 
