@@ -760,3 +760,23 @@
 - 外部证据：无。
 - 未解决风险：金额 BigInteger 和 timezone-aware 列待 B1.1.4/B1.1.5。
 - 执行者：Codex
+
+### B1.1.4 — 金额列 BigInteger 扩容
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`be484bf`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0009_production_bigint_amounts.py`、`backend/tests/production/test_bigint_amounts.py`
+- 新增迁移：`0009_production_bigint_amounts`
+- 新增/修改测试：payment、quote、reservation、settlement、return、ledger、journal、limit、corridor amount 列 BigInteger；迁移前负数/溢出扫描。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_bigint_amounts.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/models.py backend/alembic/versions/0009_production_bigint_amounts.py backend/tests/production/test_bigint_amounts.py`; `\.venv\Scripts\python.exe -m alembic upgrade head`
+- 测试结果：`1 passed`; `ruff`：`All checks passed`; migration `0008 -> 0009` 通过。
+- 正常路径证据：模型和 SQLite schema 的货币 minor/unit 列扩展到 BIGINT，迁移先检查 `<0` 或超过 int64。
+- 负向路径证据：负数/溢出数据会在迁移前 RuntimeError；金额原有 check constraints 保持。
+- 并发/重复/超时/恢复证据：迁移可重复执行，失败临时表清理后重试成功；不删除历史数据。
+- OpenAPI/AsyncAPI 影响：金额序列化契约保持整数 minor units。
+- Metrics/alerts/runbook 影响：overflow audit failure 阻断迁移。
+- 外部证据：无。
+- 未解决风险：生产时间列仍需 timezone-aware 统一。
+- 执行者：Codex
