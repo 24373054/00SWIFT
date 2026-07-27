@@ -51,6 +51,26 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.4.3 — production standards gateway
+
+- 状态：DONE；完成时间：2026-07-27；commit：`8821571`
+- 修改文件：`backend/production/standards.py`、`backend/production/service.py`、`backend/production/router.py`、`backend/tests/production/test_production_standards_gateway.py`
+- 证据：production payment path 不再导入 `nextgen.standards`；使用 artifact-backed production gateway、canonical validation、copy/lineage/evidence；4 tests passed。
+
+### B4.4.4 — AuthorizationService wiring
+
+- 状态：PARTIAL（Gate 未勾选）；完成时间：2026-07-27；实现 commit：`65d39d0`
+- 修改文件：`backend/production/worker.py`
+- 证据：pilot/live worker authorization 通过 B2 AuthorizationService 校验 mandate/approval/payment hash/checker；3 tests passed。
+- 未解决风险：当前 sandbox production worker 仍允许自动 PASS，而清单要求自动 PASS 仅限 `/sim`；需把 sandbox simulation 入口与 production route 分离后才能勾选本项。
+
+### B4.4.5 — payment graph
+
+- 状态：DONE；完成时间：2026-07-27；commit：`2490d27`
+- 修改文件：`backend/production/payment_graph.py`、`backend/production/models.py`、`backend/alembic/versions/0029_payment_graph_report_link.py`、`backend/tests/production/test_payment_graph.py`
+- 证据：original/cancellation/return/investigation/FX/settlement/journal/reconciliation/report 均通过 FK/graph loader 关联；SQLite `0028 -> 0029` 成功，1 test passed。
+- 执行者：Codex
+
 ### B4.4.2 — scoped payment reference identifiers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`bbc1f4c`
