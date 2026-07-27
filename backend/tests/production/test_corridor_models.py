@@ -5,7 +5,9 @@ import datetime as dt
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+import production.corridors as corridors
 from production.models import ProductionControlAttestation, ProductionCorridorAdmission
+from production.runtime import ProductionConflict
 
 
 def _admission(admission_id: str, *, rulebook="cn-hk-v1"):
@@ -51,3 +53,36 @@ def test_corridor_environment_corridor_rulebook_is_unique(db):
     db.add(_admission("adm-2"))
     with pytest.raises(IntegrityError):
         db.commit()
+
+
+def test_admission_check_is_default_deny_for_unapproved_scenario(db):
+    admission = _admission("adm-1")
+    db.add(admission)
+    db.add(ProductionControlAttestation(
+        attestation_id="att-1", admission_id="adm-1", signer_role="authority", signer_subject="subject",
+        statement_digest="a" * 64, valid_from=admission.valid_from, valid_to=admission.valid_to,
+        status="ACTIVE", evidence_ref="evidence://test",
+    ))
+    db.commit()
+    with pytest.raises(ProductionConflict, match="No active corridor admission"):
+        corridors.assert_corridor_admitted(
+            db, participant_id="SANDBOX-ORIGIN", corridor="CN-HK", scenario="SALARY",
+            currency="CNY", amount_minor=100,
+        )
+
+
+def test_simulation_admission_cannot_be_reused_in_pilot(db, monkeypatch):
+    admission = _admission("adm-1")
+    db.add(admission)
+    db.add(ProductionControlAttestation(
+        attestation_id="att-1", admission_id="adm-1", signer_role="authority", signer_subject="subject",
+        statement_digest="a" * 64, valid_from=admission.valid_from, valid_to=admission.valid_to,
+        status="ACTIVE", evidence_ref="evidence://test",
+    ))
+    db.commit()
+    monkeypatch.setattr(corridors, "get_settings", lambda: type("Settings", (), {"swift_env": "pilot", "is_sandbox": False})())
+    with pytest.raises(ProductionConflict, match="No active corridor admission"):
+        corridors.assert_corridor_admitted(
+            db, participant_id="SANDBOX-ORIGIN", corridor="CN-HK", scenario="TRADE",
+            currency="CNY", amount_minor=100,
+        )
