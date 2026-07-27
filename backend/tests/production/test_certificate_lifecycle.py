@@ -30,7 +30,7 @@ def test_refresh_rejects_untrusted_provider_status():
             return self
 
         def all(self):
-            return []
+            return [type("Certificate", (), {"fingerprint": "fp", "not_after": dt.datetime.now(dt.UTC) + dt.timedelta(days=1)})()]
 
     class Db:
         def query(self, _model):
