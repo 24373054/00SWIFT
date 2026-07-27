@@ -15,6 +15,19 @@ permissions:
 jobs:
   migration-baseline:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: swift_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d swift_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,7 +40,7 @@ jobs:
       - name: Upgrade schema
         working-directory: backend
         env:
-          DB_URL: sqlite:///migration_ci.db
+          DB_URL: postgresql+psycopg://postgres:postgres@localhost:5432/swift_ci
         run: |
-          python -m alembic upgrade head
+          python scripts/migration_roundtrip.py
           python scripts/verify_production_schema.py
