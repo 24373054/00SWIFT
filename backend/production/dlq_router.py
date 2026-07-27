@@ -5,9 +5,16 @@ from database import get_db
 
 from .dlq_replay import approve_replay, create_replay
 from .models import ProductionOutboxEvent
+from .outbox_metrics import snapshot
 from .security import ProductionPrincipal, require_production_scope
 
 dlq_router = APIRouter(prefix="/production/v1")
+
+
+@dlq_router.get("/outbox/metrics")
+def outbox_metrics(principal: ProductionPrincipal = Depends(require_production_scope("production.operator")), db: Session = Depends(get_db)):
+    del principal
+    return snapshot(db)
 
 
 @dlq_router.post("/dlq/{event_id}/replay")

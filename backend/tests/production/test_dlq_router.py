@@ -8,4 +8,5 @@ def test_dlq_list_and_detail_routes_are_registered():
         "/production/v1/dlq/{event_id}",
         "/production/v1/dlq/{event_id}/replay",
         "/production/v1/dlq/replays/{replay_id}/approve",
+        "/production/v1/outbox/metrics",
     }
