@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.8 — Fail-closed 不等于功能完成
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg '永远返回 503|fail-closed' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；R0.8 明确区分安全占位和真实 qualified 功能
+- 验收证据：B0.2、B7.3、B7.4、B8.2 设有真实功能 Gate
+- 未解决风险：当前 signature verifier/qualified connector 仍是占位，后续必须保持未完成
+- 执行者：Codex
+
 ### R0.7 — 全类别测试要求
 
 - 状态：DONE
