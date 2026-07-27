@@ -179,6 +179,22 @@ class ProductionLedgerService:
             journals.append(self.post_journal(journal_id=f"{journal_id}:{currency}", legal_entity=legal_entity, book=book, reason_code=reason_code, entries=group))
         return journals
 
+    def reverse_journal(self, journal_id: str, reversal_journal_id: str, reason: str, approval_ref: str, evidence_ref: str) -> ProductionJournal:
+        original = self.db.query(ProductionJournal).filter_by(journal_id=journal_id, state="POSTED").one_or_none()
+        if original is None:
+            raise ProductionConflict("Only a POSTED journal can be reversed")
+        if not reason or not approval_ref or not evidence_ref:
+            raise ProductionConflict("Reversal requires reason, approval and evidence")
+        entries = self.db.query(ProductionJournalEntry).filter_by(journal_id=journal_id).all()
+        reversed_entries = [{"account_id": item.account_id, "direction": "CREDIT" if item.direction == "DEBIT" else "DEBIT", "currency": item.currency, "amount_minor": item.amount_minor} for item in entries]
+        reversal = self.post_journal(journal_id=reversal_journal_id, legal_entity=original.legal_entity, book=original.book, reason_code="REVERSAL", entries=reversed_entries, order_id=original.order_id)
+        reversal.reverses_journal_id = original.journal_id
+        reversal.reversal_reason = reason
+        reversal.approval_ref = approval_ref
+        reversal.evidence_ref = evidence_ref
+        self.db.flush()
+        return reversal
+
     @staticmethod
     def _validate_entries(entries: list[dict[str, Any]]) -> None:
         if len(entries) < 2:

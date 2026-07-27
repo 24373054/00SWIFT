@@ -2,6 +2,7 @@ import pytest
 
 from production.gl_bridge import GlBridge
 from production.ledger_service import ProductionLedgerService
+from production.models import ProductionJournalEntry
 from production.runtime import ProductionConflict
 
 
@@ -51,3 +52,13 @@ def test_trial_balance_rebuilds_from_posted_entries(db):
     result = service.trial_balance("CNY")
     balances = {item["account_id"]: item["balance_minor"] for item in result["accounts"]}
     assert balances["tb-a"] == 15 and balances["tb-l"] == 15
+
+
+def test_reversal_creates_linked_opposite_journal(db):
+    service = ProductionLedgerService(db)
+    service.create_account("rev-a", "LE-CN", "SUBLEDGER", "CNY", "asset", opening_balance_minor=100)
+    service.create_account("rev-l", "LE-CN", "SUBLEDGER", "CNY", "liability", opening_balance_minor=100)
+    service.post_journal(journal_id="rev-original", legal_entity="LE-CN", book="SUBLEDGER", reason_code="funding", entries=[{"account_id": "rev-a", "direction": "DEBIT", "currency": "CNY", "amount_minor": 5}, {"account_id": "rev-l", "direction": "CREDIT", "currency": "CNY", "amount_minor": 5}])
+    reversal = service.reverse_journal("rev-original", "rev-opposite", "duplicate", "approval-1", "evidence-1")
+    assert reversal.reverses_journal_id == "rev-original"
+    assert {entry.direction for entry in db.query(ProductionJournalEntry).filter_by(journal_id="rev-opposite").all()} == {"DEBIT", "CREDIT"}

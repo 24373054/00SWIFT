@@ -859,6 +859,10 @@ class ProductionJournal(Base):
     gl_batch_reference = Column(String(160), nullable=False, default="")
     reason_code = Column(String(80), nullable=False)
     payload_hash = Column(String(64), nullable=False)
+    reverses_journal_id = Column(String(80), ForeignKey("prod_journals.journal_id", ondelete="RESTRICT"), nullable=True)
+    reversal_reason = Column(String(240), nullable=True)
+    approval_ref = Column(String(120), nullable=True)
+    evidence_ref = Column(String(120), nullable=True)
     created_at = Column(DateTime, nullable=False, default=utcnow)
     __table_args__ = (UniqueConstraint("legal_entity", "book", "business_date", "gl_batch_reference", name="uq_prod_gl_batch_reference"),)
 
