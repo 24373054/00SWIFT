@@ -486,6 +486,26 @@
 - 未解决风险：payment 创建前尚未执行 admission check，B0.5.2 完成。
 - 执行者：Codex
 
+### B0.5.2 — payment 创建前走廊准入检查
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`8713855`
+- 修改文件：`backend/production/corridors.py`、`backend/production/service.py`、`backend/tests/production/test_corridor_models.py`
+- 新增迁移：使用 `0007_corridor_admission`
+- 新增/修改测试：payment 创建前 ACTIVE admission、主体/场景/币种/金额/时间/控制 attestation 全校验；未批准场景 default-deny；simulation admission 不可复用到 pilot；既有 sandbox payment flow。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_corridor_models.py backend/tests/test_production_domain.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/corridors.py backend/production/service.py backend/tests/production/test_corridor_models.py`
+- 测试结果：`6 passed`; `ruff`：`All checks passed`
+- 正常路径证据：sandbox reference data 创建明确 `simulation_only=true` admission/control attestation，TRADE/CNY/CN-HK payment 可以进入编排。
+- 负向路径证据：无 ACTIVE admission、场景/币种/金额/时段不匹配、缺 control attestation、pilot 复用 simulation admission 均抛 `ProductionConflict`。
+- 并发/重复/超时/恢复证据：admission 唯一版本和有效期每次创建重新判断；payment idempotency 仍在同一 create flow。
+- OpenAPI/AsyncAPI 影响：无新增接口；payment create 的错误码/冲突语义明确。
+- Metrics/alerts/runbook 影响：corridor deny 事件应按 environment/corridor/rulebook 告警。
+- 外部证据：真实 CN/HK admission/rulebook/签字尚未提供，sandbox 只能作为 simulation。
+- 未解决风险：法律实体、双法域矩阵和责任签字文档待 B0.5.3/B0.5.4。
+- 执行者：Codex
+
 ### B0.4.4 — 真实 HSM/CA/OCSP/CRL 与密钥仪式
 
 - 状态：EXT-BLOCKED
