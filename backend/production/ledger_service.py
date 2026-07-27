@@ -2,8 +2,7 @@
 
 from ._ledger_core import ProductionLedgerService, serialize_account
 from .models import ProductionBalanceSnapshot, ProductionJournalEntry, ProductionLedgerPeriod
-from .runtime import digest
-from .runtime import ProductionConflict
+from .runtime import ProductionConflict, digest
 
 __all__ = ["ProductionLedgerService", "serialize_account"]
 

@@ -1,5 +1,4 @@
-from production.ledger_service import BalanceSnapshotService
-from production.ledger_service import ProductionLedgerService
+from production.ledger_service import BalanceSnapshotService, ProductionLedgerService
 
 
 def test_balance_snapshot_records_entry_hash(db):
