@@ -349,7 +349,7 @@
 - [x] B2.G2 任一 credential 只能访问其 tenant/participant/account。
 - [x] B2.G3 单一调用者无法完成 maker+checker。
 - [ ] B2.G4 并发额度不超限。
-- [ ] B2.G5 rulebook 未接受、证书吊销、mandate 不匹配均 fail-closed。
+- [x] B2.G5 rulebook 未接受、证书吊销、mandate 不匹配均 fail-closed。
 - [ ] B2 COMPLETE。
 
 ---

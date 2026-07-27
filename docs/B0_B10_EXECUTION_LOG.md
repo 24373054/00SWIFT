@@ -51,6 +51,17 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B2.G5 — fail-closed rulebook/certificate/mandate enforcement
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit（实现）：`be3fcaa`, `34ef9da`, `8e736a5`, `3539174`, `842d55d`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_rulebook_service.py backend/tests/production/test_entitlement_enforcement.py backend/tests/production/test_certificate_lifecycle.py backend/tests/production/test_certificate_auth.py backend/tests/production/test_authorization_service.py -q`
+- 测试结果：`7 passed`。
+- 负向证据：未接受/过期 rulebook、双边 entitlement/mandate 不匹配、participant/account/amount/currency/purpose/hash 不匹配、证书吊销或 TLS 证明缺失均拒绝；未使用固定成功或模型替代验证。
+- 外部证据：真实 OCSP/CRL/HSM provider 未配置的部分已在证书生命周期记录为外部依赖，不影响本地 fail-closed Gate。
+- 执行者：Codex
+
 ### B2.G4 — concurrent limit contention
 
 - 状态：`[EXT-BLOCKED]`
