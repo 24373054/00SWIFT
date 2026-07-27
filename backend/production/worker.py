@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from config import get_settings
 
 from .authorization_service import AuthorizationError, AuthorizationService
+from .cancellation_service import CancellationService
 from .compliance import ProductionComplianceService
 from .connectors import (
     connector_registry,
@@ -404,12 +405,13 @@ class ProductionWorker:
         leg = self.db.query(ProductionSettlementLeg).filter_by(order_id=order.order_id, leg_role="PAYMENT_VALUE").one()
         request = self.db.query(ProductionCancellationRequest).filter_by(cancellation_request_id=payload["cancellation_request_id"]).one()
         result = self.value.cancel(leg.external_reference or leg.leg_id, request.cancellation_request_id, request.reason, request.idempotency_context)
-        request.state = result.state
         request.external_reference = result.external_reference
         request.evidence_ref = ProductionEvidenceService(self.db).record("payment.cancellation", request.cancellation_request_id, result.evidence).evidence_id
         self.payments.append_fact(order.order_id, "CANCELLATION", result.state, request.cancellation_request_id, result.evidence)
         if result.state == "ACCEPTED" and leg.state != "FINAL":
-            self._transition(order, "EXECUTION_CANCELLED", "CANCELLED")
+            CancellationService(self.db).accept(request.cancellation_request_id, evidence={"external_reference": result.external_reference, **result.evidence})
+        elif result.state in {"REJECTED", "UNKNOWN"}:
+            CancellationService(self.db).transition(request.cancellation_request_id, result.state)
 
     def _return(self, payload: dict[str, Any]) -> None:
         return_payment = self.db.query(ProductionReturnPayment).filter_by(return_payment_id=payload["return_payment_id"]).one()
