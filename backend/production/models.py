@@ -959,6 +959,7 @@ class ProductionReportBatch(Base):
     __tablename__ = "prod_report_batches"
     id = Column(Integer, primary_key=True)
     batch_id = Column(String(100), nullable=False, unique=True, index=True)
+    order_id = Column(String(80), ForeignKey("prod_payment_orders.order_id", ondelete="RESTRICT"), nullable=True, index=True)
     report_type = Column(String(80), nullable=False)
     period_start = Column(String(30), nullable=False)
     period_end = Column(String(30), nullable=False)
