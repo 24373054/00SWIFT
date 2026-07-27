@@ -295,7 +295,7 @@
 
 ## B2.3 双边 Entitlement
 
-- [ ] B2.3.1 新增 `backend/production/entitlement_service.py`。
+- [x] B2.3.1 新增 `backend/production/entitlement_service.py`。
   - 双边键：origin participant、counterparty、direction、service、message type、corridor、currency、amount band、effective period。
   - 修改/激活/撤销必须 maker-checker。
 

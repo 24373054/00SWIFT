@@ -1311,6 +1311,27 @@
 - 未解决风险：外部证书链、OCSP SLA 和 token revocation propagation 尚未在真实 provider 验证。
 - 执行者：Codex
 
+### B2.3.1 — bilateral entitlement policy service
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`e27ded5`
+- 修改文件：`backend/production/entitlement_service.py`、`backend/alembic/versions/0016_entitlement_amount_bands.py`、`backend/production/models.py`、`backend/tests/production/test_entitlement_service.py`
+- 新增迁移：`0016_entitlement_amount_bands` 增加 min/max amount、version，旧 wildcard 数据显式回填范围并收紧非空。
+- 新增实现：双边 origin/counterparty/direction/service/message/corridor/currency/amount/effective window policy；create PENDING，activate/revoke distinct maker/checker + evidence/approval。
+- 新增/修改测试：无匹配 bilateral policy 默认拒绝；金额 band/effective window 通过 SQL 条件参与匹配。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_entitlement_service.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/entitlement_service.py backend/alembic/versions/0016_entitlement_amount_bands.py backend/tests/production/test_entitlement_service.py`; `\\.venv\\Scripts\\python.exe -m alembic upgrade head`
+- 测试结果：`1 passed`；`ruff: All checks passed`；Alembic `0015 -> 0016` 成功。
+- 正常路径证据：版本倒序选择精确/获批 wildcard entitlement；amount band 与 effective period 在数据库查询中约束候选。
+- 负向路径证据：反向 direction、错 counterparty、币种/走廊/报文/金额/期限不匹配均抛 `EntitlementError`。
+- 并发/重复/超时/恢复证据：create/activate/revoke 在事务 flush；唯一 entitlement id 防重复。
+- OpenAPI/AsyncAPI 影响：后续 B2.3.2/3 接入现有 entitlement API 与 PaymentFact/Audit。
+- Metrics/alerts/runbook 影响：无 entitlement、wildcard 未审批、版本过期接权限告警。
+- 外部证据：无。
+- 未解决风险：现有 `assert_entitlement()` 尚未切换到该服务，下一项完成默认拒绝接线。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE
