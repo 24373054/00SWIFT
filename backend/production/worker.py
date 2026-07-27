@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from config import get_settings
 
+from .authorization_service import AuthorizationError, AuthorizationService
 from .compliance import ProductionComplianceService
 from .connectors import (
     connector_registry,
@@ -145,15 +146,13 @@ class ProductionWorker:
         settings = get_settings()
         auth_decision = self.db.query(ProductionAuthorizationDecision).filter_by(order_id=order.order_id).order_by(ProductionAuthorizationDecision.id.desc()).first()
         authorization_ok = settings.is_sandbox or (auth_decision is not None and auth_decision.outcome == "PASSED")
-        if not authorization_ok and auth_decision is not None:
-            mandate = None
-            approval = None
-            if auth_decision.mandate_ref:
-                from .models import ProductionMandate
-                mandate = self.db.query(ProductionMandate).filter_by(mandate_id=auth_decision.mandate_ref, status="ACTIVE").one_or_none()
-            if auth_decision.approval_ref:
-                approval = self.db.query(ProductionApproval).filter_by(approval_id=auth_decision.approval_ref, state="APPROVED").one_or_none()
-            authorization_ok = mandate is not None and approval is not None
+        if not settings.is_sandbox and auth_decision is not None and auth_decision.outcome != "PASSED":
+            approval = self.db.query(ProductionApproval).filter_by(approval_id=auth_decision.approval_ref, state="APPROVED").one_or_none() if auth_decision.approval_ref else None
+            try:
+                AuthorizationService(self.db).authorize_payment(order, mandate_id=auth_decision.mandate_ref, approval_id=auth_decision.approval_ref, checker=approval.checker if approval else None)
+                authorization_ok = True
+            except AuthorizationError:
+                authorization_ok = False
         if auth_decision is not None and auth_decision.outcome != "PASSED":
             outcome = "PASSED" if authorization_ok else "REJECTED"
             self.payments.append_fact(order.order_id, "AUTHORIZATION", outcome, auth_decision.decision_id, {"rule_version": auth_decision.rule_version})
