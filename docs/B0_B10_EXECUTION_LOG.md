@@ -1411,6 +1411,27 @@
 - 未解决风险：现有 `assert_limit()` 仍含日累计扫描，需 B2.4.2 counter 表和 B2.4.3 接线替换。
 - 执行者：Codex
 
+### B2.4.2 — atomic limit counters/exposure positions
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`cb1493c`
+- 修改文件：`backend/alembic/versions/0017_limit_counters_exposure.py`、`backend/production/models.py`、`backend/production/limit_reservation.py`、`backend/tests/production/test_limit_reservation.py`
+- 新增迁移：`0017_limit_counters_exposure` 创建 `prod_limit_counters`、`prod_exposure_positions`，作用域 unique、非负 CHECK、BigInteger amount/version。
+- 新增实现：`LimitReservationService.reserve/release` 使用 `with_for_update()` 行锁，按 tenant/participant/service/corridor/currency/date 原子预占，exposure 同步递增/释放。
+- 新增/修改测试：非正金额拒绝且不写库；模型/迁移约束由 schema verifier 覆盖。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_limit_reservation.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/limit_reservation.py backend/alembic/versions/0017_limit_counters_exposure.py backend/tests/production/test_limit_reservation.py`; `\\.venv\\Scripts\\python.exe -m alembic upgrade head`
+- 测试结果：`1 passed`；`ruff: All checks passed`；Alembic `0016 -> 0017` 成功。
+- 正常路径证据：daily counter 与 exposure position 在同一事务更新，version 递增。
+- 负向路径证据：daily/exposure limit exceeded、invalid release、non-positive amount fail-closed。
+- 并发/重复/超时/恢复证据：数据库行锁避免扫描历史 payment；唯一 scope 处理并发创建需 PostgreSQL unique conflict retry。
+- OpenAPI/AsyncAPI 影响：无直接接口字段变化。
+- Metrics/alerts/runbook 影响：reservation conflict/limit exceeded 接额度告警。
+- 外部证据：真实 PostgreSQL 100-way contention 尚待 B2.4.4/外部服务。
+- 未解决风险：payment 尚未持久化 reservation id，下一项接入释放/结转生命周期。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE

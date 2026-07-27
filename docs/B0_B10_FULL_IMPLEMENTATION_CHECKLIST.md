@@ -314,7 +314,7 @@
   - 单笔、日累计、在途、FX exposure、participant、corridor、currency、时间窗。
   - 不得通过扫描历史 payment 后在应用层相加实现并发额度。
 
-- [ ] B2.4.2 新增 `prod_limit_counters`、`prod_exposure_positions` 和显式迁移。
+- [x] B2.4.2 新增 `prod_limit_counters`、`prod_exposure_positions` 和显式迁移。
   - 使用行锁/CAS 原子预占额度；失败事务自动释放或补偿。
 
 - [ ] B2.4.3 把 limit reservation id 写入 payment，并在取消/失败/完成时正确释放或结转。
