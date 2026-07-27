@@ -157,11 +157,14 @@ def ensure_participant(
     participant_type: str = "BANK",
     jurisdiction: str = "CN",
 ) -> ProductionParticipant:
+    settings = get_settings()
     tenant = ensure_tenant(db, f"tenant:{participant_id}", name or participant_id, jurisdiction)
     participant = (
         db.query(ProductionParticipant).filter_by(participant_id=participant_id).first()
     )
     if participant is None:
+        if not settings.is_sandbox:
+            raise HTTPException(403, "Participant must be provisioned through identity bootstrap")
         participant = ProductionParticipant(
             participant_id=participant_id,
             name=name or participant_id,
@@ -177,8 +180,11 @@ def ensure_participant(
 
 
 def ensure_tenant(db: Session, tenant_id: str, name: str, jurisdiction: str) -> ProductionTenant:
+    settings = get_settings()
     tenant = db.query(ProductionTenant).filter_by(tenant_id=tenant_id).first()
     if tenant is None:
+        if not settings.is_sandbox:
+            raise HTTPException(403, "Tenant must be provisioned through identity bootstrap")
         tenant = ProductionTenant(
             tenant_id=tenant_id,
             name=name[:200],
