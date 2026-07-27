@@ -641,7 +641,7 @@
 
 - [x] B5.6.1 实现 `GlMapping` version、科目转换和 batch builder。
 - [x] B5.6.2 GlBatch 保存 journal 范围、mapping version、debit/credit totals、payload hash。
-- [ ] B5.6.3 支持发送、ACK、REJECTED、重送、receipt hash；不能生成文件后直接视为接收。
+- [ ] B5.6.3 `[EXT-BLOCKED]` 支持发送、ACK、REJECTED、重送、receipt hash；不能生成文件后直接视为接收。
 - [ ] B5.6.4 B8 四方对账读取真实 GlBatch/Receipt，不允许用 payment 字段伪造 `institution_gl_hash`。
 
 ## B5.7 测试

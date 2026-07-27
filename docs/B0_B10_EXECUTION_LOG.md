@@ -433,6 +433,18 @@
 - 测试结果：GL bridge test `1 passed`。
 - 执行者：Codex
 
+### B5.6.3 — GL ACK/REJECT/receipt lifecycle
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`0bb468a`
+- 修改文件：`backend/production/gl_bridge.py`、`backend/tests/production/test_gl_bridge.py`
+- 新增/修改实现：GL batch 先 SENT；record_receipt 只接受显式 ACK/REJECTED，ACK 必须提供 receipt_hash，随后更新 batch state/receipt_hash 并写不可变 receipt。
+- 测试结果：`1 passed`；缺失 ACK receipt 负向测试通过。
+- 外部证据：真实 GL transport 尚未提供，代码保持显式 ACK gate，不把文件生成视为接收。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
