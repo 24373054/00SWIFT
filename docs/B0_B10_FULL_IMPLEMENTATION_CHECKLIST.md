@@ -498,7 +498,7 @@
 
 ## B4.4 创建与授权
 
-- [ ] B4.4.1 `ProductionPaymentService.create_payment()` 使用真实 tenant id。
+- [x] B4.4.1 `ProductionPaymentService.create_payment()` 使用真实 tenant id。
 - [ ] B4.4.2 UETR、instruction id、end-to-end id、transaction id 分开存储并建立作用域唯一性。
 - [ ] B4.4.3 payment payload 先经过 B6 registry/gateway，再生成 canonical payment；不得直接调用 `nextgen.standards`。
 - [ ] B4.4.4 authorization 必须调用 B2 `AuthorizationService`，校验 mandate/approval/payment hash 全字段，sandbox 自动 PASS 仅限 `/sim`。

@@ -51,6 +51,13 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.4.1 — true tenant binding in payment creation
+
+- 状态：DONE；完成时间：2026-07-27；commit：`2863a1a`（验证；实现已在 `cf09163`）
+- 修改文件：`backend/tests/production/test_payment_tenant_binding.py`
+- 证据：`ProductionPaymentService.create_payment()` 使用 authenticated principal 派生的真实 `tenant:{participant}`，不接受请求体 tenant；测试通过（1 passed）。
+- 执行者：Codex
+
 ### B4.3.1 — append-only payment facts
 
 - 状态：DONE；完成时间：2026-07-27；commit：`d6432d7`
