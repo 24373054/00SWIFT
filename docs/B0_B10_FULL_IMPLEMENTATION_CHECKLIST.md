@@ -472,15 +472,15 @@
 
 ## B4.2 CAS 与并发控制
 
-- [ ] B4.2.1 重写 `set_order_state()` 为真实 CAS。
+- [x] B4.2.1 重写 `set_order_state()` 为真实 CAS。
   - SQL：`UPDATE ... WHERE order_id=:id AND version=:expected`；rowcount != 1 返回 version conflict。
   - 禁止仅 `SELECT FOR UPDATE` 后可选检查从未传入的 `expected_version`。
 
-- [ ] B4.2.2 所有 command 必须传 aggregate expected version。
+- [x] B4.2.2 所有 command 必须传 aggregate expected version。
   - API 支持 `If-Match`/ETag 或 command version。
   - event envelope 带 aggregate version；旧事件不得覆盖新状态。
 
-- [ ] B4.2.3 新增 `test_payment_cas.py`。
+- [x] B4.2.3 新增 `test_payment_cas.py`。
   - 并发撤销/结算、重复 event、乱序 event、stale API update 均不得丢失更新。
 
 ## B4.3 Append-only facts 与 decision

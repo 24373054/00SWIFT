@@ -51,6 +51,27 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.2.1 — real payment CAS
+
+- 状态：DONE；完成时间：2026-07-27；commit：`504719d`
+- 修改文件：`backend/production/service.py`、`backend/tests/production/test_payment_cas.py`
+- 证据：`UPDATE ... WHERE order_id AND version`，rowcount 非 1 返回 version conflict；stale update 测试通过，保留 reservation finalize 在 CAS 成功后执行。
+
+### B4.2.2 — aggregate expected versions
+
+- 状态：DONE；完成时间：2026-07-27；commit：`30f2d71`
+- 修改文件：`backend/production/payment_aggregate.py`、`backend/production/worker.py`、`backend/tests/production/test_payment_command_versions.py`
+- 证据：command 方法和 worker transition helper 均传 expected version；每次成功 transition refresh projection；测试通过。
+
+### B4.2.3 — CAS/concurrency negative tests
+
+- 状态：DONE；完成时间：2026-07-27；commit：`0d9f737`
+- 修改文件：`backend/tests/production/test_payment_cas.py`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_payment_cas.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_payment_cas.py`
+- 测试结果：`2 passed`；stale version、duplicate、乱序 completion 均拒绝。
+- 外部证据：真实双 session PostgreSQL 并发仍需外部 fixture。
+- 执行者：Codex
+
 ### B4.1.1 — command-only payment aggregate
 
 - 状态：DONE；完成时间：2026-07-27；commit：`b0bb1e6`
