@@ -51,6 +51,35 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B4.6.1 — independent return aggregate
+
+- 状态：DONE；完成时间：2026-07-27；commit：`3e4d5c1`
+- 修改文件：`backend/production/return_service.py`、`backend/production/service.py`、`backend/production/worker.py`
+- 证据：ReturnPayment 独立状态机、独立 return UETR/sequence、原支付只通过 FK 关联，原事实不被修改。
+
+### B4.6.2 — atomic over-return control
+
+- 状态：DONE；完成时间：2026-07-27；commit：`3e4d5c1`
+- 证据：order 行锁 + SUM/sequence 原子检查；超额 return 被拒绝，partial returns 递增 sequence；2 tests passed。
+
+### B4.6.3 — return financial/message/evidence closure
+
+- 状态：`[EXT-BLOCKED]`
+- 已实现：return settlement leg、outbox message、evidence/ref fact 已生成。
+- 未解决风险：真实 ledger reversal/return journal 与 connector finality ACK 尚未配置，不能宣称完整账本闭环，保持未勾选。
+
+### B4.6.4 — return rejection/UNKNOWN/duplicate paths
+
+- 状态：DONE；完成时间：2026-07-27；commit：`dd2a512`
+- 测试文件：`backend/tests/production/test_payment_returns.py`
+- 测试结果：`2 passed`；覆盖 partial/multiple、over-return、UNKNOWN→CLOSED、非法重复终态。
+
+### B4.6.5 — payment returns regression suite
+
+- 状态：DONE；commit：`dd2a512`
+- `test_payment_returns.py` 已纳入 production tests，账本闭环缺口见 B4.6.3 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.5.1 — cancellation aggregate
 
 - 状态：DONE；完成时间：2026-07-27；commit：`55808de`

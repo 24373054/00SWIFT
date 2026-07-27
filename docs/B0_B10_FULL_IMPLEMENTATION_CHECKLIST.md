@@ -526,15 +526,15 @@
 
 ## B4.6 退回聚合
 
-- [ ] B4.6.1 新增 `backend/production/return_service.py`。
+- [x] B4.6.1 新增 `backend/production/return_service.py`。
   - ReturnPayment 独立状态机和 UETR；关联原支付但不修改原始事实。
 
-- [ ] B4.6.2 使用行锁/原子累计控制 over-return。
+- [x] B4.6.2 使用行锁/原子累计控制 over-return。
   - 并发两个 100% return 只能一个成功；金额按原结算/入账定义，处理费用和 FX 差异。
 
 - [ ] B4.6.3 return 必须生成资金/结算 leg、ledger reversal/return journal、message 和 evidence。
-- [ ] B4.6.4 处理 partial/multiple return、return rejection、UNKNOWN、重复 external response。
-- [ ] B4.6.5 新增 `test_payment_returns.py`，覆盖并发超额、部分退回、重复请求和账本闭环。
+- [x] B4.6.4 处理 partial/multiple return、return rejection、UNKNOWN、重复 external response。
+- [x] B4.6.5 新增 `test_payment_returns.py`，覆盖并发超额、部分退回、重复请求和账本闭环。
 
 ## B4.7 Timeout、UNKNOWN 与补偿
 
