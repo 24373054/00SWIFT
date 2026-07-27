@@ -77,13 +77,13 @@ class ProductionWorker:
             try:
                 if not self._register_inbox(event):
                     fresh = self.db.query(ProductionOutboxEvent).filter_by(id=event.id).one()
-                    outbox.complete(fresh)
+                    outbox.complete(fresh, owner=self.owner)
                     self.db.commit()
                     processed += 1
                     continue
                 self._handle(event)
                 fresh = self.db.query(ProductionOutboxEvent).filter_by(id=event.id).one()
-                outbox.complete(fresh)
+                outbox.complete(fresh, owner=self.owner)
                 self.db.commit()
                 processed += 1
             except Exception as exc:  # noqa: BLE001 - persisted to DLQ for operations

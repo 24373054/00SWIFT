@@ -227,7 +227,7 @@ class ProductionOutboxService:
         now = utcnow()
         self.db.query(ProductionOutboxEvent).filter(
             ProductionOutboxEvent.status == "PROCESSING",
-            ProductionOutboxEvent.lease_until < now,
+            (ProductionOutboxEvent.lease_until.is_(None) | (ProductionOutboxEvent.lease_until < now)),
         ).update(
             {"status": "PENDING", "lease_owner": None, "lease_until": None},
             synchronize_session=False,
@@ -248,13 +248,24 @@ class ProductionOutboxService:
             row.attempts += 1
             row.lease_owner = owner
             row.lease_until = now + dt.timedelta(seconds=lease_seconds)
+            row.lease_heartbeat_at = now
         self.db.flush()
         return rows
 
-    def complete(self, event: ProductionOutboxEvent) -> None:
+    def complete(self, event: ProductionOutboxEvent, *, owner: str | None = None) -> None:
+        if event.status == "PROCESSING" and (event.lease_owner is None or (owner is not None and event.lease_owner != owner)):
+            raise ProductionConflict("outbox lease fencing rejected completion")
         event.status = "PUBLISHED"
         event.lease_owner = None
         event.lease_until = None
+        self.db.flush()
+
+    def heartbeat(self, event: ProductionOutboxEvent, *, owner: str, lease_seconds: int = 60) -> None:
+        if event.status != "PROCESSING" or event.lease_owner != owner:
+            raise ProductionConflict("outbox lease fencing rejected heartbeat")
+        now = utcnow()
+        event.lease_until = now + dt.timedelta(seconds=lease_seconds)
+        event.lease_heartbeat_at = now
         self.db.flush()
 
     def fail(self, event: ProductionOutboxEvent, error: str, retry_seconds: int = 10) -> None:
