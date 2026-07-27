@@ -18,6 +18,7 @@ from config import get_settings
 
 from .authorization_service import AuthorizationError, AuthorizationService
 from .cancellation_service import CancellationService
+from .completion_policy import CompletionPolicyEvaluator
 from .compliance import ProductionComplianceService
 from .connectors import (
     connector_registry,
@@ -43,6 +44,7 @@ from .models import (
 from .return_service import ReturnService
 from .runtime import (
     ProductionAuditService,
+    ProductionConflict,
     ProductionEvidenceService,
     ProductionOutboxService,
     canonical_json,
@@ -398,6 +400,10 @@ class ProductionWorker:
         )
         self.db.add(recon)
         self.payments.append_fact(order.order_id, "RECONCILIATION", "MATCHED", recon.run_id, {})
+        policy = CompletionPolicyEvaluator(self.db).evaluate(order)
+        policy_evidence = ProductionEvidenceService(self.db).record("completion.policy", order.order_id, policy).evidence_id
+        if not policy["allowed"]:
+            raise ProductionConflict(f"completion policy rejected operational close: {policy_evidence}")
         self._transition(order, "OPERATIONALLY_CLOSED", "COMPLETED")
         ProductionAuditService(self.db).append("payment.completed", order.order_id, {"uetr": order.uetr}, "production-worker")
 
