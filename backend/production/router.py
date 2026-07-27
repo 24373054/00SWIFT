@@ -17,7 +17,7 @@ from .connectors import connector_capabilities
 from .integrity import require_request_integrity
 from .key_operations import KeyOperationError, KeyOperationService
 from .key_provider import SandboxKeyProvider
-from .ledger import ProductionLedgerService, serialize_account
+from .ledger_service import ProductionLedgerService, serialize_account
 from .models import (
     ProductionApproval,
     ProductionEntitlement,
