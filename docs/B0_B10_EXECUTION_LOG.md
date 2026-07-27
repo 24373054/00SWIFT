@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.3.4 — publish confirmation and deduplication
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`72a8771`
+- 修改文件：`backend/production/runtime.py`、`backend/tests/production/test_outbox_publish_dedup.py`
+- 新增实现：publish completion 持久化 published_at、broker offset/metadata；已 PUBLISHED 事件重复 completion 为幂等 no-op，event_id/aggregate unique 仍由数据库约束。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_outbox_publish_dedup.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/runtime.py backend/tests/production/test_outbox_publish_dedup.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 外部证据：真实 broker confirm 由 B3.4 外部 adapter Gate 验收。
+- 执行者：Codex
+
 ### B3.3.3 — lease heartbeat and ownership fencing
 
 - 状态：DONE

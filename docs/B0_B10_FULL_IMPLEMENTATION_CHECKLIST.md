@@ -396,7 +396,7 @@
 - [x] B3.3.3 增加 lease heartbeat 与 worker ownership fencing。
   - 老 worker lease 失效后不得完成新 owner 已接管的事件。
 
-- [ ] B3.3.4 增加 published/outcome 去重。
+- [x] B3.3.4 增加 published/outcome 去重。
   - broker publish confirm 后记录 broker metadata；崩溃重启通过 event_id 保证 consumer 幂等。
 
 ## B3.4 Broker 与 dispatcher
