@@ -7,6 +7,8 @@ without rewriting history.
 
 from __future__ import annotations
 
+import os
+
 import sqlalchemy as sa
 
 from alembic import op
@@ -54,8 +56,46 @@ def _assert_no_orphans(table: str, column: str, parent: str, parent_column: str)
         raise RuntimeError(f"Cannot add FK {table}.{column}: {orphan} orphan rows")
 
 
+def _backfill_explicit_sandbox_identity_parents() -> None:
+    """Preserve legacy sandbox orders without weakening non-sandbox FK gates."""
+    if os.getenv("SWIFT_ENV") != "sandbox":
+        return
+    bind = op.get_bind()
+    bind.execute(
+        sa.text(
+            """
+            INSERT INTO prod_tenants
+                (tenant_id, name, jurisdiction, data_region, status, rulebook_version, created_at, updated_at)
+            SELECT DISTINCT payment.tenant_id, payment.tenant_id, 'SANDBOX', 'sandbox-migration',
+                'ACTIVE', 'sandbox-migration-v1', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            FROM prod_payment_orders payment
+            LEFT JOIN prod_tenants tenant ON tenant.tenant_id = payment.tenant_id
+            WHERE payment.tenant_id IS NOT NULL AND tenant.tenant_id IS NULL
+            """
+        )
+    )
+    bind.execute(
+        sa.text(
+            """
+            INSERT INTO prod_participants
+                (participant_id, name, participant_type, jurisdiction, status, rulebook_version,
+                 created_at, updated_at, tenant_id)
+            SELECT DISTINCT payment.initiator_participant, payment.initiator_participant, 'SANDBOX',
+                'SANDBOX', 'ACTIVE', 'sandbox-migration-v1', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                payment.tenant_id
+            FROM prod_payment_orders payment
+            LEFT JOIN prod_participants participant
+                ON participant.participant_id = payment.initiator_participant
+            WHERE payment.initiator_participant IS NOT NULL AND participant.participant_id IS NULL
+            """
+        )
+    )
+
+
 def upgrade() -> None:
     tables = _tables()
+    if {"prod_payment_orders", "prod_tenants", "prod_participants"} <= tables:
+        _backfill_explicit_sandbox_identity_parents()
     for table, column, parent, parent_column, _nullable in RELATIONS:
         if not {table, parent} <= tables:
             continue

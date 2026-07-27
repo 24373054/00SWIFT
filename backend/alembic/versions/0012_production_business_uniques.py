@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 
 import sqlalchemy as sa
@@ -42,12 +43,97 @@ def _backfill_sequences(bind) -> None:
         bind.execute(sa.text("UPDATE prod_journals SET gl_batch_reference = journal_id WHERE gl_batch_reference IS NULL OR gl_batch_reference = ''"))
 
 
+def _repair_sandbox_instruction_duplicates(bind) -> None:
+    """Preserve duplicate demo rows while assigning a unique sandbox alias."""
+
+    if os.getenv("SWIFT_ENV", "").strip().lower() != "sandbox":
+        return
+    groups = bind.execute(
+        sa.text(
+            """
+            SELECT initiator_participant, instruction_id
+            FROM prod_payment_orders
+            GROUP BY initiator_participant, instruction_id
+            HAVING COUNT(*) > 1
+            """
+        )
+    ).fetchall()
+    repaired = 0
+    for group in groups:
+        rows = bind.execute(
+            sa.text(
+                """
+                SELECT id, order_id, instruction_id
+                FROM prod_payment_orders
+                WHERE initiator_participant=:participant
+                  AND instruction_id=:instruction_id
+                ORDER BY id
+                """
+            ),
+            {
+                "participant": group.initiator_participant,
+                "instruction_id": group.instruction_id,
+            },
+        ).fetchall()
+        for row in rows[1:]:
+            suffix = f"~sandbox-{row.order_id}"
+            candidate = f"{row.instruction_id[: max(0, 200 - len(suffix))]}{suffix}"
+            collision = bind.execute(
+                sa.text(
+                    """
+                    SELECT COUNT(*)
+                    FROM prod_payment_orders
+                    WHERE initiator_participant=:participant
+                      AND instruction_id=:candidate
+                      AND id<>:id
+                    """
+                ),
+                {
+                    "participant": group.initiator_participant,
+                    "candidate": candidate,
+                    "id": row.id,
+                },
+            ).scalar_one()
+            if collision:
+                fallback_suffix = f"-{row.id}"
+                candidate = f"sandbox-{row.order_id}"[: 200 - len(fallback_suffix)] + fallback_suffix
+            bind.execute(
+                sa.text(
+                    "UPDATE prod_payment_orders SET instruction_id=:candidate WHERE id=:id"
+                ),
+                {"candidate": candidate, "id": row.id},
+            )
+            repaired += 1
+    if repaired:
+        op.get_context().config.print_stdout(
+            f"Repaired {repaired} duplicate sandbox payment instruction id(s); "
+            "pilot/live migrations remain fail-closed"
+        )
+
+
+def _assert_unique(bind, table: str, columns: tuple[str, ...]) -> None:
+    column_list = ", ".join(columns)
+    duplicates = bind.execute(
+        sa.text(
+            f"SELECT COUNT(*) FROM ("
+            f"SELECT 1 FROM {table} GROUP BY {column_list} HAVING COUNT(*) > 1"
+            f") AS duplicate_groups"
+        )
+    ).scalar_one()
+    if duplicates:
+        raise RuntimeError(
+            f"Cannot add business unique constraint on {table}({column_list}): "
+            f"{duplicates} duplicate group(s)"
+        )
+
+
 def upgrade() -> None:
     bind = op.get_bind()
     _add_column(bind, "prod_return_payments", sa.Column("return_sequence", sa.Integer(), nullable=True))
     _add_column(bind, "prod_outbox_events", sa.Column("aggregate_sequence", sa.Integer(), nullable=True))
     _add_column(bind, "prod_journals", sa.Column("gl_batch_reference", sa.String(160), nullable=True))
     _backfill_sequences(bind)
+    _repair_sandbox_instruction_duplicates(bind)
 
     unique_specs = (
         ("prod_payment_orders", "uq_prod_instruction_participant", ("initiator_participant", "instruction_id")),
@@ -60,6 +146,7 @@ def upgrade() -> None:
     for table, name, columns in unique_specs:
         if table not in sa.inspect(bind).get_table_names():
             continue
+        _assert_unique(bind, table, columns)
         with op.batch_alter_table(table, recreate="always") as batch:
             batch.create_unique_constraint(name, list(columns))
 
