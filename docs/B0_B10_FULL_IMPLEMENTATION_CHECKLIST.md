@@ -116,7 +116,7 @@
   - 新增：`payment_router.py`、`identity_router.py`、`operations_router.py`、`ledger_router.py`、`standards_router.py`、`reporting_router.py`。
   - 目标：避免单文件中遗漏安全依赖；所有 mutation 使用统一 dependency bundle。
 
-- [ ] B0.3.3 新增 `backend/production/dependencies.py`。
+- [x] B0.3.3 新增 `backend/production/dependencies.py`。
   - 实现 `require_production_read`、`require_production_write`、`require_operator_action`、`require_admin_action`。
   - 将身份、scope、tenant、integrity、idempotency、审计上下文组合为统一依赖。
 
