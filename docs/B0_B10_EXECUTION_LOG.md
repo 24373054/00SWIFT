@@ -422,6 +422,17 @@
 - 测试结果：`1 passed`；ruff 全部通过。
 - 执行者：Codex
 
+### B5.6.2 — GL batch scope/totals/hash
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`0bb468a`
+- 修改文件：`backend/production/models.py`、`backend/production/gl_bridge.py`
+- 新增/修改实现：ProductionGlBatch 保存 journal_scope、mapping_version、debit_total_minor、credit_total_minor、payload_hash、state、receipt_hash/evidence；persist_batch 在入库前强制 totals 平衡。
+- 测试结果：GL bridge test `1 passed`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
