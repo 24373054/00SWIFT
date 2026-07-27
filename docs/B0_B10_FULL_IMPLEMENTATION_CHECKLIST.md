@@ -263,7 +263,7 @@
   - 实现 Tenant/Participant/ServiceIdentity/Certificate 生命周期：PENDING → ACTIVE → SUSPENDED/REVOKED。
   - 删除业务请求中自动创建 participant/tenant 的行为；bootstrap 只能走受控管理流程。
 
-- [ ] B2.1.2 新增 `backend/production/identity_router.py`。
+- [x] B2.1.2 新增 `backend/production/identity_router.py`。
   - API：tenant、participant、service identity、certificate 创建/查询/更新/暂停/吊销。
   - 所有 ACTIVE/REVOKE 操作走 maker-checker，不允许创建接口直接 ACTIVE。
 

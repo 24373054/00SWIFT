@@ -1169,3 +1169,23 @@
 - 外部证据：无。
 - 未解决风险：现有 identity_router 仍是旧路由注册，需 B2.1.2 完成完整 CRUD/状态 API 和审计证据。
 - 执行者：Codex
+
+### B2.1.2 — identity lifecycle API
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`43d9dcd`
+- 修改文件：`backend/production/identity_api.py`、`backend/production/identity_router.py`、`backend/tests/production/test_identity_router.py`
+- 新增 API：tenant/participant/service identity/certificate 创建、查询、transition；create 全部固定 PENDING；ACTIVE/REVOKED 通过 transition 且要求 distinct maker/checker。
+- 新增/修改测试：路由表覆盖 tenant、participant transition、service identity transition、certificate transition。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_identity_router.py backend/tests/production/test_identity_service.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/identity_api.py backend/production/identity_router.py backend/tests/production/test_identity_router.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 正常路径证据：API 只调用 `IdentityService`，事务提交由统一 `_run` 控制；查询不存在资源返回 404。
+- 负向路径证据：API 无 create ACTIVE 分支；transition 缺 distinct checker 或非法状态由 service 拒绝。
+- 并发/重复/超时/恢复证据：数据库 unique constraint 保护重复 identity；transition 失败 rollback。
+- OpenAPI/AsyncAPI 影响：新增 `/production/v1/tenants`、`/participants`、`/service-identities`、`/certificates` 生命周期端点。
+- Metrics/alerts/runbook 影响：身份变更端点需接 audit/evidence（后续 B8 完善）。
+- 外部证据：无。
+- 未解决风险：checker 认证主体将在 B2.5 重写审批 API 时从请求字段切换为 authenticated principal。
+- 执行者：Codex
