@@ -135,7 +135,7 @@
 
 ## B0.4 密钥、HSM 与信任域
 
-- [ ] B0.4.1 新增 `backend/production/key_provider.py`。
+- [x] B0.4.1 新增 `backend/production/key_provider.py`。
   - Protocol：sign、verify、get_public_key、rotate、revoke status；私钥 API 不允许 export。
   - sandbox provider 与 qualified HSM provider 分开注册。
 
