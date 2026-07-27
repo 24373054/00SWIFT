@@ -142,7 +142,7 @@
 - [x] B0.4.2 在 `backend/config.py` 增加 HSM/KMS provider、trust domain、key label、OCSP/CRL、rotation 配置。
   - pilot/live 禁止 file/private-key provider。
 
-- [ ] B0.4.3 新增密钥操作审计和双控接口。
+- [x] B0.4.3 新增密钥操作审计和双控接口。
   - 修改身份/操作路由与模型；轮换、吊销、信任锚变更必须走 B2 审批流程。
 
 - [ ] B0.4.4 `[EXT-BLOCKED]` 提供真实 HSM、CA/RA、OCSP/CRL、密钥仪式和信任策略。
