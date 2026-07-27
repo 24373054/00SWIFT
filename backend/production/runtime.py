@@ -261,12 +261,17 @@ class ProductionOutboxService:
         self.db.flush()
         return rows
 
-    def complete(self, event: ProductionOutboxEvent, *, owner: str | None = None) -> None:
+    def complete(self, event: ProductionOutboxEvent, *, owner: str | None = None, broker_offset: str | None = None, broker_metadata: dict[str, Any] | None = None) -> None:
+        if event.status == "PUBLISHED":
+            return
         if event.status == "PROCESSING" and (event.lease_owner is None or (owner is not None and event.lease_owner != owner)):
             raise ProductionConflict("outbox lease fencing rejected completion")
         event.status = "PUBLISHED"
         event.lease_owner = None
         event.lease_until = None
+        event.published_at = utcnow()
+        event.broker_offset = broker_offset
+        event.broker_metadata = canonical_json(broker_metadata or {})
         self.db.flush()
 
     def heartbeat(self, event: ProductionOutboxEvent, *, owner: str, lease_seconds: int = 60) -> None:
