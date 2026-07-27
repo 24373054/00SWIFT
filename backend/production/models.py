@@ -636,6 +636,50 @@ class ProductionKeyOperationAudit(Base):
     completed_at = Column(DateTime, nullable=True)
 
 
+class ProductionCorridorAdmission(Base):
+    __tablename__ = "prod_corridor_admissions"
+    id = Column(Integer, primary_key=True)
+    admission_id = Column(String(100), nullable=False, unique=True, index=True)
+    environment = Column(String(20), nullable=False, index=True)
+    corridor = Column(String(40), nullable=False, index=True)
+    applicable_subjects = Column(Text, nullable=False, default="[]")
+    scenarios = Column(Text, nullable=False, default="[]")
+    currencies = Column(Text, nullable=False, default="[]")
+    min_amount_minor = Column(Integer, nullable=False, default=1)
+    max_amount_minor = Column(Integer, nullable=False)
+    valid_from = Column(DateTime, nullable=False)
+    valid_to = Column(DateTime, nullable=False)
+    funding_flow_version = Column(String(80), nullable=False)
+    finality_definition = Column(String(240), nullable=False)
+    data_flow_version = Column(String(80), nullable=False)
+    rulebook_version = Column(String(80), nullable=False)
+    signed_roles = Column(Text, nullable=False, default="[]")
+    status = Column(String(20), nullable=False, default="PENDING")
+    simulation_only = Column(Boolean, nullable=False, default=True)
+    evidence_ref = Column(String(120), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    __table_args__ = (
+        UniqueConstraint("environment", "corridor", "rulebook_version", name="uq_prod_corridor_environment_version"),
+        CheckConstraint("min_amount_minor > 0 AND max_amount_minor >= min_amount_minor", name="ck_prod_corridor_amount_window"),
+        CheckConstraint("status IN ('PENDING', 'ACTIVE', 'EXPIRED', 'REVOKED')", name="ck_prod_corridor_status"),
+    )
+
+
+class ProductionControlAttestation(Base):
+    __tablename__ = "prod_control_attestations"
+    id = Column(Integer, primary_key=True)
+    attestation_id = Column(String(100), nullable=False, unique=True, index=True)
+    admission_id = Column(String(100), nullable=False, index=True)
+    signer_role = Column(String(100), nullable=False)
+    signer_subject = Column(String(160), nullable=False)
+    statement_digest = Column(String(64), nullable=False)
+    valid_from = Column(DateTime, nullable=False)
+    valid_to = Column(DateTime, nullable=False)
+    status = Column(String(20), nullable=False, default="PENDING")
+    evidence_ref = Column(String(120), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+
+
 class ProductionOutboxEvent(Base):
     __tablename__ = "prod_outbox_events"
     id = Column(Integer, primary_key=True)
