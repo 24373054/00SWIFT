@@ -466,6 +466,25 @@
 - 未解决风险：trust-anchor 变更仍需 qualified 外部审批和 B2 流程。
 - 执行者：Codex
 
+### B0.4.4 — 真实 HSM/CA/OCSP/CRL 与密钥仪式
+
+- 状态：EXT-BLOCKED
+- 完成时间：2026-07-27
+- commit：无（外部依赖未提供；代码边界见 `8780e4e`、`4028f71`、`a069a1e`）
+- 修改文件：无新增代码；保持 qualified provider 未注册即 fail-closed。
+- 新增迁移：无
+- 新增/修改测试：`test_key_provider.py` 已验证 qualified callback 缺失时拒绝；`test_config_qualification_gate.py` 已验证 file/private provider 禁止。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_key_provider.py backend/tests/production/test_config_qualification_gate.py -q`
+- 测试结果：通过；外部资格本身不可在本地伪造。
+- 正常路径证据：无；不把 sandbox Ed25519 当作 HSM/CA 资格。
+- 负向路径证据：无 qualified provider、无 trust-domain/key-label、file provider 均保持阻断。
+- 并发/重复/超时/恢复证据：待厂商/机构提供轮换演练和密钥仪式记录。
+- OpenAPI/AsyncAPI 影响：pilot/live `/key-operations` 保持 503。
+- Metrics/alerts/runbook 影响：必须告警 `[EXT-BLOCKED]`，禁止进入 pilot/live。
+- 外部证据：待提供厂商/机构 attestation、不可导出证明、CA/RA、OCSP/CRL、轮换演练、生产/测试信任域隔离证据。
+- 未解决风险：P0 外部资格缺失，B0 Gate G5 不得通过。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
