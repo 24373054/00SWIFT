@@ -346,7 +346,7 @@
 ## B2 Gate
 
 - [x] B2.G1 所有现有身份/账户/证书/mandate/rulebook 模型都有服务、API、状态机和测试，不再是“只建表”。
-- [ ] B2.G2 任一 credential 只能访问其 tenant/participant/account。
+- [x] B2.G2 任一 credential 只能访问其 tenant/participant/account。
 - [ ] B2.G3 单一调用者无法完成 maker+checker。
 - [ ] B2.G4 并发额度不超限。
 - [ ] B2.G5 rulebook 未接受、证书吊销、mandate 不匹配均 fail-closed。

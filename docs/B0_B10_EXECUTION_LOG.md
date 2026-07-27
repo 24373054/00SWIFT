@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B2.G2 — credential tenant/participant/account scope isolation
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit（实现）：`be09db4`, `cf09163`, `34adef1`, `43d9dcd`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_tenant_filters.py backend/tests/production/test_route_authorization_matrix.py backend/tests/production/test_identity_header_boundary.py backend/tests/production/test_account_service.py backend/tests/production/test_service_identity_binding.py -q`
+- 测试结果：`8 passed`（无失败；仅已记录的 Starlette deprecation warning）。
+- 正常路径证据：principal tenant_id 从 participant 绑定派生；账户授权同时检查 tenant、participant、ACTIVE ownership；所有生产查询带 tenant/participant 过滤。
+- 负向路径证据：跨 tenant payment 读取被拒绝；pilot/live role/subject/participant header 被拒绝；无绑定证书/服务身份被拒绝；管理员不会绕过租户过滤。
+- 外部证据：无；真实 PostgreSQL RLS 组合由 B1.G3 `[EXT-BLOCKED]` 管理，不影响服务层 Gate。
+- 执行者：Codex
+
 ### B2.G1 — identity/account/certificate/mandate/rulebook lifecycle coverage
 
 - 状态：DONE
