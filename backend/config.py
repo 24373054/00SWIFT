@@ -163,6 +163,8 @@ class Settings(BaseSettings):
         self._validate_production_gate()
 
     def _validate_production_gate(self) -> None:
+        if not self.db_url.lower().startswith(("postgresql://", "postgresql+")):
+            raise RuntimeError("Pilot/live requires PostgreSQL; SQLite is permitted only in sandbox/test")
         if self.production_key_provider != "qualified" or self.production_hsm_provider != "qualified":
             raise RuntimeError("Pilot/live requires qualified HSM/KMS key provider; file/private-key providers are forbidden")
         if not self.production_trust_domain or not self.production_key_label:
