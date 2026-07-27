@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.9 — 外部依赖阻塞标记
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg '\[EXT-BLOCKED\]' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；外部 HSM、标准工件、connector、法律/监管签字均有明确标记位置
+- 验收证据：B0.4.4、B6.1.5、B7.3.6、B8.5.6、B8.6.5、B10.4.5 及最终签字表
+- 未解决风险：外部证据尚未提供，不能进入 pilot/live
+- 执行者：Codex
+
 ### R0.8 — Fail-closed 不等于功能完成
 
 - 状态：DONE
