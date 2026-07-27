@@ -281,6 +281,8 @@ class ProductionPaymentService:
             order_id=f"pay_{uuid.uuid4().hex}",
             uetr=uetr,
             instruction_id=instruction_id,
+            end_to_end_id=str(payload.get("end_to_end_id") or f"E2E-{uuid.uuid4().hex}"),
+            transaction_id=str(payload.get("transaction_id") or f"TX-{uuid.uuid4().hex}"),
             tenant_id=principal.tenant_id,
             initiator_participant=principal.participant_id,
             corridor=corridor,

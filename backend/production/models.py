@@ -394,6 +394,8 @@ class ProductionPaymentOrder(Base):
     order_id = Column(String(80), nullable=False, unique=True, index=True)
     uetr = Column(String(36), nullable=False, unique=True, index=True)
     instruction_id = Column(String(200), nullable=False, index=True)
+    end_to_end_id = Column(String(200), nullable=False, index=True)
+    transaction_id = Column(String(200), nullable=False, index=True)
     tenant_id = Column(String(80), ForeignKey("prod_tenants.tenant_id", ondelete="RESTRICT"), nullable=False, index=True)
     initiator_participant = Column(String(80), ForeignKey("prod_participants.participant_id", ondelete="RESTRICT"), nullable=False, index=True)
     corridor = Column(String(40), nullable=False)
@@ -426,6 +428,8 @@ class ProductionPaymentOrder(Base):
     __table_args__ = (
         CheckConstraint("amount_minor > 0", name="ck_prod_payment_amount"),
         UniqueConstraint("initiator_participant", "instruction_id", name="uq_prod_instruction_participant"),
+        UniqueConstraint("tenant_id", "end_to_end_id", name="uq_prod_end_to_end_tenant"),
+        UniqueConstraint("tenant_id", "transaction_id", name="uq_prod_transaction_tenant"),
     )
     facts = relationship("ProductionPaymentFact", primaryjoin="ProductionPaymentOrder.order_id == foreign(ProductionPaymentFact.order_id)", viewonly=True)
 
