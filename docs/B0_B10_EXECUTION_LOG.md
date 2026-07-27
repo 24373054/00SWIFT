@@ -463,6 +463,16 @@
 - 外部依赖：当前 `.venv` 未安装 Hypothesis（`ModuleNotFoundError: hypothesis`），无法运行清单要求的随机属性测试；现有确定性 balance/reversal tests 已保留，保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B5.7.2 — concurrent hold tests
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`68b39e1`
+- 代码侧状态：HoldService 使用 SQL row lock/version CAS；尚未添加真实 PostgreSQL 多会话并发测试。
+- 外部依赖：生产并发验收需要 PostgreSQL/锁隔离环境，当前 sandbox SQLite 不提供等价证据，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
