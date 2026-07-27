@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.5.1 — inbox/domain/outbox transaction
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`3bbc009`
+- 修改文件：`backend/tests/production/test_worker_transaction.py`
+- 验收实现：worker 在同一 Session transaction 内写 inbox receipt、执行 handler 领域变更并产生 follow-up outbox；事务回滚同时撤销 receipt 和新事件，避免半提交。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_worker_transaction.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_worker_transaction.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 外部证据：无。
+- 执行者：Codex
+
 ### B3.4.1 — broker adapter
 
 - 状态：DONE

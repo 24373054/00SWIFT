@@ -414,7 +414,7 @@
 
 ## B3.5 Inbox、外部副作用与 crash window
 
-- [ ] B3.5.1 Inbox receipt、领域变更和新 outbox 必须在同一数据库事务。
+- [x] B3.5.1 Inbox receipt、领域变更和新 outbox 必须在同一数据库事务。
 - [ ] B3.5.2 外部 connector 调用必须使用稳定 idempotency reference。
   - worker 崩溃后先调用 connector query-by-client-reference，再决定是否重发。
 
