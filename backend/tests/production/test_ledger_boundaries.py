@@ -20,3 +20,16 @@ def test_account_type_controls_normal_balance_direction(db):
     service.create_account("asset", "LE-CN", "SUBLEDGER", "CNY", "asset", opening_balance_minor=100)
     service.create_account("liability", "LE-CN", "SUBLEDGER", "CNY", "liability", opening_balance_minor=100)
     service.post_journal(journal_id="j-1", legal_entity="LE-CN", book="SUBLEDGER", reason_code="funding", entries=[{"account_id": "asset", "direction": "CREDIT", "currency": "CNY", "amount_minor": 10}, {"account_id": "liability", "direction": "DEBIT", "currency": "CNY", "amount_minor": 10}])
+
+
+def test_journal_lifecycle_and_posted_immutability(db):
+    service = ProductionLedgerService(db)
+    service.create_account("a", "LE-CN", "SUBLEDGER", "CNY", "asset", opening_balance_minor=100)
+    service.create_account("l", "LE-CN", "SUBLEDGER", "CNY", "liability", opening_balance_minor=100)
+    draft = service.create_journal_draft(journal_id="j-life", legal_entity="LE-CN", book="SUBLEDGER", reason_code="funding", entries=[{"account_id": "a", "direction": "CREDIT", "currency": "CNY", "amount_minor": 10}, {"account_id": "l", "direction": "DEBIT", "currency": "CNY", "amount_minor": 10}])
+    assert draft.state == "DRAFT"
+    assert service.validate_journal("j-life").state == "VALIDATED"
+    posted = service.post_journal(journal_id="j-post", legal_entity="LE-CN", book="SUBLEDGER", reason_code="funding", entries=[{"account_id": "a", "direction": "CREDIT", "currency": "CNY", "amount_minor": 10}, {"account_id": "l", "direction": "DEBIT", "currency": "CNY", "amount_minor": 10}])
+    posted.reason_code = "tampered"
+    with pytest.raises(ValueError, match="immutable"):
+        db.flush()

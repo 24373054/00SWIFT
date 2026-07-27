@@ -134,12 +134,46 @@ class ProductionLedgerService:
             business_date=dt.date.today().isoformat(),
             reason_code=reason_code,
             payload_hash=digest(entries),
+            gl_batch_reference=journal_id,
         )
         self.db.add(journal)
         for item in entries:
             self.db.add(ProductionJournalEntry(entry_id=f"je_{uuid.uuid4().hex}", journal_id=journal_id, **item))
         self.db.flush()
         return journal
+
+    def create_journal_draft(self, *, journal_id: str, legal_entity: str, book: str, reason_code: str, entries: list[dict[str, Any]], order_id: str | None = None) -> ProductionJournal:
+        if self.db.query(ProductionJournal).filter_by(journal_id=journal_id).first():
+            raise ProductionConflict("Journal id already exists")
+        self._validate_entries(entries)
+        journal = ProductionJournal(journal_id=journal_id, order_id=order_id, legal_entity=legal_entity, book=book, business_date=dt.date.today().isoformat(), reason_code=reason_code, payload_hash=digest(entries), gl_batch_reference=journal_id, state="DRAFT")
+        self.db.add(journal)
+        for item in entries:
+            self.db.add(ProductionJournalEntry(entry_id=f"je_{uuid.uuid4().hex}", journal_id=journal_id, **item))
+        self.db.flush()
+        return journal
+
+    def validate_journal(self, journal_id: str) -> ProductionJournal:
+        journal = self.db.query(ProductionJournal).filter_by(journal_id=journal_id).with_for_update().one_or_none()
+        if journal is None or journal.state not in {"DRAFT", "VALIDATED"}:
+            raise ProductionConflict("Journal is not validateable")
+        entries = self.db.query(ProductionJournalEntry).filter_by(journal_id=journal_id).all()
+        self._validate_entries([{"account_id": item.account_id, "direction": item.direction, "currency": item.currency, "amount_minor": item.amount_minor} for item in entries])
+        journal.state = "VALIDATED"
+        self.db.flush()
+        return journal
+
+    @staticmethod
+    def _validate_entries(entries: list[dict[str, Any]]) -> None:
+        if len(entries) < 2:
+            raise ProductionConflict("A journal requires at least two entries")
+        currencies = {entry.get("currency") for entry in entries}
+        if len(currencies) != 1:
+            raise ProductionConflict("A journal cannot mix currencies")
+        debit = sum(int(entry["amount_minor"]) for entry in entries if entry.get("direction") == "DEBIT")
+        credit = sum(int(entry["amount_minor"]) for entry in entries if entry.get("direction") == "CREDIT")
+        if debit <= 0 or debit != credit:
+            raise ProductionConflict("Journal is not balanced")
 
     def trial_balance(self, currency: str | None = None) -> dict[str, Any]:
         query = self.db.query(ProductionLedgerAccount).filter_by(active=True)

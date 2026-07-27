@@ -879,6 +879,26 @@ class ProductionJournalEntry(Base):
     )
 
 
+@event.listens_for(ProductionJournal, "before_update")
+def _posted_journal_immutable(_mapper, _connection, target) -> None:
+    if target.state == "POSTED":
+        raise ValueError("posted journals are immutable; create a reversal")
+
+
+@event.listens_for(ProductionJournal, "before_delete")
+def _posted_journal_delete_block(_mapper, _connection, target) -> None:
+    if target.state == "POSTED":
+        raise ValueError("posted journals are immutable; create a reversal")
+
+
+@event.listens_for(ProductionJournalEntry, "before_update")
+@event.listens_for(ProductionJournalEntry, "before_delete")
+def _posted_entry_immutable(_mapper, connection, target) -> None:
+    state = connection.exec_driver_sql("SELECT state FROM prod_journals WHERE journal_id = ?", (target.journal_id,)).scalar()
+    if state == "POSTED":
+        raise ValueError("posted journal entries are immutable; create a reversal")
+
+
 class ProductionIdempotencyKey(Base):
     __tablename__ = "prod_idempotency_keys"
     id = Column(Integer, primary_key=True)
