@@ -284,6 +284,18 @@
 - 测试结果：`1 passed`。
 - 执行者：Codex
 
+### B5.3.2 — locked hold reserve/release/consume
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`1c91e49`
+- 修改文件：`backend/production/funding_service.py`、`backend/tests/production/test_hold_service.py`
+- 新增/修改实现：创建 hold 对 account 行加锁并检查 posted projection-reserved available；transition 使用 expected_version CAS，终态变更在同一事务锁定 account 并释放 reserved amount。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_hold_service.py -q`
+- 测试结果：`1 passed`；stale version 被拒绝。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

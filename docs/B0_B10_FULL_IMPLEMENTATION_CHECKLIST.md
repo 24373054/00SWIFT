@@ -612,7 +612,7 @@
   - 状态：REQUESTED/HELD/CONSUMED/RELEASED/EXPIRED/UNKNOWN。
   - account、amount、currency、expiry、purpose、payment、external reference。
 
-- [ ] B5.3.2 reserve/release/consume 使用行锁和 CAS。
+- [x] B5.3.2 reserve/release/consume 使用行锁和 CAS。
   - `available = posted balance - active holds`，同一事务内检查和新增 hold。
 
 - [ ] B5.3.3 所有失败/撤销路径必须释放 hold；所有完成路径必须 consume，不得遗留 RESERVED。
