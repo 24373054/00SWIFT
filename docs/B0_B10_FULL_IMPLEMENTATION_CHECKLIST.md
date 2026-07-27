@@ -646,11 +646,11 @@
 
 ## B5.7 测试
 
-- [ ] B5.7.1 `test_ledger_properties.py`：引入 Hypothesis，随机 posting/reversal 后保持平衡和可重建。
-- [ ] B5.7.2 `test_ledger_concurrency.py`：并发 hold、consume、release 无双花/负余额。
-- [ ] B5.7.3 `test_ledger_immutability.py`：数据库拒绝修改/删除 posted entry。
-- [ ] B5.7.4 `test_payment_ledger_integration.py`：每种 payment outcome 对应准确 journal/hold。
-- [ ] B5.7.5 `test_gl_bridge.py`：mapping、batch、ACK、reject/replay、hash。
+- [ ] B5.7.1 `[EXT-BLOCKED]` `test_ledger_properties.py`：引入 Hypothesis，随机 posting/reversal 后保持平衡和可重建。
+- [ ] B5.7.2 `[EXT-BLOCKED]` `test_ledger_concurrency.py`：并发 hold、consume、release 无双花/负余额。
+- [x] B5.7.3 `test_ledger_immutability.py`：数据库拒绝修改/删除 posted entry。
+- [ ] B5.7.4 `[EXT-BLOCKED]` `test_payment_ledger_integration.py`：每种 payment outcome 对应准确 journal/hold。
+- [ ] B5.7.5 `[EXT-BLOCKED]` `test_gl_bridge.py`：mapping、batch、ACK、reject/replay、hash。
 
 ## B5 Gate
 

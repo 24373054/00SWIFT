@@ -454,6 +454,15 @@
 - 外部证据：合作机构 GL batch/receipt feed、字段契约和 ACK 证据缺失，保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B5.7.1 — ledger property tests
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`d4323fd`
+- 外部依赖：当前 `.venv` 未安装 Hypothesis（`ModuleNotFoundError: hypothesis`），无法运行清单要求的随机属性测试；现有确定性 balance/reversal tests 已保留，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
