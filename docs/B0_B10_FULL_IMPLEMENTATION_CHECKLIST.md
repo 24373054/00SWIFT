@@ -286,7 +286,7 @@
   - OAuth token scopes 与 service identity scopes、participant entitlement 取交集。
   - 验证 identity/certificate/environment/status/effective period。
 
-- [ ] B2.2.3 实现 certificate rotation overlap、revoke、OCSP/CRL refresh。
+- [x] B2.2.3 实现 certificate rotation overlap、revoke、OCSP/CRL refresh。
   - 新增 `certificate_service.py` 和 scheduler/worker 事件。
   - 吊销后现有 token 在规定 SLA 内失效。
 
