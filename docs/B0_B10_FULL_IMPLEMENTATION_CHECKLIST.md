@@ -594,7 +594,7 @@
   - POSTED journal/entry 禁止 UPDATE/DELETE。
   - journal idempotency key 和 business reference 唯一。
 
-- [ ] B5.2.2 数据库层验证每个 journal、每个 currency 借贷平衡。
+- [x] B5.2.2 数据库层验证每个 journal、每个 currency 借贷平衡。
   - 多币 journal 拆成独立 currency groups 和明确 FX clearing legs。
 
 - [ ] B5.2.3 余额必须可从 entries 重建。

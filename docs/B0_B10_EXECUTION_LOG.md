@@ -222,6 +222,18 @@
 - 测试结果：`3 passed`；包含 posted journal 篡改拒绝。
 - 执行者：Codex
 
+### B5.2.2 — currency-group balance validation
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`d7e30d1`
+- 修改文件：`backend/production/_ledger_core.py`、`backend/tests/production/test_ledger_boundaries.py`
+- 新增/修改实现：单币 journal 强制借贷平衡；多币过账按 currency 拆分独立 journal，并要求每个 currency group 提供显式 FX clearing account/leg。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_boundaries.py -q`
+- 测试结果：`4 passed`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
