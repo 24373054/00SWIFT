@@ -271,7 +271,7 @@
   - Account、AccountOwnership、owner evidence、币种、法人、状态和有效期。
   - 支付账户必须由 principal participant + tenant + active ownership 三者共同授权。
 
-- [ ] B2.1.4 实现正式 Rulebook acceptance。
+- [x] B2.1.4 实现正式 Rulebook acceptance。
   - 新增 `rulebook_service.py`、`rulebook_router.py`。
   - 校验 document digest、版本、生效日、participant 签署身份和 evidence。
   - 未接受当前版本的参与者不能发起交易。

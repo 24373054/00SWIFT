@@ -1210,3 +1210,24 @@
 - 外部证据：无。
 - 未解决风险：账户激活 checker 仍是请求字段，B2.5 改为 authenticated checker principal；跨数据库并发 ownership overlap 需 PostgreSQL exclusion/事务测试。
 - 执行者：Codex
+
+### B2.1.4 — formal rulebook acceptance
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`be3fcaa`
+- 修改文件：`backend/production/rulebook_service.py`、`backend/production/rulebook_api.py`、`backend/production/rulebook_router.py`、`backend/alembic/versions/0015_rulebook_acceptance_window.py`、`backend/production/models.py`、`backend/production/service.py`、`backend/production/router.py`、`backend/tests/production/test_rulebook_service.py`
+- 新增迁移：`0015_rulebook_acceptance_window` 增加 signer_subject/effective_from/effective_to；升级先回填 accepted_by/accepted_at，再收紧非空。
+- 新增实现：文档 SHA-256 digest、rulebook version、签署身份、evidence、有效期和 ACTIVE participant 校验；pilot/live create payment 强制存在当前 ACCEPTED rulebook。
+- 新增 API：`POST /production/v1/rulebooks/accept`、`GET /participants/{participant_id}/rulebooks`。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_rulebook_service.py backend/tests/production/test_identity_router.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/rulebook_service.py backend/production/rulebook_api.py backend/production/rulebook_router.py backend/alembic/versions/0015_rulebook_acceptance_window.py backend/production/service.py backend/tests/production/test_rulebook_service.py`; `\\.venv\\Scripts\\python.exe -m alembic upgrade head`
+- 测试结果：`2 passed`；`ruff: All checks passed`；Alembic `0014 -> 0015` 成功。
+- 正常路径证据：acceptance 保存 digest/signer/evidence/effective window；payment service 在非 sandbox 下调用 `assert_current`。
+- 负向路径证据：inactive participant、digest mismatch、签署主体不一致、无 evidence、无当前 acceptance 均 fail-closed。
+- 并发/重复/超时/恢复证据：acceptance append-only row；有效版本按 effective_from 倒序选择，数据库 transaction 控制提交。
+- OpenAPI/AsyncAPI 影响：新增 rulebook acceptance/query API；payment create 的 pilot/live 前置条件收紧。
+- Metrics/alerts/runbook 影响：digest mismatch、expired/unaccepted rulebook 接合规告警。
+- 外部证据：无。
+- 未解决风险：现有 sandbox bypass 仅限模拟环境；pilot/live 的 acceptance 签名/证书绑定将在 B2.2/B8 完善。
+- 执行者：Codex
