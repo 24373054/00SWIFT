@@ -387,6 +387,18 @@
 - 测试结果：`1 passed`。
 - 执行者：Codex
 
+### B5.5.3 — balance snapshot source hash
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`6bfef5e`、`255176d`
+- 修改文件：`backend/production/ledger_service.py`、`backend/tests/production/test_balance_snapshot.py`
+- 新增/修改实现：BalanceSnapshotService 从 entries 重建 account balance，保存 source_max_entry_sequence 和 source_hash，支持后续与 entries 重算校验。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_balance_snapshot.py -q`
+- 测试结果：`1 passed`；ruff 全部通过。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
