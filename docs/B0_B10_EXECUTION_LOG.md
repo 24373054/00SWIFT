@@ -259,6 +259,19 @@
 - 测试结果：`6 passed`。
 - 执行者：Codex
 
+### B5.2.5 — fee/tax/interest/adjustment templates
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`4cf7609`、`ca9ff2c`
+- 修改文件：`backend/production/models.py`、`backend/production/_ledger_core.py`、`backend/alembic/versions/0033_journal_templates.py`、`backend/tests/production/test_ledger_boundaries.py`
+- 新增迁移：`0033_journal_templates`。
+- 新增/修改实现：versioned JournalTemplate 保存 charge type、mapping、liability profile/evidence；post_template 只接受 active template 并生成准确双重分录，禁止调用者临时绕过模板。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_boundaries.py -q`
+- 测试结果：`7 passed`；ruff 全部通过。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

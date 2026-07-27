@@ -603,7 +603,7 @@
 - [x] B5.2.4 新增 reversal。
   - 不修改原 journal；创建相反分录并链接 `reverses_journal_id`、reason、approval、evidence。
 
-- [ ] B5.2.5 新增 fee、tax、interest 和 adjustment journal templates。
+- [x] B5.2.5 新增 fee、tax、interest 和 adjustment journal templates。
   - 模板 versioned；科目映射和负债主体明确。
 
 ## B5.3 Hold/Reservation
