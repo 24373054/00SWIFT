@@ -222,7 +222,7 @@
 
 ## B1.3 PostgreSQL RLS
 
-- [ ] B1.3.1 新增 `0007_production_rls.py`。
+- [x] B1.3.1 新增 `0007_production_rls.py`。（实际迁移编号：`0014_production_rls.py`，因 `0007` 已占用）
   - 对所有 tenant-owned 表启用并强制 RLS。
   - policy 使用 transaction-local `app.tenant_id`、`app.participant_id`、`app.service_identity`。
 

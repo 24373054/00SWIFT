@@ -900,3 +900,23 @@
 - 外部证据：PostgreSQL deferred constraint/并发事务验证仍待 B1 Gate 外部 PostgreSQL 实例。
 - 未解决风险：跨行借贷平衡不能由 SQLite 普通 CHECK 表达，已用事务 validator；生产 PostgreSQL 可再升级 deferred constraint trigger。
 - 执行者：Codex
+
+### B1.3.1 — PostgreSQL RLS 迁移
+
+- 状态：DONE（PostgreSQL 实例验证 `[EXT-BLOCKED]`）
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`05108ff`
+- 修改文件：`backend/alembic/versions/0014_production_rls.py`、`backend/tests/production/test_postgres_rls_migration.py`
+- 新增迁移：因 `0007` 已被 corridor admission 占用，使用 `0014_production_rls`；对 tenant/participant-owned production 表启用并强制 RLS，policy 使用 transaction-local `app.tenant_id`、`app.participant_id`，同时 `USING/WITH CHECK`。
+- 新增/修改测试：policy predicate 静态审计、SQLite 方言安全 no-op。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_postgres_rls_migration.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/alembic/versions/0014_production_rls.py backend/tests/production/test_postgres_rls_migration.py`; `\\.venv\\Scripts\\python.exe -m alembic upgrade head`
+- 测试结果：`1 passed`；`ruff: All checks passed`；SQLite Alembic upgrade `0013 -> 0014` 成功且不执行 PostgreSQL SQL。
+- 正常路径证据：PostgreSQL 分支会 `ENABLE/FORCE ROW LEVEL SECURITY`、先删后建确定命名 policy，回滚会移除 policy 并关闭 RLS。
+- 负向路径证据：未设置 transaction-local tenant/participant 的请求不满足 predicate；SQLite 不会误执行 PostgreSQL 语法。
+- 并发/重复/超时/恢复证据：policy DDL 可重复执行（DROP IF EXISTS）；`SET LOCAL` 生命周期由后续 B1.3.2 db_context 管理。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：RLS violation 应接入安全告警；policy 名称可用于审计检查。
+- 外部证据：`[EXT-BLOCKED]` 当前环境无 PostgreSQL 服务，无法完成两租户实际 RLS read/write/join/count 验证。
+- 未解决风险：尚未在真实 PostgreSQL 上执行 clean/rollback；继续完成 B1.3.2–B1.4 后由 Gate 统一阻断/验收。
+- 执行者：Codex
