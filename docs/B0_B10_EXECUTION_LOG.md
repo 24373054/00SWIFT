@@ -740,3 +740,23 @@
 - 外部证据：无；真实签发机构仍为 `[EXT-BLOCKED]`。
 - 未解决风险：资格决策写入服务和过期后台扫描在后续 B0.1.4/B7 完成。
 - 执行者：Codex
+
+### B1.1.3 — ORM 外键与 RESTRICT 删除策略
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`6720404`
+- 修改文件：`backend/production/models.py`、`backend/tests/production/test_model_foreign_keys.py`
+- 新增迁移：关系数据库约束已在 `0008_production_relational_integrity` 建立。
+- 新增/修改测试：payment/fact/journal/inbox/report receipt 核心模型 ForeignKey 和 `ondelete=RESTRICT`；relationship 为 viewonly 且无 delete cascade。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_model_foreign_keys.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/models.py backend/tests/production/test_model_foreign_keys.py`
+- 测试结果：`1 passed`; `ruff`：`All checks passed`
+- 正常路径证据：核心生产模型声明 tenant/participant/order/journal/outbox/report parent 关系，ORM 仅用于导航。
+- 负向路径证据：所有测试关系 `ondelete=RESTRICT`，没有 cascade delete；migration orphan 预检查失败即停止。
+- 并发/重复/超时/恢复证据：FK/unique 由 DB 原子维护，历史金融/审计记录不可级联删除。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：FK violation/orphan migration error 需进入数据修复告警。
+- 外部证据：无。
+- 未解决风险：金额 BigInteger 和 timezone-aware 列待 B1.1.4/B1.1.5。
+- 执行者：Codex
