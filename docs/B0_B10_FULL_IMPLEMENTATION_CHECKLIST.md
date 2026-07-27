@@ -578,7 +578,7 @@
   - 新增：`ledger_models.py`、`ledger_service.py`、`funding_service.py`、`gl_bridge.py`、`ledger_router.py`。
   - 旧 `ledger.py` 仅保留兼容导入或删除重复路径。
 
-- [ ] B5.1.2 扩展模型和显式迁移。
+- [x] B5.1.2 扩展模型和显式迁移。
   - LegalEntity、LedgerBook、LedgerAccount、Journal、JournalEntry、Hold、BalanceSnapshot、LedgerPeriod、Fee/Tax、FxRevaluation、GlMapping、GlBatch、GlReceipt。
   - 每个对象 tenant、legal entity、book、business date、currency、version、evidence 完整。
 

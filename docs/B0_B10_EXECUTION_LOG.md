@@ -173,6 +173,18 @@
 - 测试结果：`4 passed`（1 个既有 deprecation warning）；ruff 全部通过。
 - 执行者：Codex
 
+### B5.1.2 — accounting models and migration
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`a13db62`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0031_ledger_accounting_boundary.py`
+- 新增迁移：`0031_ledger_accounting_boundary`，新增 LegalEntity、LedgerBook、Hold、LedgerPeriod、BalanceSnapshot、FeeTax、FxRevaluation、GlMapping、GlBatch、GlReceipt；字段包含 tenant/legal entity/book/business date/currency/version/evidence。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_boundaries.py -q`; `\.venv\\Scripts\\python.exe -m alembic -c alembic.ini upgrade head`
+- 测试结果：`1 passed`；Alembic upgrade 成功到 `0031_ledger_accounting_boundary`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
