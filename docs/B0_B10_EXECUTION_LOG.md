@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.5.2 — stable connector reference recovery
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`c8b816c`
+- 修改文件：`backend/production/connector_recovery.py`、`backend/tests/production/test_connector_recovery.py`
+- 新增实现：所有外部副作用调用可通过稳定 client reference 先 query，再在确认无结果时 dispatch；query 到结果不会重复调用。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_connector_recovery.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/connector_recovery.py backend/tests/production/test_connector_recovery.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 外部证据：真实 connector query endpoint 未配置，pilot/live 保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B3.5.1 — inbox/domain/outbox transaction
 
 - 状态：DONE
