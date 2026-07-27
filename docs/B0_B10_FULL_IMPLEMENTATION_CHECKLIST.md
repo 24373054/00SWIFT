@@ -99,7 +99,7 @@
   - 使用依赖注入取得 verifier；先校验 body digest，再校验 RFC 9421 签名和证书/密钥身份绑定。
   - 无 qualified verifier 时仍 fail-closed，但 health/readiness 必须显示未完成，不能声称功能完成。
 
-- [ ] B0.2.3 新增持久化 nonce/replay store。
+- [x] B0.2.3 新增持久化 nonce/replay store。
   - 修改：`backend/production/models.py`；新增迁移 `0005_production_replay_store.py`。
   - 新增：`prod_request_nonces`，以 trust domain + key id + nonce 唯一；保存 request digest、过期时间和首次使用时间。
   - 并发：唯一约束必须阻止两个并发请求同时使用同一 nonce。
