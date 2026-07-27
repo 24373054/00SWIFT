@@ -264,6 +264,7 @@ class ProductionApproval(Base):
     evidence_ref = Column(String(120), nullable=True)
     created_at = Column(DateTime, nullable=False, default=utcnow)
     approved_at = Column(DateTime, nullable=True)
+    __table_args__ = (UniqueConstraint("aggregate_type", "aggregate_id", "action", name="uq_prod_approval_decision"),)
 
 
 class ProductionDeliveryProfile(Base):
@@ -349,7 +350,10 @@ class ProductionPaymentOrder(Base):
     version = Column(Integer, nullable=False, default=1)
     created_at = Column(DateTime, nullable=False, default=utcnow)
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
-    __table_args__ = (CheckConstraint("amount_minor > 0", name="ck_prod_payment_amount"),)
+    __table_args__ = (
+        CheckConstraint("amount_minor > 0", name="ck_prod_payment_amount"),
+        UniqueConstraint("initiator_participant", "instruction_id", name="uq_prod_instruction_participant"),
+    )
     facts = relationship("ProductionPaymentFact", primaryjoin="ProductionPaymentOrder.order_id == foreign(ProductionPaymentFact.order_id)", viewonly=True)
 
 
@@ -452,6 +456,7 @@ class ProductionFxTradeIntent(Base):
     failure_reason = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=utcnow)
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+    __table_args__ = (UniqueConstraint("quote_id", name="uq_prod_quote_accept"),)
 
 
 class ProductionFxTrade(Base):
@@ -551,11 +556,13 @@ class ProductionReturnPayment(Base):
     currency = Column(String(3), nullable=False)
     reason = Column(String(120), nullable=False)
     state = Column(String(30), nullable=False, default="REQUESTED")
+    return_sequence = Column(Integer, nullable=False, default=1)
     idempotency_context = Column(String(160), nullable=False, unique=True)
     return_leg_id = Column(String(80), nullable=True)
     external_reference = Column(String(160), nullable=True)
     evidence_ref = Column(String(120), nullable=True)
     created_at = Column(DateTime, nullable=False, default=utcnow)
+    __table_args__ = (UniqueConstraint("original_order_id", "return_sequence", name="uq_prod_return_sequence"),)
 
 
 class ProductionLedgerAccount(Base):
@@ -582,9 +589,11 @@ class ProductionJournal(Base):
     book = Column(String(100), nullable=False)
     business_date = Column(String(10), nullable=False)
     state = Column(String(20), nullable=False, default="POSTED")
+    gl_batch_reference = Column(String(160), nullable=False, default="")
     reason_code = Column(String(80), nullable=False)
     payload_hash = Column(String(64), nullable=False)
     created_at = Column(DateTime, nullable=False, default=utcnow)
+    __table_args__ = (UniqueConstraint("legal_entity", "book", "business_date", "gl_batch_reference", name="uq_prod_gl_batch_reference"),)
 
 
 class ProductionJournalEntry(Base):
@@ -702,6 +711,7 @@ class ProductionOutboxEvent(Base):
     schema_version = Column(String(40), nullable=False, default="1.0")
     partition_key = Column(String(120), nullable=False, index=True)
     aggregate_id = Column(String(120), nullable=False, index=True)
+    aggregate_sequence = Column(Integer, nullable=False, default=1)
     payload = Column(Text, nullable=False)
     status = Column(String(20), nullable=False, default="PENDING", index=True)
     attempts = Column(Integer, nullable=False, default=0)
@@ -710,6 +720,7 @@ class ProductionOutboxEvent(Base):
     lease_until = Column(DateTime, nullable=True, index=True)
     last_error = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=utcnow)
+    __table_args__ = (UniqueConstraint("topic", "aggregate_id", "aggregate_sequence", name="uq_prod_event_aggregate_sequence"),)
 
 
 class ProductionInboxMessage(Base):
