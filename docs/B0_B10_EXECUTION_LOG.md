@@ -1533,6 +1533,25 @@
 - 未解决风险：B2.5.4 仍需删除旧 router 内 direct APPROVED 逻辑并让业务 authorization 调用服务。
 - 执行者：Codex
 
+### B2.5.4 — remove direct APPROVED approval logic
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`fc9a264`
+- 修改文件：`backend/production/router.py`
+- 新增/修改实现：旧 create_approval handler 默认 PENDING，强制 maker 使用 authenticated principal.subject；请求 state 非 PENDING 拒绝；request checker 不能伪造/自决；旧 direct APPROVED/approved_at 分支删除。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_route_semantics.py::test_approval_cannot_self_approve backend/tests/production/test_approval_router.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/router.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 正常路径证据：创建只能生成 PENDING projection，decision endpoint 才能变更状态并写 append-only decision。
+- 负向路径证据：maker/checker 自决、请求直接 APPROVED、伪造 maker 均拒绝。
+- 并发/重复/超时/恢复证据：旧 handler 与新 approval_router 均无 direct APPROVED 路由；重复 decision 受 PENDING filter 保护。
+- OpenAPI/AsyncAPI 影响：审批 API 生命周期收紧，旧单请求审批不再可用。
+- Metrics/alerts/runbook 影响：非法 direct approval 请求计入 SoD 告警。
+- 外部证据：无。
+- 未解决风险：B2.5.5 需补完整 maker/checker negative matrix（credential/同主体/管理员/重复/过期）。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE

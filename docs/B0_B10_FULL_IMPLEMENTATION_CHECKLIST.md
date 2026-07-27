@@ -336,7 +336,7 @@
   - Approval projection 可更新，decision 记录不可更新/删除。
   - checker 的签名、时间、reason、policy version、evidence 必须保留。
 
-- [ ] B2.5.4 删除当前单请求直接 `APPROVED` 的逻辑。
+- [x] B2.5.4 删除当前单请求直接 `APPROVED` 的逻辑。
   - 修改：现有 `backend/production/router.py` 相应路由。
 
 - [ ] B2.5.5 新增 `test_maker_checker.py`。
