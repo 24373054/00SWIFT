@@ -126,6 +126,19 @@
 - 验收证据：撤销接受释放 RESERVED reservation 并关闭 unsuccessful；撤销发生在 reserve 前安全；重复 accept 被拒绝，未出现冻结资金残留。
 - 执行者：Codex
 
+### B4.G4 — CAS/乱序/重复事件 gate
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`1013871`
+- 修改文件：`backend/tests/production/test_payment_cas.py`
+- 新增/修改测试：补齐新增 end_to_end_id/transaction_id 非空约束的 CAS fixture；覆盖 stale expected version、重复状态和乱序状态拒绝，并联合运行 outbox lease/duplicate completion 与 return state tests。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_payment_cas.py backend/tests/production/test_payment_returns.py backend/tests/production/test_outbox_leases.py backend/tests/production/test_outbox_publish_dedup.py -q`
+- 测试结果：`7 passed`。
+- 验收证据：CAS stale write 被拒绝，非法重复/乱序 transition 被拒绝，lease fencing 与 duplicate publish completion 测试通过。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
