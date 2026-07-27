@@ -303,7 +303,7 @@
   - 不能只在 Python 拉出候选后宽松匹配；查询必须 tenant-scoped、默认拒绝。
   - 对 wildcard 使用明确 policy，pilot/live 禁止无审批的 `*`。
 
-- [ ] B2.3.3 增加 entitlement version/evidence，并把命中版本写入 PaymentFact/Audit。
+- [x] B2.3.3 增加 entitlement version/evidence，并把命中版本写入 PaymentFact/Audit。
 
 - [ ] B2.3.4 新增 bilateral negative matrix 测试。
   - A→B 允许不代表 B→A；C 无权；币种/走廊/报文/期限任一不匹配均拒绝。

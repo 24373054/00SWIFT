@@ -1352,6 +1352,26 @@
 - 未解决风险：命中版本/evidence 写入 PaymentFact/Audit 尚待 B2.3.3；真实 PostgreSQL RLS 仍由 B1 Gate 阻断。
 - 执行者：Codex
 
+### B2.3.3 — entitlement version/evidence propagation
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`b7e34df`
+- 修改文件：`backend/production/security.py`、`backend/production/service.py`、`backend/tests/production/test_entitlement_evidence.py`
+- 新增实现：`assert_entitlement()` 返回命中的版本化 policy；payment 写 `PaymentFact(ENTITLEMENT/MATCHED)` 保存 entitlement_id/version/evidence_ref；payment.created 与 FX quote audit 同步保存命中版本和 evidence。
+- 新增/修改测试：fact payload contract 断言 version/evidence；payment idempotency/worker 回归。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_entitlement_evidence.py backend/tests/production/test_entitlement_enforcement.py backend/tests/test_production_domain.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/security.py backend/production/service.py backend/tests/production/test_entitlement_evidence.py`
+- 测试结果：`4 passed`（1 个已知 Starlette/httpx deprecation warning）；`ruff: All checks passed`。
+- 正常路径证据：命中 entitlement 后 evidence 同时落 PaymentFact 和 AuditEvent，不依赖响应字段。
+- 负向路径证据：未命中 policy 不会生成 MATCHED fact，服务先抛 403。
+- 并发/重复/超时/恢复证据：fact/audit 在同一 payment transaction；重试由 idempotency scope 控制。
+- OpenAPI/AsyncAPI 影响：无破坏性字段变化。
+- Metrics/alerts/runbook 影响：entitlement version mismatch/evidence missing 可直接审计查询。
+- 外部证据：无。
+- 未解决风险：双边 entitlement matrix 集成测试在 B2.3.4 完成。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE
