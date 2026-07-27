@@ -51,6 +51,17 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B2.G3 — maker/checker separation
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit（实现/测试）：`736bd4c`
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_maker_checker.py backend/tests/production/test_route_semantics.py::test_approval_cannot_self_approve -q`
+- 测试结果：`4 passed`。
+- 验收证据：maker subject 自决、同 credential 换 subject、过期/重复 approval、伪造请求 maker 均拒绝；checker 只来自 authenticated principal，且 decision 保存 credential binding。
+- 外部证据：无。
+- 执行者：Codex
+
 ### B2.G2 — credential tenant/participant/account scope isolation
 
 - 状态：DONE
