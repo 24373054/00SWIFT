@@ -296,6 +296,28 @@
 - 测试结果：`1 passed`；stale version 被拒绝。
 - 执行者：Codex
 
+### B5.3.3 — payment outcome hold invariant
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`a8ee2db`
+- 代码侧状态：HoldService 已提供终态释放/consume；现有支付 worker 仍有历史 ProductionFundingReservation connector adapter 路径，需 B5.4 ledger integration 后统一迁移所有 payment outcomes。
+- 外部证据：真实 ledger/connector hold contract 尚未提供，不能宣称所有 payment completion/cancel/return paths 已切换，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
+### B5.3.4 — hold expiry worker
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`0b43a69`
+- 修改文件：`backend/production/funding_service.py`、`backend/tests/production/test_hold_expiry.py`
+- 新增/修改实现：expire_due 扫描到期 HELD hold；无 external_reference 时转 UNKNOWN 且不释放冻结金额，有可确认外部引用才转 EXPIRED 并释放。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_hold_expiry.py -q`
+- 测试结果：`1 passed`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

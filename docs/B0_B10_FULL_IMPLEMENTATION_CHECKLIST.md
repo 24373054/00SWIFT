@@ -615,8 +615,8 @@
 - [x] B5.3.2 reserve/release/consume 使用行锁和 CAS。
   - `available = posted balance - active holds`，同一事务内检查和新增 hold。
 
-- [ ] B5.3.3 所有失败/撤销路径必须释放 hold；所有完成路径必须 consume，不得遗留 RESERVED。
-- [ ] B5.3.4 增加 hold expiry worker；到期前若外部状态 UNKNOWN，不可盲目释放。
+- [ ] B5.3.3 `[EXT-BLOCKED]` 所有失败/撤销路径必须释放 hold；所有完成路径必须 consume，不得遗留 RESERVED。
+- [x] B5.3.4 增加 hold expiry worker；到期前若外部状态 UNKNOWN，不可盲目释放。
 
 ## B5.4 支付集成
 
