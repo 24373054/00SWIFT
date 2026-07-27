@@ -920,3 +920,23 @@
 - 外部证据：`[EXT-BLOCKED]` 当前环境无 PostgreSQL 服务，无法完成两租户实际 RLS read/write/join/count 验证。
 - 未解决风险：尚未在真实 PostgreSQL 上执行 clean/rollback；继续完成 B1.3.2–B1.4 后由 Gate 统一阻断/验收。
 - 执行者：Codex
+
+### B1.3.2 — tenant transaction context
+
+- 状态：DONE（PostgreSQL `SET LOCAL` 实例验证 `[EXT-BLOCKED]`）
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`9433334`
+- 修改文件：`backend/production/db_context.py`、`backend/tests/production/test_db_context.py`
+- 新增实现：`DatabaseContext` 强制 tenant/participant/service identity；PostgreSQL 使用 `set_config(..., true)` 事务局部变量；SQLite 仅测试上下文；连接清理和 worker envelope 恢复均拒绝缺失身份。
+- 新增/修改测试：SQLite set/clear、worker 缺 context 负向、tenant_transaction 自动清理。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_db_context.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/db_context.py backend/tests/production/test_db_context.py`
+- 测试结果：`3 passed`；`ruff: All checks passed`。
+- 正常路径证据：事务进入时设置三项 identity，退出 finally 清理；后台任务只能从事件 envelope 取得 tenant context。
+- 负向路径证据：envelope 缺 context 或任一 identity 为空抛 `ValueError`；无 global admin fallback。
+- 并发/重复/超时/恢复证据：上下文绑定单个 SQLAlchemy connection；finally 清理避免连接池复用串租户。
+- OpenAPI/AsyncAPI 影响：事件消费者 envelope 需含 `context.tenant_id/participant_id/service_identity`。
+- Metrics/alerts/runbook 影响：缺上下文、RLS denial 可接安全告警；worker runbook 必须保留 envelope context。
+- 外部证据：`[EXT-BLOCKED]` 无 PostgreSQL 连接池，无法证明 `set_config(..., true)` 在真实 pooled transaction 中的隔离。
+- 未解决风险：需在 B1.3.4 两租户 PostgreSQL 测试中验证 rollback/连接归还后参数清空。
+- 执行者：Codex

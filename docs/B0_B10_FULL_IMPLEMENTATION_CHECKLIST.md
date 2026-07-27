@@ -226,7 +226,7 @@
   - 对所有 tenant-owned 表启用并强制 RLS。
   - policy 使用 transaction-local `app.tenant_id`、`app.participant_id`、`app.service_identity`。
 
-- [ ] B1.3.2 新增 `backend/production/db_context.py`。
+- [x] B1.3.2 新增 `backend/production/db_context.py`。
   - 每个事务开始时设置 `SET LOCAL` 上下文；连接池归还前不可泄漏。
   - 后台任务必须从事件 envelope 恢复 tenant，不允许使用全局管理员上下文。
 
