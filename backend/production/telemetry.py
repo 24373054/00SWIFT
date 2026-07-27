@@ -90,6 +90,30 @@ def dependency_snapshot(db=None) -> dict[str, object]:
         except Exception as exc:  # noqa: BLE001 - health must report dependency failure
             checks["standards_artifact"] = {"available": False, "status": "unavailable", "detail": str(exc)}
 
+    if db is None:
+        checks["corridor_admission"] = {"available": False, "status": "unavailable"}
+    else:
+        try:
+            from .models import ProductionControlAttestation, ProductionCorridorAdmission
+
+            admission = db.query(ProductionCorridorAdmission).filter_by(
+                environment=settings.swift_env, status="ACTIVE"
+            ).order_by(ProductionCorridorAdmission.id.desc()).first()
+            now = dt.datetime.now(dt.UTC)
+            valid = bool(admission and admission.valid_from.replace(tzinfo=dt.UTC) <= now <= admission.valid_to.replace(tzinfo=dt.UTC))
+            production_eligible = bool(admission and (settings.is_sandbox or not admission.simulation_only))
+            attested = bool(admission and db.query(ProductionControlAttestation).filter_by(admission_id=admission.admission_id, status="ACTIVE").first())
+            available = bool(admission and valid and production_eligible and attested)
+            checks["corridor_admission"] = {
+                "available": available,
+                "status": "ok" if available else "missing_or_expired",
+                "admission_id": admission.admission_id if admission else None,
+                "rulebook_version": admission.rulebook_version if admission else None,
+                "valid_to": admission.valid_to.isoformat() if admission else None,
+            }
+        except Exception as exc:  # noqa: BLE001 - health must report dependency failure
+            checks["corridor_admission"] = {"available": False, "status": "unavailable", "detail": str(exc)}
+
     now = dt.datetime.now(dt.UTC)
     age = None if _worker_heartbeat_at is None else (now - _worker_heartbeat_at).total_seconds()
     heartbeat_ok = age is not None and age <= settings.production_worker_heartbeat_timeout_seconds
@@ -98,6 +122,6 @@ def dependency_snapshot(db=None) -> dict[str, object]:
         "status": "ok" if heartbeat_ok else "stale_or_missing",
         "age_seconds": age,
     }
-    required = ("database", "broker", "hsm", "signature_verifier", "connector", "standards_artifact", "worker_heartbeat")
+    required = ("database", "broker", "hsm", "signature_verifier", "connector", "standards_artifact", "corridor_admission", "worker_heartbeat")
     ready = settings.swift_env != "sandbox" and all(bool(checks[key]["available"]) for key in required)
     return {"ready": ready, "environment": settings.swift_env, "checks": checks}

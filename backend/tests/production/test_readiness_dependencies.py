@@ -13,6 +13,7 @@ def test_production_health_reports_each_dependency_without_claiming_ready(client
         "signature_verifier",
         "connector",
         "standards_artifact",
+        "corridor_admission",
         "worker_heartbeat",
     }
     assert payload["dependencies"]["connector"]["status"] == "simulation"
