@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.12 — 保护用户改动与提交边界
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`git status --short; git log --oneline -12`
+- 测试结果：通过；每条 R0 规则均以独立 commit 记录，未执行 reset/checkout/删除用户文件
+- 验收证据：当前提交历史包含 R0.1–R0.12 逐条提交；B0–B10 仍未勾选
+- 未解决风险：工作区原有 Luna 代码改动未被本条处理，后续仅在明确文件范围内修改
+- 执行者：Codex
+
 ### R0.11 — OpenAPI/AsyncAPI 契约
 
 - 状态：DONE
