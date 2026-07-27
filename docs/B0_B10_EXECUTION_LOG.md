@@ -532,6 +532,23 @@
 - 验收证据：posted journal and posted entry ORM listeners reject update/delete; reversal path creates a new linked journal instead.
 - 执行者：Codex
 
+### B5.G4 — concurrency/property/fault gate
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`7d261d2`
+- 外部证据：Hypothesis、PostgreSQL multi-session concurrency 和 qualified fault-injection environment 未提供；确定性 lock/CAS tests 已通过但不足以验收 Gate，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
+### B5.G5 — real GL receipt gate
+
+- 状态：EXT-BLOCKED
+- commit：`70c18a8`
+- 代码侧状态：GL batch 在无 ACK/receipt 时保持 SENT，不进入 ACK；真实四方对账 feed 未接入。
+- 外部证据：机构 GL transport/receipt 未提供，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
