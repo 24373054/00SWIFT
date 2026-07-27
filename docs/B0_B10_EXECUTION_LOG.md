@@ -90,6 +90,19 @@
 - 未解决风险：生产 DB PostgreSQL 并发演练待 B1；当前 SQLite 测试证明唯一约束语义。
 - 执行者：Codex
 
+### B0.G5 — 外部 HSM/CA 未提供
+
+- 状态：EXT-BLOCKED
+- 完成时间：2026-07-27
+- commit：无（对应 B0.4.4 外部阻断）
+- 修改文件：无。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_key_provider.py backend/tests/production/test_config_qualification_gate.py -q`
+- 测试结果：通过；qualified provider 缺失时系统只允许 sandbox/simulation，pilot/live startup/readiness 阻断。
+- 验收证据：`production_key_provider=file`、`production_hsm_provider=unconfigured` 或无 qualified callback 均失败；未将 sandbox provider 宣称为 HSM。
+- 外部证据：待 HSM/CA/RA、不可导出证明、OCSP/CRL、密钥仪式和信任域隔离证据。
+- 未解决风险：Gate G5 不得勾选，B0 COMPLETE 不得勾选。
+- 执行者：Codex
+
 ### R0.1 — 执行证据机制
 
 - 状态：DONE
