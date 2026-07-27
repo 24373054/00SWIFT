@@ -426,7 +426,7 @@
 
 ## B3.6 DLQ、重放和运营
 
-- [ ] B3.6.1 新增 DLQ 查询/详情 API。
+- [x] B3.6.1 新增 DLQ 查询/详情 API。
 - [ ] B3.6.2 新增 replay request 聚合。
   - replay 必须 operator 创建、checker 批准、记录原因和原 event hash；不能直接把状态改回 PENDING。
 

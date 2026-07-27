@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.6.1 — DLQ query/detail API
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`514046a`
+- 修改文件：`backend/production/dlq_router.py`、`backend/production/router.py`、`backend/tests/production/test_dlq_router.py`
+- 新增实现：`GET /production/v1/dlq` 与详情 endpoint；强制 operator scope 且 tenant scoped，返回 attempts/error/payload hash/broker metadata 证据。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_dlq_router.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/dlq_router.py backend/production/router.py backend/tests/production/test_dlq_router.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 负向证据：跨 tenant 或非 DEAD_LETTER 事件返回 404，不泄露 payload。
+- 执行者：Codex
+
 ### B3.5.4 — test-only fault injection hooks
 
 - 状态：DONE
