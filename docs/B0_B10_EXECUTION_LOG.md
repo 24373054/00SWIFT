@@ -31,6 +31,26 @@
 
 <!-- 从这里开始按任务编号顺序追加，禁止删除历史记录。 -->
 
+### B0.1.1 — 签名资格工件验证器
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`59fcff7`
+- 修改文件：`backend/production/qualification.py`、`backend/tests/production/test_qualification.py`
+- 新增迁移：无
+- 新增/修改测试：签名有效、缺文件、过期、环境不匹配、digest/signature/trust-anchor 错误
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_qualification.py -q`
+- 测试结果：`3 passed`; `ruff check`：`All checks passed`
+- 正常路径证据：Ed25519 签名、公钥 trust anchor、artifact bytes SHA-256、有效期全部验证
+- 负向路径证据：不存在、过期、环境不匹配、签名错误均抛出 `QualificationError`
+- 并发/重复/超时/恢复证据：本条为纯验证器；启动准入持久化和 replay 在 B0.1.2/B0.2 覆盖
+- OpenAPI/AsyncAPI 影响：无
+- Metrics/alerts/runbook 影响：B0.1.4 接入 readiness；本条不标 readiness
+- 外部证据：无；真实签发者/工件在 B0.4/B7 标记 `[EXT-BLOCKED]`
+- 未解决风险：当前尚未接入数据库决策记录和 startup gate
+- 执行者：Codex
+
 ### R0.1 — 执行证据机制
 
 - 状态：DONE

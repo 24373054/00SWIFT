@@ -66,7 +66,7 @@
 
 ## B0.1 统一资格状态模型
 
-- [ ] B0.1.1 新增 `backend/production/qualification.py`，实现 `QualificationArtifact`、`QualificationStatus`、`QualificationVerifier`。
+- [x] B0.1.1 新增 `backend/production/qualification.py`，实现 `QualificationArtifact`、`QualificationStatus`、`QualificationVerifier`。
   - 修改：`backend/config.py`、`backend/production/connectors.py`、`backend/production/router.py`。
   - 代码要求：读取 attestation JSON；校验文件存在、JSON schema、环境、参与方、connector 名称/版本、签发者、有效期、制品 SHA-256 和签名。
   - 禁止：只判断路径字符串非空。
