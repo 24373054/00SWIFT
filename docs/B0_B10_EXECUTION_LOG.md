@@ -1277,6 +1277,26 @@
 - 状态：DONE
 - 开始时间：2026-07-27
 - 完成时间：2026-07-27
+- commit：`3539174`；测试补强：`7e496c3`、`9a42f65`、`b503d5b`
+- 修改文件：`backend/production/certificate_service.py`、`backend/tests/production/test_certificate_lifecycle.py`
+- 新增实现：双控证书轮换保留 overlap_until、旧证书有效期收窄；revoke 写 revoked_at；OCSP/CRL checker 注入并拒绝未知返回值；过期 ACTIVE 证书自动转 EXPIRED。
+- 新增/修改测试：无 active 旧证书时轮换拒绝；invalid OCSP/CRL status 拒绝；测试 fixture 确认 provider 真被调用。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_certificate_lifecycle.py backend/tests/production/test_service_identity_binding.py backend/tests/production/test_certificate_auth.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/certificate_service.py backend/tests/production/test_certificate_lifecycle.py`
+- 测试结果：证书相关 `5 passed`；`ruff: All checks passed`。
+- 正常路径证据：new certificate 与 old overlap 均落库；refresh 仅接受 GOOD/REVOKED/UNKNOWN provider 状态。
+- 负向路径证据：同一 maker/checker、非法 overlap、无 reason、invalid OCSP/CRL status fail-closed。
+- 并发/重复/超时/恢复证据：DB transaction flush；唯一 fingerprint/serial 防重复；撤销后后续 auth 查询立即拒绝。
+- OpenAPI/AsyncAPI 影响：服务层接口待 B2.2.4 scheduler/router 接入。
+- Metrics/alerts/runbook 影响：rotation overlap、revocation、OCSP unknown 状态接证书运营告警。
+- 外部证据：真实 OCSP/CRL endpoint 未配置，provider 通过显式 callback 保持可审计阻断。
+- 未解决风险：尚未建立 scheduler/worker 事件触发器与 SLA 量化，下一项测试补齐。
+- 执行者：Codex
+
+### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
 - commit：`3539174`
 - 修改文件：`backend/production/certificate_service.py`、`backend/tests/production/test_certificate_lifecycle.py`
 - 新增实现：双控证书轮换保留 overlap_until、旧证书有效期收窄；revoke 写 revoked_at；OCSP/CRL checker 注入并拒绝未知返回值；过期 ACTIVE 证书自动转 EXPIRED。
