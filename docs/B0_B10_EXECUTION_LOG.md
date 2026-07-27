@@ -545,6 +545,18 @@
 - 未解决风险：B0 Gate G6 不得通过，不能进入影子/小额实盘。
 - 执行者：Codex
 
+### B0.G1 — 不存在 attestation 阻断 pilot/live
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`117bbef`
+- 修改文件：`backend/config.py`、`backend/tests/production/test_config_qualification_gate.py`
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_config_qualification_gate.py -q`
+- 测试结果：`4 passed`（后续 B0.4.2 扩展后为 `7 passed`）
+- 验收证据：pilot 缺失/不存在 attestation、缺 trust anchor、connector mismatch 均在 startup gate 抛 RuntimeError；非空路径不会绕过 verifier。
+- 外部证据：无；真实 attestation 仍需 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B0.4.4 — 真实 HSM/CA/OCSP/CRL 与密钥仪式
 
 - 状态：EXT-BLOCKED
