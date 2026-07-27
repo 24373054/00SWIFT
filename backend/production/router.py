@@ -644,3 +644,29 @@ def production_validate_standard_message(
         "artifact_id": result["artifact_id"],
         "evidence_id": evidence.evidence_id,
     }
+
+
+# Route handlers remain close to their domain schemas above, while registration
+# is split into security-scoped routers. Clearing the provisional decorators
+# prevents duplicate OpenAPI operations when the modules are included.
+from .identity_router import identity_router  # noqa: E402
+from .ledger_router import ledger_router  # noqa: E402
+from .operations_router import operations_router  # noqa: E402
+from .payment_router import payment_router  # noqa: E402
+from .reporting_router import reporting_router  # noqa: E402
+from .standards_router import standards_router  # noqa: E402
+
+router.routes.clear()
+for _domain_router in (
+    operations_router,
+    payment_router,
+    identity_router,
+    ledger_router,
+    reporting_router,
+    standards_router,
+):
+    # FastAPI's include_router stores a deferred wrapper on this version;
+    # flatten the already-built APIRoute objects so the application includes
+    # every domain route and OpenAPI sees the same security dependencies.
+    router.routes.extend(_domain_router.routes)
+router._mark_routes_changed()
