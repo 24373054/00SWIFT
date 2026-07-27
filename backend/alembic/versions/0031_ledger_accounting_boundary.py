@@ -1,6 +1,7 @@
 """B5 accounting boundary models and explicit migration."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0031_ledger_accounting_boundary"
