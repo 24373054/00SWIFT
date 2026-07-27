@@ -1,7 +1,12 @@
 """Canonical ledger service entrypoint."""
 
 from ._ledger_core import ProductionLedgerService, serialize_account
-from .models import ProductionBalanceSnapshot, ProductionInvestigationCase, ProductionJournalEntry, ProductionLedgerPeriod
+from .models import (
+    ProductionBalanceSnapshot,
+    ProductionInvestigationCase,
+    ProductionJournalEntry,
+    ProductionLedgerPeriod,
+)
 from .runtime import ProductionConflict, digest
 
 __all__ = ["ProductionLedgerService", "serialize_account"]
