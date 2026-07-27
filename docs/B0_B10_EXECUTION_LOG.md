@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.5.3 — handler-specific recovery functions
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`c5b555a`
+- 修改文件：`backend/production/connector_recovery.py`、`backend/tests/production/test_connector_recovery_paths.py`
+- 新增实现：reserve、FX accept、message send、settlement submit、cancel、return 均有明确 query/recover wrapper，稳定 reference 缺失时拒绝。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_connector_recovery_paths.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/connector_recovery.py backend/tests/production/test_connector_recovery_paths.py`
+- 测试结果：`6 passed`；`ruff: All checks passed`。
+- 外部证据：真实 connector query/recovery 端点需外部资格，保留 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B3.5.2 — stable connector reference recovery
 
 - 状态：DONE

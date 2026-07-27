@@ -418,7 +418,7 @@
 - [x] B3.5.2 外部 connector 调用必须使用稳定 idempotency reference。
   - worker 崩溃后先调用 connector query-by-client-reference，再决定是否重发。
 
-- [ ] B3.5.3 为每个 handler 定义恢复函数。
+- [x] B3.5.3 为每个 handler 定义恢复函数。
   - reserve、FX accept、message send、settlement submit、cancel、return 都必须有 query/recover。
 
 - [ ] B3.5.4 新增 fault injection hooks，仅测试环境启用。
