@@ -43,6 +43,7 @@ def _qualified_attestation(tmp_path, *, connector: str = "qualified-value-v1") -
 def _pilot_settings(**overrides) -> Settings:
     values = {
         "swift_env": "pilot",
+        "db_url": "postgresql+psycopg://user:pass@localhost/test",
         "admin_api_token": "admin-token",
         "live_host_oauth": "https://oauth.example",
         "live_host_preval": "https://preval.example",

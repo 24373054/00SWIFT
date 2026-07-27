@@ -206,7 +206,7 @@ def assert_account_access(
     owner_ref: str,
 ) -> ProductionAccount:
     participant = ensure_participant(db, principal.participant_id)
-    account = db.query(ProductionAccount).filter_by(account_id=account_id).one_or_none()
+    account = db.query(ProductionAccount).filter_by(account_id=account_id, tenant_id=principal.tenant_id, participant_id=principal.participant_id).one_or_none()
     if account is None and principal.source.startswith("sandbox"):
         account = ProductionAccount(
             account_id=account_id[:120],
@@ -237,6 +237,15 @@ def assert_account_access(
         or account.owner_ref != owner_ref
     ):
         raise HTTPException(403, {"code": "ACCOUNT_ACCESS_DENIED", "account_id": account_id})
+    ownership = db.query(ProductionAccountOwnership).filter(
+        ProductionAccountOwnership.account_id == account.account_id,
+        ProductionAccountOwnership.participant_id == principal.participant_id,
+        ProductionAccountOwnership.status == "ACTIVE",
+        ProductionAccountOwnership.effective_from <= utcnow(),
+        (ProductionAccountOwnership.effective_to.is_(None) | (ProductionAccountOwnership.effective_to >= utcnow())),
+    ).first()
+    if ownership is None:
+        raise HTTPException(403, {"code": "ACCOUNT_OWNERSHIP_REQUIRED", "account_id": account_id})
     return account
 
 

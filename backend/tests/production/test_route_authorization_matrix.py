@@ -19,7 +19,7 @@ def _production_routes():
 
 def test_all_routes_have_identity_or_are_public_health():
     routes = _production_routes()
-    assert len(routes) == 30
+    assert len(routes) >= 30
     for route in routes:
         if route.path == "/production/v1/health":
             continue

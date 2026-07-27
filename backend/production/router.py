@@ -683,6 +683,7 @@ def production_validate_standard_message(
 # Route handlers remain close to their domain schemas above, while registration
 # is split into security-scoped routers. Clearing the provisional decorators
 # prevents duplicate OpenAPI operations when the modules are included.
+from .account_router import account_router  # noqa: E402
 from .identity_router import identity_router  # noqa: E402
 from .ledger_router import ledger_router  # noqa: E402
 from .operations_router import operations_router  # noqa: E402
@@ -695,6 +696,7 @@ for _domain_router in (
     operations_router,
     payment_router,
     identity_router,
+    account_router,
     ledger_router,
     reporting_router,
     standards_router,
