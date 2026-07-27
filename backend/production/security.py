@@ -54,7 +54,6 @@ def _sandbox_principal(participant_id: str | None) -> ProductionPrincipal:
             "production.api",
             "production.read",
             "production.write",
-            "production.admin",
             "production.operator",
             "production.worker",
         }),
