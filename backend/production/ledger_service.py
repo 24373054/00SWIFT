@@ -24,6 +24,17 @@ class LedgerPeriodService:
         self.db.flush()
         return period
 
+    def close(self, period_id, expected_version, maker, checker):
+        if maker == checker:
+            raise ProductionConflict("Period close requires maker-checker")
+        period = self.db.query(ProductionLedgerPeriod).filter_by(period_id=period_id).with_for_update().one_or_none()
+        if period is None or period.version != expected_version or period.state not in {"OPEN", "SOFT_CLOSED"}:
+            raise ProductionConflict("Ledger period close conflict")
+        period.state = "CLOSED"
+        period.version += 1
+        self.db.flush()
+        return period
+
 
 class BalanceSnapshotService:
     def __init__(self, db):
@@ -48,14 +59,3 @@ class BalanceSnapshotService:
             self.db.flush()
             raise ProductionConflict("Ledger imbalance blocks completion")
         return True
-
-    def close(self, period_id, expected_version, maker, checker):
-        if maker == checker:
-            raise ProductionConflict("Period close requires maker-checker")
-        period = self.db.query(ProductionLedgerPeriod).filter_by(period_id=period_id).with_for_update().one_or_none()
-        if period is None or period.version != expected_version or period.state not in {"OPEN", "SOFT_CLOSED"}:
-            raise ProductionConflict("Ledger period close conflict")
-        period.state = "CLOSED"
-        period.version += 1
-        self.db.flush()
-        return period
