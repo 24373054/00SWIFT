@@ -36,5 +36,8 @@ def test_refresh_rejects_untrusted_provider_status():
         def query(self, _model):
             return Query()
 
+        def flush(self):
+            return None
+
     with pytest.raises(CertificateLifecycleError, match="invalid status"):
         CertificateService(Db()).refresh_external_status(checker=lambda _fingerprint: "BAD")
