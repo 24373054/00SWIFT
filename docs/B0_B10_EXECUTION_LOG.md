@@ -51,6 +51,17 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 
+### R0.6 — 金额与时间类型规则
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg 'BigInteger|timezone=True|UTC' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；R0.6 已作为全局数据模型/迁移约束，B1.1 明确要求落地
+- 验收证据：B1.1.4、B1.1.5 和金额/时间测试要求已定义
+- 未解决风险：现有模型仍有 Integer/naive datetime，必须在 B1 修复
+- 执行者：Codex
+
 ### R0.5 — 历史迁移不可变
 
 - 状态：DONE
