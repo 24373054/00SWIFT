@@ -308,6 +308,26 @@ class ProductionApproval(Base):
     __table_args__ = (UniqueConstraint("aggregate_type", "aggregate_id", "action", name="uq_prod_approval_decision"),)
 
 
+class ProductionApprovalDecision(Base):
+    __tablename__ = "prod_approval_decisions"
+    id = Column(Integer, primary_key=True)
+    decision_id = Column(String(100), nullable=False, unique=True)
+    approval_id = Column(String(100), ForeignKey("prod_approvals.approval_id", ondelete="RESTRICT"), nullable=False, index=True)
+    outcome = Column(String(20), nullable=False)
+    checker = Column(String(200), nullable=False)
+    signature = Column(String(512), nullable=True)
+    reason = Column(String(500), nullable=False)
+    policy_version = Column(String(80), nullable=False)
+    evidence_ref = Column(String(120), nullable=True)
+    decided_at = Column(DateTime, nullable=False, default=utcnow)
+
+
+@event.listens_for(ProductionApprovalDecision, "before_update")
+@event.listens_for(ProductionApprovalDecision, "before_delete")
+def _approval_decision_immutable(_mapper, _connection, _target) -> None:
+    raise ValueError("approval decisions are append-only")
+
+
 class ProductionDeliveryProfile(Base):
     __tablename__ = "prod_delivery_profiles"
     id = Column(Integer, primary_key=True)

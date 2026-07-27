@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 
-from .models import ProductionApproval, utcnow
+from .models import ProductionApproval, ProductionApprovalDecision, utcnow
 from .security import ProductionPrincipal, require_production_scope
 
 
@@ -19,6 +19,7 @@ class ApprovalCreateRequest(BaseModel):
 
 class ApprovalDecisionRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
+    outcome: str = Field(default="APPROVED", pattern="^(APPROVED|REJECTED)$")
 
 
 def create_pending_approval(request: ApprovalCreateRequest, principal: ProductionPrincipal = Depends(require_production_scope("production.admin")), db: Session = Depends(get_db)):
@@ -38,5 +39,6 @@ def decide_approval(approval_id: str, request: ApprovalDecisionRequest, principa
     approval.reason = request.reason
     approval.state = "APPROVED"
     approval.approved_at = utcnow()
+    db.add(ProductionApprovalDecision(decision_id=f"dec_{__import__('uuid').uuid4().hex}", approval_id=approval.approval_id, outcome=request.outcome, checker=principal.subject, reason=request.reason, policy_version="maker-checker-v1", decided_at=utcnow()))
     db.commit()
     return {"approval_id": approval.approval_id, "state": approval.state, "checker": approval.checker}
