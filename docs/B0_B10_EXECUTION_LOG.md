@@ -51,3 +51,14 @@
 - 未解决风险：尚未创建本条提交；后续每项必须先更新本日志再勾选
 - 执行者：Codex
 - 复核者：待用户/Luna 复核
+
+### R0.2 — 禁止占位冒充完成
+
+- 状态：DONE
+- commit：待提交
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试命令：`rg '新增 ORM 类|Protocol|固定返回成功|TODO' docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 测试结果：通过；R0.2 明确规定这些内容不计完成
+- 验收证据：每个 B Gate 均要求真实代码、错误路径和测试
+- 未解决风险：无；后续实现若出现占位必须保持未勾选
+- 执行者：Codex
