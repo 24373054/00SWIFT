@@ -549,6 +549,15 @@
 - 外部证据：机构 GL transport/receipt 未提供，保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B5.5.2 amendment — regression fix
+
+- 状态：DONE
+- commit：`f7fe66f`
+- 修改文件：`backend/production/ledger_service.py`
+- 修复：将 LedgerPeriodService.close 保持在正确 service 类中，避免 snapshot service 误接收 period close API。
+- 集中回归：账本/hold/GL/completion/domain 相关 `18 passed`（1 个既有 deprecation warning）；ruff 全部通过。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
