@@ -5,6 +5,7 @@ on:
     paths:
       - "backend/alembic/**"
       - "backend/scripts/verify_migration_baseline.py"
+      - "backend/scripts/verify_production_schema.py"
       - "docs/database/MIGRATION_BASELINE.md"
   workflow_dispatch:
 
@@ -25,4 +26,8 @@ jobs:
         run: python backend/scripts/verify_migration_baseline.py
       - name: Upgrade schema
         working-directory: backend
-        run: python -m alembic upgrade head
+        env:
+          DB_URL: sqlite:///migration_ci.db
+        run: |
+          python -m alembic upgrade head
+          python scripts/verify_production_schema.py
