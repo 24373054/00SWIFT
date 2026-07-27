@@ -1251,3 +1251,23 @@
 - 外部证据：真实 ingress TLS extension 注入需部署环境验证。
 - 未解决风险：当前主 dependency 尚未替换为该 authenticator，B2.2.2 完成 OAuth/certificate/environment 状态组合接线。
 - 执行者：Codex
+
+### B2.2.2 — OAuth/service identity/certificate binding
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`8e736a5`
+- 修改文件：`backend/production/security.py`、`backend/tests/production/test_service_identity_binding.py`
+- 新增实现：OAuth token scopes 与 persisted identity scopes 取交集；校验 identity environment、ACTIVE participant/tenant、certificate fingerprint binding、certificate status/有效期；pilot/live 无证书绑定直接拒绝。
+- 新增/修改测试：错 environment、未绑定 participant、过期 certificate fail-closed。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_service_identity_binding.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/security.py backend/tests/production/test_service_identity_binding.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 正常路径证据：credential → service identity → certificate → participant → tenant 五段绑定后才返回 principal。
+- 负向路径证据：token scope 交集为空、environment mismatch、inactive/revoked/expired certificate 或 participant 均抛 HTTP 403。
+- 并发/重复/超时/恢复证据：认证路径只读查询；状态撤销立即影响后续 token resolution。
+- OpenAPI/AsyncAPI 影响：无字段变化；production auth dependency 收紧。
+- Metrics/alerts/runbook 影响：identity/certificate mismatch 进入安全告警与证书运营 runbook。
+- 外部证据：真实 OAuth provider 与 mTLS ingress 端到端仍待 B2.2.4/外部环境。
+- 未解决风险：现有 sandbox credential fallback 保留，仅限 sandbox；certificate rotation overlap 在 B2.2.3 实现。
+- 执行者：Codex

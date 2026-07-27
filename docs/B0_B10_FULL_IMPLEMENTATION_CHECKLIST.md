@@ -282,7 +282,7 @@
   - 从受信 ingress/ASGI TLS context 获取证书；不得相信任意客户端自报 fingerprint header。
   - 绑定 certificate → service identity → participant → tenant。
 
-- [ ] B2.2.2 修改 `backend/production/security.py`。
+- [x] B2.2.2 修改 `backend/production/security.py`。
   - OAuth token scopes 与 service identity scopes、participant entitlement 取交集。
   - 验证 identity/certificate/environment/status/effective period。
 
