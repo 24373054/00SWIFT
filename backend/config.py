@@ -81,6 +81,7 @@ class Settings(BaseSettings):
     production_require_auth: bool = False
     production_qualified_attestation_path: str | None = None
     production_signature_verifier: Literal["unconfigured", "qualified"] = "unconfigured"
+    production_signature_allowed_algorithms: str = "ed25519"
     production_qualification_trust_anchor: str | None = None
     production_qualification_expected_connector: str | None = None
     production_broker_url: str | None = None
