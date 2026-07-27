@@ -689,6 +689,7 @@ from .ledger_router import ledger_router  # noqa: E402
 from .operations_router import operations_router  # noqa: E402
 from .payment_router import payment_router  # noqa: E402
 from .reporting_router import reporting_router  # noqa: E402
+from .rulebook_router import rulebook_router  # noqa: E402
 from .standards_router import standards_router  # noqa: E402
 
 router.routes.clear()
@@ -699,6 +700,7 @@ for _domain_router in (
     account_router,
     ledger_router,
     reporting_router,
+    rulebook_router,
     standards_router,
 ):
     # FastAPI's include_router stores a deferred wrapper on this version;

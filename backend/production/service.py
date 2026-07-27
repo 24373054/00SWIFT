@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from config import get_settings
 from nextgen.standards import finding_dicts, validate_message
 
 from .connectors import SandboxFxQuoteProvider
@@ -32,6 +33,7 @@ from .models import (
     ProductionSettlementLeg,
     utcnow,
 )
+from .rulebook_service import RulebookError, RulebookService
 from .runtime import (
     ProductionAuditService,
     ProductionConflict,
@@ -206,6 +208,11 @@ class ProductionPaymentService:
         idempotency_key: str,
     ) -> dict[str, Any]:
         amount_minor_value, currency, settlement_currency = _amount_fields(payload)
+        if not get_settings().is_sandbox:
+            try:
+                RulebookService(self.db).assert_current(principal.participant_id)
+            except RulebookError as exc:
+                raise ProductionConflict(str(exc)) from exc
         corridor = str(payload.get("corridor") or "CN-HK").upper()
         message_type = str(payload.get("message_type") or "pacs.008")
         scenario = str((payload.get("purpose") or {}).get("code") or "UNSPECIFIED").upper()
