@@ -2,8 +2,7 @@ import pytest
 
 from production.gl_bridge import GlBridge
 from production.ledger_service import ProductionLedgerService
-from production.models import ProductionJournalEntry
-from production.models import ProductionJournalTemplate
+from production.models import ProductionJournalEntry, ProductionJournalTemplate
 from production.runtime import ProductionConflict
 
 

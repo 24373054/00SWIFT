@@ -1,6 +1,7 @@
 """B5 versioned fee/tax/interest/adjustment journal templates."""
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0033_journal_templates"
