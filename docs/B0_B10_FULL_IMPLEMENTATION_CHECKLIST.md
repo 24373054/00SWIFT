@@ -600,7 +600,7 @@
 - [x] B5.2.3 余额必须可从 entries 重建。
   - `balance_minor` 如保留只能是带 version 的 projection/cache，不能成为唯一权威。
 
-- [ ] B5.2.4 新增 reversal。
+- [x] B5.2.4 新增 reversal。
   - 不修改原 journal；创建相反分录并链接 `reverses_journal_id`、reason、approval、evidence。
 
 - [ ] B5.2.5 新增 fee、tax、interest 和 adjustment journal templates。

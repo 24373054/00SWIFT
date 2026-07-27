@@ -246,6 +246,19 @@
 - 测试结果：`5 passed`。
 - 执行者：Codex
 
+### B5.2.4 — journal reversal
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`c820b94`、`e255abd`
+- 修改文件：`backend/production/models.py`、`backend/production/_ledger_core.py`、`backend/alembic/versions/0032_journal_reversal_fields.py`、`backend/tests/production/test_ledger_boundaries.py`
+- 新增迁移：`0032_journal_reversal_fields`。
+- 新增/修改实现：只能对 POSTED journal 创建相反 entries；原 journal 不变；reversal 通过 reverses_journal_id、reason、approval_ref、evidence_ref 链接并原子写入。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_boundaries.py -q`
+- 测试结果：`6 passed`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
