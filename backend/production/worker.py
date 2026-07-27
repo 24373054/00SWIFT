@@ -41,6 +41,8 @@ from .models import (
     ProductionSettlementLeg,
     utcnow,
 )
+from .funding_service import FundingService
+from .ledger_service import ProductionLedgerService
 from .return_service import ReturnService
 from .runtime import (
     ProductionAuditService,
@@ -65,6 +67,8 @@ class ProductionWorker:
         self.db = db
         self.owner = f"{self.consumer}:{uuid.uuid4().hex}"
         self.payments = ProductionPaymentService(db)
+        self.funding_service = FundingService(db)
+        self.ledger_service = ProductionLedgerService(db)
         registry = connector_registry()
         self.funding = registry["funding"]
         self.fx = registry["fx"]
