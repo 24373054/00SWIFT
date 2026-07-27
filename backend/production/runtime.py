@@ -9,8 +9,9 @@ import uuid
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 
+from sqlalchemy import and_, exists, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from .models import (
     ProductionAuditEvent,
@@ -232,11 +233,19 @@ class ProductionOutboxService:
             {"status": "PENDING", "lease_owner": None, "lease_until": None},
             synchronize_session=False,
         )
+        earlier = aliased(ProductionOutboxEvent)
         rows = (
             self.db.query(ProductionOutboxEvent)
             .filter(
                 ProductionOutboxEvent.status == "PENDING",
                 ProductionOutboxEvent.available_at <= now,
+                ~exists().where(
+                    and_(
+                        earlier.partition_key == ProductionOutboxEvent.partition_key,
+                        earlier.aggregate_sequence < ProductionOutboxEvent.aggregate_sequence,
+                        or_(earlier.status == "PENDING", earlier.status == "PROCESSING"),
+                    )
+                ),
             )
             .order_by(ProductionOutboxEvent.id)
             .limit(max(1, min(limit, 500)))
