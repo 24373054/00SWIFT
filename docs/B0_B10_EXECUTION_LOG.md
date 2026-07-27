@@ -234,6 +234,18 @@
 - 测试结果：`4 passed`。
 - 执行者：Codex
 
+### B5.2.3 — entry-derived trial balance
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`bbe571f`
+- 修改文件：`backend/production/_ledger_core.py`、`backend/tests/production/test_ledger_boundaries.py`
+- 新增/修改实现：trial_balance 只汇总 POSTED journal entries，按 account normal balance direction 重建余额；account.balance_minor 不再作为唯一权威，保留 projection 字段仅用于 hold/available 展示。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_boundaries.py -q`
+- 测试结果：`5 passed`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

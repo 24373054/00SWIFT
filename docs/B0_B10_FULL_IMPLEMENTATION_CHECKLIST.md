@@ -597,7 +597,7 @@
 - [x] B5.2.2 数据库层验证每个 journal、每个 currency 借贷平衡。
   - 多币 journal 拆成独立 currency groups 和明确 FX clearing legs。
 
-- [ ] B5.2.3 余额必须可从 entries 重建。
+- [x] B5.2.3 余额必须可从 entries 重建。
   - `balance_minor` 如保留只能是带 version 的 projection/cache，不能成为唯一权威。
 
 - [ ] B5.2.4 新增 reversal。
