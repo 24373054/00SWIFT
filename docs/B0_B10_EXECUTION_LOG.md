@@ -306,6 +306,26 @@
 - 未解决风险：现有 router 尚未完全按矩阵拆分，B0.3.2–B0.3.6 继续执行。
 - 执行者：Codex
 
+### B0.3.2 — 按安全域拆分生产路由
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`159c139`
+- 修改文件：`backend/production/router.py`、`backend/production/payment_router.py`、`backend/production/identity_router.py`、`backend/production/operations_router.py`、`backend/production/ledger_router.py`、`backend/production/standards_router.py`、`backend/production/reporting_router.py`
+- 新增迁移：无
+- 新增/修改测试：路由矩阵覆盖测试、生产 health 路由和旧 API operational regression。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_authorization_matrix_document.py backend/tests/production/test_readiness_dependencies.py backend/tests/test_ecny_api_flow.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/router.py backend/production/payment_router.py backend/production/identity_router.py backend/production/operations_router.py backend/production/ledger_router.py backend/production/standards_router.py backend/production/reporting_router.py`
+- 测试结果：`5 passed`; `ruff`：`All checks passed`
+- 正常路径证据：payment、identity、operations、ledger、standards、reporting 六个安全域 router 均注册真实 endpoint，生产 health 仍返回依赖状态。
+- 负向路径证据：拆分过程中未引入重复 endpoint；matrix test 仍确认全部 27 路由有文档覆盖。
+- 并发/重复/超时/恢复证据：路由拆分不改变业务事务/幂等依赖；每个 endpoint 保留原函数依赖签名。
+- OpenAPI/AsyncAPI 影响：生产路由注册由六个安全域模块组成，路径前缀保持 `/production/v1`。
+- Metrics/alerts/runbook 影响：可按安全域统计拒绝和审计事件。
+- 外部证据：无；真实身份/证书仍 `[EXT-BLOCKED]`。
+- 未解决风险：统一 dependency bundle 在 B0.3.3 接入。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
