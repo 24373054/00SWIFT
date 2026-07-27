@@ -1391,6 +1391,26 @@
 - 未解决风险：真实 PostgreSQL RLS 与双边 policy 组合仍待 B1/G3 外部 Gate。
 - 执行者：Codex
 
+### B2.4.1 — limit/exposure policy service
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`6979763`
+- 修改文件：`backend/production/limit_service.py`、`backend/tests/production/test_limit_service.py`
+- 新增实现：按 participant/service/corridor/currency/effective window 选取 ACTIVE profile；单笔 amount、FX exposure 上限 fail-closed；不扫描历史 payment 计算并发限额。
+- 新增/修改测试：非正金额、single limit、exposure limit 负向测试。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_limit_service.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/limit_service.py backend/tests/production/test_limit_service.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`。
+- 正常路径证据：profile 查询 tenant/participant scoped，amount/exposure 由显式参数校验。
+- 负向路径证据：无 ACTIVE profile、amount<=0、单笔/FX exposure 超限均抛 `LimitError`。
+- 并发/重复/超时/恢复证据：本服务不做历史扫描；原子 counter reservation 在 B2.4.2 实现。
+- OpenAPI/AsyncAPI 影响：无直接 API 变化。
+- Metrics/alerts/runbook 影响：limit/exposure reject reason 可接额度告警。
+- 外部证据：无。
+- 未解决风险：现有 `assert_limit()` 仍含日累计扫描，需 B2.4.2 counter 表和 B2.4.3 接线替换。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE

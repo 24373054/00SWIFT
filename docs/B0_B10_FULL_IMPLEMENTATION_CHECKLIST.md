@@ -310,7 +310,7 @@
 
 ## B2.4 额度与暴露
 
-- [ ] B2.4.1 新增 `backend/production/limit_service.py`。
+- [x] B2.4.1 新增 `backend/production/limit_service.py`。
   - 单笔、日累计、在途、FX exposure、participant、corridor、currency、时间窗。
   - 不得通过扫描历史 payment 后在应用层相加实现并发额度。
 
