@@ -1292,6 +1292,25 @@
 - 未解决风险：尚未建立 scheduler/worker 事件触发器与 SLA 量化，下一项测试补齐。
 - 执行者：Codex
 
+### B2.2.4 — identity/certificate lifecycle negative matrix
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`b503d5b`（测试补强）；实现见 `34adef1`、`8e736a5`、`3539174`
+- 修改文件：`backend/tests/production/test_service_identity_binding.py`、`backend/tests/production/test_certificate_lifecycle.py`、`backend/tests/production/test_certificate_auth.py`
+- 覆盖矩阵：错证书/自报 fingerprint、错 token scope/environment、inactive/revoked/expired certificate、轮换 overlap/双控、无效 OCSP/CRL status、trust-domain binding。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_service_identity_binding.py backend/tests/production/test_certificate_lifecycle.py backend/tests/production/test_certificate_auth.py backend/tests/production/test_identity_header_boundary.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_service_identity_binding.py backend/tests/production/test_certificate_lifecycle.py backend/tests/production/test_certificate_auth.py`
+- 测试结果：`7 passed`；`ruff: All checks passed`。
+- 正常路径证据：仅 trusted TLS DER + active identity/certificate/participant/tenant chain can authenticate。
+- 负向路径证据：所有错误矩阵均 fail-closed，未使用 header、固定 fingerprint 或固定 provider success。
+- 并发/重复/超时/恢复证据：rotation/revoke/refresh 服务层使用事务 flush；pool/ingress 集成留待外部环境。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：证书拒绝和 rotation overlap 进入安全运营告警。
+- 外部证据：真实 mTLS ingress/OAuth provider 端到端仍待部署环境。
+- 未解决风险：外部证书链、OCSP SLA 和 token revocation propagation 尚未在真实 provider 验证。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE

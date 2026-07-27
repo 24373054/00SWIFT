@@ -290,7 +290,7 @@
   - 新增 `certificate_service.py` 和 scheduler/worker 事件。
   - 吊销后现有 token 在规定 SLA 内失效。
 
-- [ ] B2.2.4 新增 `test_service_identity_binding.py`、`test_certificate_lifecycle.py`。
+- [x] B2.2.4 新增 `test_service_identity_binding.py`、`test_certificate_lifecycle.py`。
   - 覆盖错证书、错 token、错环境、吊销、轮换重叠、证书过期和 trust-domain 混用。
 
 ## B2.3 双边 Entitlement
