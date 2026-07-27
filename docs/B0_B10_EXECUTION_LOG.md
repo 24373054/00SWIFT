@@ -205,3 +205,23 @@
 - 正常路径证据：有效 attestation 返回 `QualificationStatus.VERIFIED`。
 - 负向路径证据：缺少 `artifact_type` 的 attestation 在 verifier 层拒绝。
 - 未解决风险：真实签发机构和生产工件仍属于 B0.4/B7 的 `[EXT-BLOCKED]` 外部证据。
+
+### B0.1.2 — 资格工件与决策持久化
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`470d90a`
+- 修改文件：`backend/production/models.py`、`backend/alembic/versions/0004_production_qualification.py`、`backend/tests/production/test_qualification_models.py`
+- 新增迁移：`0004_production_qualification`
+- 新增/修改测试：工件/决策表可持久化；环境+subject+connector_version 唯一约束；非法 ACTIVE 过期工件被拒绝。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_qualification_models.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/production/models.py backend/alembic/versions/0004_production_qualification.py backend/tests/production/test_qualification_models.py`; `\.venv\Scripts\python.exe -m alembic upgrade head`
+- 测试结果：`2 passed`; `ruff` 通过；Alembic `0003_production_hardening -> 0004_production_qualification` 通过。
+- 正常路径证据：SQLite `swift_dev.db` 中存在 `prod_qualification_artifacts`、`prod_qualification_decisions`，工件表含 artifact_type、digest、签名算法、有效期、状态、验证时间、verifier 版本和唯一约束。
+- 负向路径证据：重复环境/subject/version 提交触发 `IntegrityError`；过期工件设置 ACTIVE 触发 `ValueError`。
+- 并发/重复/超时/恢复证据：数据库唯一约束为重复提交提供原子拒绝；并发 replay 在 B0.2.3 覆盖。
+- OpenAPI/AsyncAPI 影响：无新增外部接口。
+- Metrics/alerts/runbook 影响：B0.1.4 接入 readiness；本条不声称生产就绪。
+- 外部证据：无；真实签发机构仍为 `[EXT-BLOCKED]`。
+- 未解决风险：资格决策写入服务和过期后台扫描在后续 B0.1.4/B7 完成。
+- 执行者：Codex
