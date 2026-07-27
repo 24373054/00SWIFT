@@ -51,6 +51,30 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.2.1 — atomic idempotency lifecycle
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`5ba48c3`
+- 修改文件：`backend/production/runtime.py`、`backend/production/models.py`、`backend/alembic/versions/0022_idempotency_recovery.py`、`backend/tests/production/test_idempotency_recovery.py`
+- 新增实现：begin 使用 SAVEPOINT 原子 insert，不对调用者事务执行 rollback；记录 owner/locked_until/request hash/response/error/attempt/trace；支持 STARTED/COMPLETED/FAILED_RETRYABLE/FAILED_FINAL/EXPIRED。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_idempotency_recovery.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/runtime.py backend/production/models.py backend/alembic/versions/0022_idempotency_recovery.py backend/tests/production/test_idempotency_recovery.py`; `.\\.venv\\Scripts\\python.exe -m alembic -c alembic.ini upgrade head`
+- 测试结果：`2 passed`；`ruff: All checks passed`；SQLite `0021 -> 0022` 成功。
+- 负向证据：同 key 异 body、未过期 STARTED、FAILED_FINAL 均拒绝；并发冲突在 SAVEPOINT 内处理。
+- 执行者：Codex
+
+### B3.2.2 — STARTED timeout recovery
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`6aa5527`
+- 修改文件：`backend/production/runtime.py`、`backend/tests/production/test_idempotency_recovery_strategy.py`
+- 新增实现：`recover_started` 强制先通过 aggregate/connector query-by-reference；查到结果即完成，只有明确无结果才返回 `TAKEOVER_REQUIRED`。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_idempotency_recovery_strategy.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/runtime.py backend/tests/production/test_idempotency_recovery_strategy.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 负向证据：未过期或非 STARTED 记录不能恢复；不会盲目重做外部副作用。
+- 执行者：Codex
+
 ### B3.1.4 — event compatibility tests
 
 - 状态：DONE

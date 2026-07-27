@@ -372,12 +372,12 @@
 
 ## B3.2 幂等记录
 
-- [ ] B3.2.1 重写 `ProductionIdempotencyService.begin()`。
+- [x] B3.2.1 重写 `ProductionIdempotencyService.begin()`。
   - 使用数据库原子 insert/upsert，不得在 `IntegrityError` 后 rollback 调用者完整事务。
   - 状态：STARTED/COMPLETED/FAILED_RETRYABLE/FAILED_FINAL/EXPIRED。
   - owner、locked_until、request hash、response、错误、attempt、trace。
 
-- [ ] B3.2.2 定义 STARTED 超时恢复策略。
+- [x] B3.2.2 定义 STARTED 超时恢复策略。
   - 超时后先查询聚合/外部结果，再 takeover；不得盲目重做。
 
 - [ ] B3.2.3 给所有业务 POST 增加 idempotency contract test。
