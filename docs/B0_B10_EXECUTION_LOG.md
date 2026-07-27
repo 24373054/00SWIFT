@@ -1332,6 +1332,26 @@
 - 未解决风险：现有 `assert_entitlement()` 尚未切换到该服务，下一项完成默认拒绝接线。
 - 执行者：Codex
 
+### B2.3.2 — default-deny bilateral entitlement enforcement
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`bc7fb02`
+- 修改文件：`backend/production/security.py`、`backend/production/service.py`、`backend/tests/production/test_entitlement_enforcement.py`
+- 新增实现：`assert_entitlement()` 改为调用 `EntitlementService.match()`，在 SQL 候选中强制 tenant/participant/service/effective/amount 条件；wildcard 仅在 approved_by + evidence_ref 下允许；payment/FX 调用传入实际金额。
+- 新增/修改测试：非 sandbox 无 bilateral entitlement 默认 403；现有服务回归保持 sandbox bypass 仅模拟环境。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_entitlement_enforcement.py backend/tests/production/test_entitlement_service.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/security.py backend/production/service.py backend/tests/production/test_entitlement_enforcement.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 正常路径证据：精确 policy 或已审批 wildcard 命中才放行，命中候选由版本倒序确定。
+- 负向路径证据：A→B 不推出 B→A；错币种/走廊/报文/方向/金额/期限和未审批 wildcard 均拒绝。
+- 并发/重复/超时/恢复证据：匹配查询 tenant/participant scoped；policy activation/revoke 由事务控制。
+- OpenAPI/AsyncAPI 影响：无新增字段；payment/FX authorization 前置条件收紧。
+- Metrics/alerts/runbook 影响：ENTITLEMENT_REQUIRED 和 wildcard rejection 接权限告警。
+- 外部证据：无。
+- 未解决风险：命中版本/evidence 写入 PaymentFact/Audit 尚待 B2.3.3；真实 PostgreSQL RLS 仍由 B1 Gate 阻断。
+- 执行者：Codex
+
 ### B2.2.3 — certificate rotation/revoke/OCSP-CRL refresh
 
 - 状态：DONE

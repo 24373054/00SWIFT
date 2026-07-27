@@ -299,7 +299,7 @@
   - 双边键：origin participant、counterparty、direction、service、message type、corridor、currency、amount band、effective period。
   - 修改/激活/撤销必须 maker-checker。
 
-- [ ] B2.3.2 修复 `assert_entitlement()`。
+- [x] B2.3.2 修复 `assert_entitlement()`。
   - 不能只在 Python 拉出候选后宽松匹配；查询必须 tenant-scoped、默认拒绝。
   - 对 wildcard 使用明确 policy，pilot/live 禁止无审批的 `*`。
 
