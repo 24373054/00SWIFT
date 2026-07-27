@@ -151,6 +151,32 @@ class ProductionIdempotencyService:
         record.owner = None
         self.db.flush()
 
+    def recover_started(
+        self,
+        record: ProductionIdempotencyKey,
+        query_aggregate,
+        *,
+        now: dt.datetime | None = None,
+    ) -> tuple[str, Any | None]:
+        """Resolve an expired STARTED record before allowing a retry.
+
+        ``query_aggregate`` must query the local aggregate and/or connector by
+        stable client reference.  A takeover is returned only when it proves
+        that no prior business effect exists; the service never blindly reruns.
+        """
+
+        now = now or utcnow()
+        if record.status != "STARTED" or record.locked_until is None or _aware(record.locked_until) > now:
+            raise ProductionConflict("idempotency record is not eligible for recovery")
+        result = query_aggregate(record.scope, record.key)
+        if result is not None:
+            self.complete(record, 200, result)
+            return "COMPLETED", result
+        record.owner = None
+        record.locked_until = now
+        self.db.flush()
+        return "TAKEOVER_REQUIRED", None
+
 
 class ProductionOutboxService:
     def __init__(self, db: Session):
