@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.6.3 — worker/outbox operational metrics
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`fec9f54`
+- 修改文件：`backend/production/outbox_metrics.py`、`backend/production/dlq_router.py`、`backend/tests/production/test_outbox_metrics.py`、`backend/tests/production/test_dlq_router.py`
+- 新增实现：pending/processing/DLQ 数量、oldest event age、retry attempts snapshot 及 operator endpoint `/outbox/metrics`。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_outbox_metrics.py backend/tests/production/test_dlq_router.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/production/outbox_metrics.py backend/production/dlq_router.py backend/tests/production/test_outbox_metrics.py backend/tests/production/test_dlq_router.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 外部证据：正式 metrics exporter 未配置，endpoint 先提供可审计数据库快照。
+- 执行者：Codex
+
 ### B3.6.2 — dual-control DLQ replay
 
 - 状态：DONE

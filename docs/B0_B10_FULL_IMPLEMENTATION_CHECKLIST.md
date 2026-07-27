@@ -430,7 +430,7 @@
 - [x] B3.6.2 新增 replay request 聚合。
   - replay 必须 operator 创建、checker 批准、记录原因和原 event hash；不能直接把状态改回 PENDING。
 
-- [ ] B3.6.3 新增 worker heartbeat、lag、oldest event age、retry、DLQ metrics。
+- [x] B3.6.3 新增 worker heartbeat、lag、oldest event age、retry、DLQ metrics。
 - [ ] B3.6.4 新增 runbook：`docs/runbooks/OUTBOX_RECOVERY.md`。
 
 ## B3.7 测试
