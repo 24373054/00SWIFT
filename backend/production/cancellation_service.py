@@ -35,6 +35,8 @@ class CancellationService:
 
     def accept(self, request_id: str, *, evidence: dict) -> ProductionCancellationRequest:
         current = self.db.query(ProductionCancellationRequest).filter_by(cancellation_request_id=request_id).one()
+        if current.state not in {"REQUESTED", "VALIDATING", "SENT"}:
+            raise ProductionConflict(f"invalid cancellation transition {current.state} -> ACCEPTED")
         if current.state in {"REQUESTED", "VALIDATING"}:
             current.state = "SENT"
             self.db.flush()
