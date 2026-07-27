@@ -116,6 +116,26 @@
 - 未解决风险：Gate G6 不得勾选，B0 COMPLETE 不得勾选。
 - 执行者：Codex
 
+### B1.1.1 — 冻结历史迁移 baseline
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`c14290d`
+- 修改文件：`docs/database/MIGRATION_BASELINE.md`、`backend/scripts/verify_migration_baseline.py`、`backend/tests/production/test_migration_baseline.py`、`.github/workflows/migrations.yml`
+- 新增迁移：无；历史 `0001/0002/0003` 未修改。
+- 新增/修改测试：baseline 三文件 SHA-256 校验和 CI workflow。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_migration_baseline.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/scripts/verify_migration_baseline.py backend/tests/production/test_migration_baseline.py`; `\.venv\Scripts\python.exe backend/scripts/verify_migration_baseline.py`
+- 测试结果：`1 passed`; `ruff`：`All checks passed`; verifier 通过。
+- 正常路径证据：immutable baseline 文档记录 revision hash 和已知缺陷，CI 在 migration upgrade 前 fail-closed 校验。
+- 负向路径证据：缺失/修改任一历史 revision 会 `SystemExit`，禁止静默修改。
+- 并发/重复/超时/恢复证据：CI 每次 PR/push 重新 hash；历史修复必须追加新 revision。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：baseline mismatch 阻断 migration workflow。
+- 外部证据：无。
+- 未解决风险：B1.1.2 仍需显式关系完整性迁移。
+- 执行者：Codex
+
 ### R0.1 — 执行证据机制
 
 - 状态：DONE
