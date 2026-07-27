@@ -445,6 +445,15 @@
 - 外部证据：真实 GL transport 尚未提供，代码保持显式 ACK gate，不把文件生成视为接收。
 - 执行者：Codex
 
+### B5.6.4 — GL source for four-way reconciliation
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- commit：`70c18a8`
+- 代码侧状态：GlBatch/GlReceipt 持久化结构已完成；B8 reconciliation 当前仍有历史 payment-derived institution hash 路径，待真实 GL feed 接入后删除。
+- 外部证据：合作机构 GL batch/receipt feed、字段契约和 ACK 证据缺失，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
