@@ -66,6 +66,10 @@ class ProductionWorker:
         self.messages = registry["messages"]
         self.value = registry["value"]
 
+    def _transition(self, order: ProductionPaymentOrder, state: str, outcome: str | None = None) -> None:
+        set_order_state(self.db, order.order_id, state, outcome, expected_version=order.version)
+        self.db.refresh(order)
+
     def run_once(self, limit: int = 50) -> dict[str, int]:
         record_worker_heartbeat()
         outbox = ProductionOutboxService(self.db)
@@ -155,15 +159,15 @@ class ProductionWorker:
             self.payments._replace_fact(order.order_id, "AUTHORIZATION", outcome, auth_decision.decision_id, {"rule_version": auth_decision.rule_version})
             auth_decision.outcome = outcome
         if not authorization_ok:
-            set_order_state(self.db, order.order_id, "SUSPENDED", "REJECTED")
+            self._transition(order, "SUSPENDED", "REJECTED")
             return
         decision = self.db.query(ProductionComplianceDecision).filter_by(order_id=order.order_id).first()
         if decision is not None:
             outcome = ProductionComplianceService(self.db).evaluate(order)
             if outcome != "PASSED":
                 self.payments._replace_fact(order.order_id, "COMPLIANCE", outcome, decision.decision_id, {"rule_version": decision.rule_version})
-                set_order_state(self.db, order.order_id, "COMPLIANCE_REJECTED", "REJECTED")
-                set_order_state(self.db, order.order_id, "OPERATIONALLY_CLOSED_UNSUCCESSFUL", "REJECTED")
+                self._transition(order, "COMPLIANCE_REJECTED", "REJECTED")
+                self._transition(order, "OPERATIONALLY_CLOSED_UNSUCCESSFUL", "REJECTED")
                 return
             self.payments._replace_fact(order.order_id, "COMPLIANCE", "PASSED", decision.decision_id, {"rule_version": decision.rule_version})
             decision.outcome = "PASSED"
@@ -173,9 +177,9 @@ class ProductionWorker:
         if order.currency != order.settlement_currency:
             # Cross-currency orders must cross the explicit FX acceptance
             # barrier before any funding reservation is created here.
-            set_order_state(self.db, order.order_id, "FX_ACCEPTANCE_PENDING")
+            self._transition(order, "FX_ACCEPTANCE_PENDING")
             return
-        set_order_state(self.db, order.order_id, "RESERVATION_PENDING")
+        self._transition(order, "RESERVATION_PENDING")
         reservation = (
             self.db.query(ProductionFundingReservation)
             .filter_by(order_id=order.order_id, funding_reference=f"{order.initiator_participant}:{order.currency}")
@@ -234,7 +238,7 @@ class ProductionWorker:
                     intent.trade_intent_id,
                     {"trade_intent_id": intent.trade_intent_id, "quote_id": intent.quote_id, "order_id": order.order_id},
                 )
-                set_order_state(self.db, order.order_id, "FX_ACCEPTANCE_PENDING")
+                self._transition(order, "FX_ACCEPTANCE_PENDING")
         elif not self._has_event("payment.message.requested", order.order_id):
             ProductionOutboxService(self.db).enqueue("payment.message.requested", order.order_id, {"order_id": order.order_id})
 
@@ -247,7 +251,7 @@ class ProductionWorker:
         result = self.fx.accept_quote(quote.quote_id, intent.trade_intent_id, intent.idempotency_context)
         intent.state = result.state
         quote.status = "ACCEPTED"
-        set_order_state(self.db, order.order_id, "FX_ACCEPTED")
+        self._transition(order, "FX_ACCEPTED")
         intent.trade_reference = result.external_reference
         intent.provider_reference = intent.idempotency_context
         intent.evidence_ref = ProductionEvidenceService(self.db).record(
@@ -327,11 +331,11 @@ class ProductionWorker:
         ).evidence_id
         self.payments._replace_fact(order.order_id, "MESSAGE", result.state, "payment-message", {"evidence_id": message_evidence, **result.evidence})
         if result.state in {"DELIVERED", "NETWORK_ACKED"}:
-            set_order_state(self.db, order.order_id, "MESSAGE_DELIVERED")
+            self._transition(order, "MESSAGE_DELIVERED")
             if not self._has_event("payment.value.requested", order.order_id):
                 ProductionOutboxService(self.db).enqueue("payment.value.requested", order.order_id, {"order_id": order.order_id})
         else:
-            set_order_state(self.db, order.order_id, "SUSPENDED")
+            self._transition(order, "SUSPENDED")
 
     def _payment_value(self, payload: dict[str, Any]) -> None:
         order = self.db.query(ProductionPaymentOrder).filter_by(order_id=payload["order_id"]).one()
@@ -347,7 +351,7 @@ class ProductionWorker:
         leg.evidence_ref = ProductionEvidenceService(self.db).record("settlement.finality", leg.leg_id, result.evidence).evidence_id
         self.payments._replace_fact(order.order_id, "SETTLEMENT", result.state, leg.leg_role, result.evidence)
         if result.state == "FINAL":
-            set_order_state(self.db, order.order_id, "VALUE_SETTLEMENT")
+            self._transition(order, "VALUE_SETTLEMENT")
             self._complete_payment(order)
 
     def _complete_payment(self, order: ProductionPaymentOrder) -> None:
@@ -376,7 +380,7 @@ class ProductionWorker:
             ).evidence_id
             self.db.add(credit)
         self.payments._replace_fact(order.order_id, "BENEFICIARY", "CREDITED", credit.credit_id, {})
-        set_order_state(self.db, order.order_id, "CUSTOMER_COMPLETED", "COMPLETED")
+        self._transition(order, "CUSTOMER_COMPLETED", "COMPLETED")
         reservations = self.db.query(ProductionFundingReservation).filter_by(order_id=order.order_id).all()
         legs = self.db.query(ProductionSettlementLeg).filter_by(order_id=order.order_id).all()
         recon = ProductionReconciliationRun(
@@ -391,7 +395,7 @@ class ProductionWorker:
         )
         self.db.add(recon)
         self.payments._replace_fact(order.order_id, "RECONCILIATION", "MATCHED", recon.run_id, {})
-        set_order_state(self.db, order.order_id, "OPERATIONALLY_CLOSED", "COMPLETED")
+        self._transition(order, "OPERATIONALLY_CLOSED", "COMPLETED")
         ProductionAuditService(self.db).append("payment.completed", order.order_id, {"uetr": order.uetr}, "production-worker")
 
     def _cancel(self, payload: dict[str, Any]) -> None:
@@ -404,7 +408,7 @@ class ProductionWorker:
         request.evidence_ref = ProductionEvidenceService(self.db).record("payment.cancellation", request.cancellation_request_id, result.evidence).evidence_id
         self.payments._replace_fact(order.order_id, "CANCELLATION", result.state, request.cancellation_request_id, result.evidence)
         if result.state == "ACCEPTED" and leg.state != "FINAL":
-            set_order_state(self.db, order.order_id, "EXECUTION_CANCELLED", "CANCELLED")
+            self._transition(order, "EXECUTION_CANCELLED", "CANCELLED")
 
     def _return(self, payload: dict[str, Any]) -> None:
         return_payment = self.db.query(ProductionReturnPayment).filter_by(return_payment_id=payload["return_payment_id"]).one()
