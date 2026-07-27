@@ -960,3 +960,22 @@
 - 外部证据：无。
 - 未解决风险：真实 PostgreSQL RLS 与服务层组合仍需 B1.3.4 两租户集成验证。
 - 执行者：Codex
+
+### B1.3.4 — 两租户 PostgreSQL RLS 集成测试
+
+- 状态：`[EXT-BLOCKED]`（代码与测试已提交，外部 PostgreSQL fixture 未提供）
+- 开始时间：2026-07-27
+- 完成时间：—（等待 `PRODUCTION_TEST_POSTGRES_URL`）
+- commit：`6850cb5`
+- 修改文件：`backend/tests/production/test_postgres_rls.py`
+- 新增/修改测试：真实 PostgreSQL URL 存在时以 pool_size=1 验证两租户 payment read/write、跨租户 order/outbox/evidence join/count 不泄漏、事务 rollback 后连接池 context 清空；缺 URL 明确 pytest skip `[EXT-BLOCKED]`。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_postgres_rls.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_postgres_rls.py`
+- 测试结果：`1 skipped`（`[EXT-BLOCKED] PRODUCTION_TEST_POSTGRES_URL is not configured`）；`ruff: All checks passed`。
+- 正常路径证据：配置 PostgreSQL 后，测试必须存在两个租户各至少一笔 payment，且 tenant A 查询 tenant B payment/outbox/evidence 均为 0。
+- 负向路径证据：测试不会把缺少 PostgreSQL 当作通过；无 URL 直接保持 `[EXT-BLOCKED]`。
+- 并发/重复/超时/恢复证据：pool_size=1 强制复用连接，rollback 后新连接 current_setting 必须为空。
+- OpenAPI/AsyncAPI 影响：无。
+- Metrics/alerts/runbook 影响：RLS violation、连接池 context 泄漏应接安全告警。
+- 外部证据：`[EXT-BLOCKED]` 当前机器未提供 PostgreSQL 服务/fixture，无法勾选本项及 B1 Gate RLS 条目。
+- 未解决风险：必须在 PostgreSQL clean schema 和真实两租户数据上运行后才能验收。
+- 执行者：Codex
