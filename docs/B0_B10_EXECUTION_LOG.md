@@ -51,6 +51,18 @@
 - 未解决风险：当前尚未接入数据库决策记录和 startup gate
 - 执行者：Codex
 
+### B3.1.3 — AsyncAPI production events
+
+- 状态：DONE
+- 完成时间：2026-07-27
+- commit：`5770a31`
+- 修改文件：`asyncapi/production-events.yaml`、`backend/tests/production/test_asyncapi_contract.py`
+- 新增实现：AsyncAPI 3 contract 覆盖 payment、funding、FX、message、settlement、compliance、reconciliation、case、report 事件族及严格 envelope schema。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_asyncapi_contract.py -q`; `.\\.venv\\Scripts\\python.exe -m ruff check backend/tests/production/test_asyncapi_contract.py`
+- 测试结果：`1 passed`；`ruff: All checks passed`；YAML 解析成功且九类事件族全部存在。
+- 外部证据：无。
+- 执行者：Codex
+
 ### B3.1.2 — outbox integrity schema
 
 - 状态：DONE
