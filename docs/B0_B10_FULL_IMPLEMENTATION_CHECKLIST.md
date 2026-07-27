@@ -77,7 +77,7 @@
   - 字段：artifact id/type/version、issuer、subject、environment、digest、signature algorithm、valid_from/to、status、verified_at、verifier version、evidence id。
   - 约束：环境/subject/version 唯一性；过期工件不能成为 ACTIVE。
 
-- [ ] B0.1.3 重写 `Settings._validate_production_gate()`。
+- [x] B0.1.3 重写 `Settings._validate_production_gate()`。
   - 修改：`backend/config.py`。
   - 行为：pilot/live 启动必须调用资格验证器；路径不存在、签名无效、connector 版本不匹配立即启动失败。
   - 测试：禁止当前“传入不存在路径仍通过”的行为。
