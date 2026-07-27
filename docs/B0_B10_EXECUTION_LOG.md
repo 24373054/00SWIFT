@@ -150,6 +150,17 @@
 - 外部证据：合作银行/数字人民币运营机构 connector、真实同币/跨币轨道和终局回执缺失，无法生成真实 happy-path 证据，保持 `[EXT-BLOCKED]`。
 - 执行者：Codex
 
+### B4.G2 — rejection/cancel/return/UNKNOWN/recovery/compensation paths
+
+- 状态：EXT-BLOCKED
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`72d4925`
+- 修改文件：`docs/B0_B10_FULL_IMPLEMENTATION_CHECKLIST.md`
+- 代码侧状态：已实现 cancellation、return、timeout UNKNOWN、recovery service、compensation table 及 sandbox negative tests。
+- 外部证据：真实 connector response/query、ledger reversal、跨机构 recovery 和人工补偿签字尚未提供，不能声称全路径通过，保持 `[EXT-BLOCKED]`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
