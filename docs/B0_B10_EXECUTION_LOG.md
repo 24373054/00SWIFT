@@ -375,6 +375,18 @@
 - 验收证据：trial_balance 汇总 POSTED entries 并按正常余额方向重建，projection balance 不再是唯一权威；`5 passed`。
 - 执行者：Codex
 
+### B5.5.2 — ledger period maker-checker
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`6bfd239`
+- 修改文件：`backend/production/ledger_service.py`、`backend/tests/production/test_ledger_period.py`
+- 新增/修改实现：LedgerPeriodService 支持 OPEN/SOFT_CLOSED/CLOSED transitions；close 使用行锁/version CAS，并拒绝同一 maker/checker。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_ledger_period.py -q`
+- 测试结果：`1 passed`。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
