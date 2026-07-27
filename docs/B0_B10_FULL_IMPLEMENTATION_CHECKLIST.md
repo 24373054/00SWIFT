@@ -158,7 +158,7 @@
   - 没有 ACTIVE admission、超出获准场景/币种/限额/时段时 default-deny。
   - sandbox admission 必须标记 simulation，不能被 pilot/live 复用。
 
-- [ ] B0.5.3 完成并版本化产品法律实体/资金流图、CN–HK 双法域适用性矩阵、RACI、不承诺清单。
+- [x] B0.5.3 完成并版本化产品法律实体/资金流图、CN–HK 双法域适用性矩阵、RACI、不承诺清单。
   - 文件映射见 B10.8；代码 health/readiness 显示当前批准版本和有效期。
 
 - [ ] B0.5.4 `[EXT-BLOCKED]` 持牌合作方、内地/香港法律、合规、结算、数据保护和安全负责人签字。
