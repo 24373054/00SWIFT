@@ -154,7 +154,7 @@
   - 修改模型并新增显式迁移。
   - 字段：CN/HK 适用主体、场景、币种、金额/时间窗口、资金流版本、finality definition、数据流版本、rulebook version、签字角色、validity、status、evidence。
 
-- [ ] B0.5.2 payment 创建前检查 corridor admission。
+- [x] B0.5.2 payment 创建前检查 corridor admission。
   - 没有 ACTIVE admission、超出获准场景/币种/限额/时段时 default-deny。
   - sandbox admission 必须标记 simulation，不能被 pilot/live 复用。
 
