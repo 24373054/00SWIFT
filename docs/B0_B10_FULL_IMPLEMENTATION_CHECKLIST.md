@@ -72,7 +72,7 @@
   - 禁止：只判断路径字符串非空。
   - 测试：新增 `backend/tests/production/test_qualification.py`，覆盖不存在、过期、环境不匹配、digest 错误、签名错误、有效工件。
 
-- [ ] B0.1.2 新增 `prod_qualification_artifacts` 与 `prod_qualification_decisions`。
+- [x] B0.1.2 新增 `prod_qualification_artifacts` 与 `prod_qualification_decisions`。
   - 修改：`backend/production/models.py`；新增 `backend/alembic/versions/0004_production_qualification.py`。
   - 字段：artifact id/type/version、issuer、subject、environment、digest、signature algorithm、valid_from/to、status、verified_at、verifier version、evidence id。
   - 约束：环境/subject/version 唯一性；过期工件不能成为 ACTIVE。
