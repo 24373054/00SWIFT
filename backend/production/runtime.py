@@ -75,54 +75,80 @@ class ProductionIdempotencyService:
         key: str,
         request: Any,
         ttl_seconds: int = 86400,
+        *,
+        owner: str = "production-api",
+        trace_id: str | None = None,
     ) -> tuple[ProductionIdempotencyKey, bool]:
         if not key.strip():
             raise ProductionConflict("Idempotency-Key is required")
         request_hash = digest(request)
-        record = (
-            self.db.query(ProductionIdempotencyKey)
-            .filter_by(scope=scope, key=key)
-            .first()
-        )
+        now = utcnow()
+        record = self.db.query(ProductionIdempotencyKey).filter_by(scope=scope, key=key).with_for_update().first()
         if record:
             if record.request_hash != request_hash:
                 raise ProductionConflict("Idempotency key was reused with a different payload")
-            if _aware(record.expires_at) <= utcnow():
+            if _aware(record.expires_at) <= now:
                 record.status = "EXPIRED"
                 self.db.flush()
                 raise ProductionConflict("Idempotency key has expired; create a new key")
             if record.status == "STARTED":
-                raise ProductionConflict("Idempotent operation is already in progress") from None
-            if record.status != "COMPLETED":
+                if record.locked_until is None or _aware(record.locked_until) > now:
+                    raise ProductionConflict("Idempotent operation is already in progress") from None
+                record.owner = owner
+                record.trace_id = trace_id
+                record.locked_until = now + dt.timedelta(seconds=ttl_seconds)
+                record.attempt += 1
+                self.db.flush()
+                return record, False
+            if record.status == "COMPLETED":
+                return record, True
+            if record.status == "FAILED_RETRYABLE":
+                record.status = "STARTED"
+                record.owner = owner
+                record.trace_id = trace_id
+                record.locked_until = now + dt.timedelta(seconds=ttl_seconds)
+                record.attempt += 1
+                self.db.flush()
+                return record, False
+            if record.status in {"FAILED_FINAL", "EXPIRED"}:
                 raise ProductionConflict(f"Idempotent operation is not replayable: {record.status}")
             return record, True
         record = ProductionIdempotencyKey(
             scope=scope,
             key=key,
             request_hash=request_hash,
-            expires_at=utcnow() + dt.timedelta(seconds=ttl_seconds),
+            expires_at=now + dt.timedelta(seconds=ttl_seconds),
+            owner=owner,
+            locked_until=now + dt.timedelta(seconds=ttl_seconds),
+            attempt=1,
+            trace_id=trace_id,
         )
-        self.db.add(record)
         try:
-            self.db.flush()
+            with self.db.begin_nested():
+                self.db.add(record)
+                self.db.flush()
         except IntegrityError:
-            self.db.rollback()
-            record = (
-                self.db.query(ProductionIdempotencyKey)
-                .filter_by(scope=scope, key=key)
-                .one()
-            )
+            record = self.db.query(ProductionIdempotencyKey).filter_by(scope=scope, key=key).with_for_update().one()
             if record.request_hash != request_hash:
                 raise ProductionConflict("Concurrent idempotency payload conflict") from None
-            if record.status == "STARTED":
-                raise ProductionConflict("Idempotent operation is already in progress") from None
-            return record, True
+            if record.status == "COMPLETED":
+                return record, True
+            raise ProductionConflict("Idempotent operation is already in progress") from None
         return record, False
 
     def complete(self, record: ProductionIdempotencyKey, status: int, response: Any) -> None:
         record.status = "COMPLETED"
         record.response_status = status
         record.response_body = canonical_json(response)
+        record.locked_until = None
+        record.owner = None
+        self.db.flush()
+
+    def fail(self, record: ProductionIdempotencyKey, error: str, *, final: bool = False) -> None:
+        record.status = "FAILED_FINAL" if final else "FAILED_RETRYABLE"
+        record.last_error = error[:2000]
+        record.locked_until = None
+        record.owner = None
         self.db.flush()
 
 
