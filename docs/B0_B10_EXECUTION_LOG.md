@@ -1231,3 +1231,23 @@
 - 外部证据：无。
 - 未解决风险：现有 sandbox bypass 仅限模拟环境；pilot/live 的 acceptance 签名/证书绑定将在 B2.2/B8 完善。
 - 执行者：Codex
+
+### B2.2.1 — trusted ClientCertificateAuthenticator
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`34adef1`
+- 修改文件：`backend/production/certificate_auth.py`、`backend/tests/production/test_certificate_auth.py`
+- 新增实现：仅从 ASGI trusted TLS extension/client_cert_der 读取 DER；计算 SHA-256 fingerprint；绑定 ACTIVE certificate → service identity(environment) → ACTIVE participant → tenant；检查有效期和 trust domain。
+- 新增/修改测试：任意 `x-certificate-fingerprint` header/字符串自报均拒绝；缺失或非 bytes TLS context fail-closed。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_certificate_auth.py -q`; `\\.venv\\Scripts\\python.exe -m ruff check backend/production/certificate_auth.py backend/tests/production/test_certificate_auth.py`
+- 测试结果：`2 passed`；`ruff: All checks passed`。
+- 正常路径证据：只有受信 ingress 注入的 DER bytes 能进入数据库绑定查询，返回 certificate/identity/participant/tenant 四级绑定。
+- 负向路径证据：headers、过期/未知/非 ACTIVE certificate、错 environment、未绑定 participant 均抛 `CertificateAuthError`。
+- 并发/重复/超时/恢复证据：认证只读数据库查询；唯一 fingerprint/identity constraints 防止歧义绑定。
+- OpenAPI/AsyncAPI 影响：无直接 API 字段变化；后续 security dependency 可接入该 authenticator。
+- Metrics/alerts/runbook 影响：unknown/revoked/expired certificate 应接入 mTLS 安全告警。
+- 外部证据：真实 ingress TLS extension 注入需部署环境验证。
+- 未解决风险：当前主 dependency 尚未替换为该 authenticator，B2.2.2 完成 OAuth/certificate/environment 状态组合接线。
+- 执行者：Codex

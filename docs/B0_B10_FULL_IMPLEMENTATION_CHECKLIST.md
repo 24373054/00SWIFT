@@ -278,7 +278,7 @@
 
 ## B2.2 mTLS、OAuth 与证书生命周期
 
-- [ ] B2.2.1 新增 `ClientCertificateAuthenticator`。
+- [x] B2.2.1 新增 `ClientCertificateAuthenticator`。
   - 从受信 ingress/ASGI TLS context 获取证书；不得相信任意客户端自报 fingerprint header。
   - 绑定 certificate → service identity → participant → tenant。
 
