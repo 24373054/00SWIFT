@@ -206,10 +206,8 @@ def list_payments(
     state: str | None = None,
 ):
     query = db.query(ProductionPaymentOrder).filter(
-        ProductionPaymentOrder.initiator_participant == principal.participant_id
+        ProductionPaymentOrder.tenant_id == principal.tenant_id
     )
-    if principal.can("production.admin"):
-        query = db.query(ProductionPaymentOrder)
     if state:
         query = query.filter(ProductionPaymentOrder.orchestration_state == state)
     return {"items": [ProductionPaymentService(db).serialize(row) for row in query.order_by(ProductionPaymentOrder.id.desc()).limit(limit).all()]}
@@ -222,7 +220,7 @@ def get_payment(
     db: Session = Depends(get_db),
 ):
     try:
-        order = ProductionPaymentService(db).get_order(order_id)
+        order = ProductionPaymentService(db).get_order(order_id, principal)
         if order.initiator_participant != principal.participant_id and not principal.can("production.admin"):
             raise ProductionConflict("Payment does not belong to the participant")
         return ProductionPaymentService(db).serialize(order)
@@ -237,7 +235,7 @@ def get_payment_facts(
     db: Session = Depends(get_db),
 ):
     try:
-        order = ProductionPaymentService(db).get_order(order_id)
+        order = ProductionPaymentService(db).get_order(order_id, principal)
         if order.initiator_participant != principal.participant_id and not principal.can("production.admin"):
             raise ProductionConflict("Payment does not belong to the participant")
         return {"payment_id": order_id, "facts": ProductionPaymentService(db).facts(order_id)}
@@ -253,7 +251,7 @@ def open_investigation_case(
     db: Session = Depends(get_db),
     _integrity: None = Depends(require_request_integrity),
 ):
-    order = ProductionPaymentService(db).get_order(order_id)
+    order = ProductionPaymentService(db).get_order(order_id, principal)
     if order.initiator_participant != principal.participant_id and not principal.can("production.admin"):
         raise _handle_conflict(ProductionConflict("Payment does not belong to the participant"))
     case = ProductionInvestigationCase(
@@ -274,9 +272,9 @@ def list_investigation_cases(
     principal: ProductionPrincipal = Depends(require_production_scope("production.operator")),
     db: Session = Depends(get_db),
 ):
-    query = db.query(ProductionInvestigationCase)
-    if not principal.can("production.admin"):
-        query = query.join(ProductionPaymentOrder, ProductionPaymentOrder.order_id == ProductionInvestigationCase.order_id).filter(ProductionPaymentOrder.initiator_participant == principal.participant_id)
+    query = db.query(ProductionInvestigationCase).join(
+        ProductionPaymentOrder, ProductionPaymentOrder.order_id == ProductionInvestigationCase.order_id
+    ).filter(ProductionPaymentOrder.tenant_id == principal.tenant_id)
     return {"items": [{"case_id": item.case_id, "order_id": item.order_id, "case_type": item.case_type, "state": item.state, "priority": item.priority, "owner": item.owner, "reason": item.reason} for item in query.order_by(ProductionInvestigationCase.id.desc()).all()]}
 
 

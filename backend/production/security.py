@@ -34,6 +34,10 @@ class ProductionPrincipal:
     source: str
     credential_id: int | None = None
 
+    @property
+    def tenant_id(self) -> str:
+        return f"tenant:{self.participant_id}"
+
     def can(self, scope: str) -> bool:
         if scope in self.scopes:
             return True

@@ -267,7 +267,7 @@ class ProductionPaymentService:
             order_id=f"pay_{uuid.uuid4().hex}",
             uetr=uetr,
             instruction_id=instruction_id,
-            tenant_id=principal.participant_id,
+            tenant_id=principal.tenant_id,
             initiator_participant=principal.participant_id,
             corridor=corridor,
             debtor_party_ref=debtor_party,
@@ -413,7 +413,7 @@ class ProductionPaymentService:
         quote_id: str,
         idempotency_key: str,
     ) -> dict[str, Any]:
-        order = self.get_order(order_id)
+        order = self.get_order(order_id, principal)
         if order.initiator_participant != principal.participant_id and not principal.can("production.admin"):
             raise ProductionConflict("Payment does not belong to the participant")
         quote = self.db.query(ProductionFxQuote).filter_by(quote_id=quote_id).one_or_none()
@@ -489,7 +489,7 @@ class ProductionPaymentService:
         reason: str,
         idempotency_key: str,
     ) -> dict[str, Any]:
-        order = self.get_order(order_id)
+        order = self.get_order(order_id, principal)
         if order.orchestration_state in ORCHESTRATION_TERMINAL:
             raise ProductionConflict("Terminal payment cannot be cancelled")
         if order.initiator_participant != principal.participant_id and not principal.can("production.admin"):
@@ -524,7 +524,7 @@ class ProductionPaymentService:
         reason: str,
         idempotency_key: str,
     ) -> dict[str, Any]:
-        order = self.get_order(order_id)
+        order = self.get_order(order_id, principal)
         if order.initiator_participant != principal.participant_id and not principal.can("production.admin"):
             raise ProductionConflict("Payment does not belong to the participant")
         amount_minor_value = minor_amount(amount, order.currency)
@@ -584,8 +584,11 @@ class ProductionPaymentService:
         self.db.flush()
         return response
 
-    def get_order(self, order_id: str) -> ProductionPaymentOrder:
-        order = self.db.query(ProductionPaymentOrder).filter_by(order_id=order_id).one_or_none()
+    def get_order(self, order_id: str, principal: ProductionPrincipal | None = None) -> ProductionPaymentOrder:
+        query = self.db.query(ProductionPaymentOrder).filter_by(order_id=order_id)
+        if principal is not None:
+            query = query.filter(ProductionPaymentOrder.tenant_id == principal.tenant_id)
+        order = query.one_or_none()
         if order is None:
             raise ProductionConflict("Payment order not found")
         return order
