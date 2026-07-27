@@ -198,6 +198,18 @@
 - 验收证据：asset/liability 混合 journal 按各自方向计算，未知 account type fail-closed。
 - 执行者：Codex
 
+### B5.1.4 — liability profile integration
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`86a760f`
+- 修改文件：`backend/production/funding_service.py`、`backend/tests/production/test_funding_service.py`
+- 新增/修改实现：FundingService reserve 支持显式 liability_profile_id；assert_liability_profile 只接受 active profile，绑定 operator/liability_type/jurisdiction/interest/reserve metadata，缺失或失效 profile fail-closed。
+- 测试命令：`$env:PYTHONPATH='backend'; .\\.venv\\Scripts\\python.exe -m pytest backend/tests/production/test_funding_service.py -q`
+- 测试结果：`1 passed`；缺少 profile 负向断言通过。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`

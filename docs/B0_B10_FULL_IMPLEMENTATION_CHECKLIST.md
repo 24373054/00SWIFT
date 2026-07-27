@@ -585,7 +585,7 @@
 - [x] B5.1.3 明确账户类型和正常余额方向。
   - asset/liability/equity/income/expense/contra/suspense；不能统一用 credit 加、debit 减。
 
-- [ ] B5.1.4 LiabilityProfile 真正接入。
+- [x] B5.1.4 LiabilityProfile 真正接入。
   - 明确平台是权威账本还是运营机构 mirror；记录负债主体、2.0 利息、存保、准备金/保证金规则版本。
 
 ## B5.2 不可变分录
