@@ -286,6 +286,26 @@
 - 未解决风险：qualified verifier callback 尚未绑定真实证书链和 OCSP/CRL。
 - 执行者：Codex
 
+### B0.3.1 — 生产 API 授权矩阵
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`a50683b`
+- 修改文件：`docs/security/PRODUCTION_API_AUTHORIZATION_MATRIX.md`、`backend/tests/production/test_authorization_matrix_document.py`
+- 新增迁移：无
+- 新增/修改测试：从 router 装饰器提取全部生产路由，逐项检查矩阵覆盖。
+- 测试命令：`\.venv\Scripts\python.exe -m pytest backend/tests/production/test_authorization_matrix_document.py -q`; `\.venv\Scripts\python.exe -m ruff check backend/tests/production/test_authorization_matrix_document.py`
+- 测试结果：`1 passed`; `ruff`：`All checks passed`
+- 正常路径证据：矩阵覆盖当前 27 个生产路由，逐项列出 identity、scope、tenant、integrity、幂等、maker/checker、audit。
+- 负向路径证据：矩阵明确禁止自报角色/参与方 header、管理员越过双控和公网 worker。
+- 并发/重复/超时/恢复证据：每个 mutation 的幂等和重放要求显式列入矩阵，具体实现由 B0.2/B1 覆盖。
+- OpenAPI/AsyncAPI 影响：矩阵作为 API 安全契约，后续拆分路由必须保持一一对应。
+- Metrics/alerts/runbook 影响：矩阵定义审计和拒绝事件维度。
+- 外部证据：无；真实身份/证书/CA 仍为 `[EXT-BLOCKED]`。
+- 未解决风险：现有 router 尚未完全按矩阵拆分，B0.3.2–B0.3.6 继续执行。
+- 执行者：Codex
+
 ### B0.1.4 — 健康与就绪依赖快照
 
 - 状态：DONE
