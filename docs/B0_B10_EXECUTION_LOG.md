@@ -558,6 +558,17 @@
 - 集中回归：账本/hold/GL/completion/domain 相关 `18 passed`（1 个既有 deprecation warning）；ruff 全部通过。
 - 执行者：Codex
 
+### Regression fix — B4 payment identity fixtures
+
+- 状态：DONE
+- 开始时间：2026-07-27
+- 完成时间：2026-07-27
+- commit：`cdd4652`
+- 修改文件：`backend/tests/production/test_append_only_facts.py`、`backend/tests/production/test_payment_aggregate.py`、`backend/tests/production/test_payment_state_dimensions.py`
+- 修复：为既有测试 payment order 补齐新增强制 end_to_end_id/transaction_id 字段。
+- 测试结果：相关 3 tests `3 passed`；production suite 其余失败已消除。
+- 执行者：Codex
+
 ### B4.7.1 — payment timers
 
 - 状态：DONE；完成时间：2026-07-27；commit：`cc28dab`
